@@ -7,7 +7,9 @@
 #include "parser.h"
 
 
-void Compiler::compile() {
+void Compiler::compile(CompileFile compile_file) {
+
+	this->compile_file = compile_file;
 
 	options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
 	options.debug_emission_flags |= EMIT_AST_DEBUG;
@@ -15,34 +17,21 @@ void Compiler::compile() {
 
 	log("kng compiler v0_1");
 
-	// open a test file
-	std::ifstream f;
-	f.open("F:/kng/tests/test.kng");
-
-	std::stringstream buffer;
-	buffer << f.rdbuf();
-
-	std::string contents = buffer.str();
-
-	log(contents);
-
-	ErrorHandler e(contents);
-
+	ErrorHandler e(compile_file.file_contents);
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 	log("compilation started");
 
 	// lexical analysis
-	Lexer l(contents, &e);
+	Lexer l(compile_file.file_contents, &e);
 	auto tokens = l.scan();
 	if (options.debug_emission_flags & EMIT_TOKEN_DEBUG)
-		log(tokens.to_json());
-
+		lexer_debug_output = tokens.to_json();
 	// parsing to an ast
 	Parser p(tokens.tokens, &e);
 	auto ast = p.parse();
 	if (options.debug_emission_flags & EMIT_AST_DEBUG)
-		log(ast->to_json());
+		parser_debug_output = ast->to_json();
 
 	// code generation
 

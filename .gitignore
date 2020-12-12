@@ -1,6 +1,7 @@
 .vs/
 examples/
 tests/
+TODO.md
 **/build
 **/Debug
 **/Release

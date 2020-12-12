@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_SUPPRESS_REGENERATION true)
 
 include_directories(
+	src/vendor/cxxopts/include
 	src/vendor/Catch2-2.13.3/include
 	src/vendor/spdlog-1.8.1/include
 	src

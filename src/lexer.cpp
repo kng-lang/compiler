@@ -5,15 +5,11 @@
 
 
 TokenList Lexer::scan() {
-
-	log("scanning!");
-
 	while (!end()) {
 		// do stuff here
 		skip_whitespace();
 		auto current = next();
 		switch (current) {
-
 			// @TODO these are sequential i.e. \r\n is a newline
 			case '\n':
 			case '\r': token(Token::Type::NEWLINE); index = 1; line++; break;
@@ -148,7 +144,7 @@ char Lexer::advance(u32 amount){
 }
 
 u8 Lexer::end() {
-	return current > src.size()-1;
+	return current > src.size()-1 || src.size()==0;
 }
 
 u8 Lexer::is_letter(char c){
