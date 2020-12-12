@@ -1,0 +1,16 @@
+.vs/
+examples/
+tests/
+**/build
+**/Debug
+**/Release
+**/x64/
+**/x86/
+**/CMakeFiles/
+**/*.sln
+**/*.vcxproj
+**/*.vcxproj.filters
+**/*.vcxproj.user
+**/*.cmake
+**/CMakeCache.txt
+**/*.dir

@@ -1,0 +1,223 @@
+#include "lexer.h"
+
+
+
+
+
+TokenList Lexer::scan() {
+
+	log("scanning!");
+
+	while (!end()) {
+		// do stuff here
+		skip_whitespace();
+		auto current = next();
+		switch (current) {
+
+			// @TODO these are sequential i.e. \r\n is a newline
+			case '\n':
+			case '\r': token(Token::Type::NEWLINE); index = 1; line++; break;
+			case '+': token(Token::Type::PLUS); break;
+			case '-': token(Token::Type::MINUS); break;
+			case '*': token(Token::Type::STAR); break;
+			case '(': token(Token::Type::LPAREN); break;
+			case ')': token(Token::Type::RPAREN); break;
+			case '[': token(Token::Type::LBRACKET); break;
+			case ']': token(Token::Type::RBRACKET); break;
+			case '{': token(Token::Type::LCURLY); break;
+			case '}': token(Token::Type::RCURLY); break;
+			case '_': token(Token::Type::UNDERSCORE); break;
+			case ';': token(Token::Type::SEMI_COLON); break;
+
+			case '&': decide(Token::Type::BAND, Token::Type::LAND); break;
+			case '|': decide(Token::Type::BOR, Token::Type::LOR); break;
+			case '!': decide(Token::Type::BANG, Token::Type::NEQ); break;
+			case '=': decide(Token::Type::ASSIGN, Token::Type::EQUALS); break;
+			case ':': decide(Token::Type::COLON, Token::Type::QUICK_ASSIGN); break;
+
+			case '.': decide(Token::Type::DOT, Token::Type::DOUBLEDOT, Token::Type::TRIPLEDOT); break;
+			case '>': decide(Token::Type::GREATER, Token::Type::GEQ, Token::Type::RSHIFT); break;
+			case '<': decide(Token::Type::LESS, Token::Type::LEQ, Token::Type::LSHIFT); break;
+
+			case '/': do_comment();
+
+			default: {
+				if (is_letter(current)) {
+					do_word(current);
+				}
+				else if (is_digit(current)) {
+					do_number(current);
+				}else if (is_string(current)){
+					do_string(current);
+				}
+			}
+		}
+	}
+
+	token(Token::Type::END);
+	return TokenList(tokens);
+}
+
+void Lexer::token(Token::Type type) {
+	token(type, "");
+}
+
+void Lexer::token(Token::Type type, std::string value) {
+	// @TODO implement index and line incrementing as its not working
+	Token tok;
+	tok.index = this->indexSavePoint;
+	tok.line = this->lineSavePoint;
+	tok.type = type;
+	tok.value = value;
+	tokens.push_back(tok);
+	resetSavePoint();
+}
+
+void Lexer::decide(Token::Type t1, Token::Type t2){
+	// all double tokens end with '=' which is convenient!
+	if (!end() && peek() == '=') {
+		next();
+		return token(t2);
+	}
+	if (!end() && prev()==peek()) {
+		next();
+		return token(t2);
+	}
+	else 
+		token(t1);
+
+}
+
+// @TODO this doesn't work
+void Lexer::decide(Token::Type t1, Token::Type t2, Token::Type t3){
+	if (!end() && peek() == '=') {
+		advance(1);
+		return token(t2);
+	}
+	// e.g. >> or ||
+	if (!end() && prev() == peek()) {
+		advance(1);
+		return token(t3);
+	}
+}
+
+void Lexer::skip_whitespace(){
+	while (peek() == ' ' || peek() == '\t')
+		next();
+}
+
+void Lexer::resetSavePoint() {
+	indexSavePoint = index;
+	lineSavePoint = line;
+}
+
+u8 Lexer::consume(char c) {
+	if (peek() == c) {
+		next();
+		return 1;
+	}
+	return 0;
+}
+
+char Lexer::prev(){
+	return peek(-1);
+}
+
+char Lexer::peek(){
+	return src.at(current);
+}
+
+char Lexer::peek(u32 amount) {
+	return src.at(current + amount);
+}
+
+char Lexer::peek_ahead() {
+	return src.at(current + 1);
+}
+
+char Lexer::next(){
+	index++;
+	return advance(1);
+}
+
+char Lexer::advance(u32 amount){
+	index+=amount;
+	char c = src.at(current);
+	current += amount;
+	return c;
+}
+
+u8 Lexer::end() {
+	return current > src.size()-1;
+}
+
+u8 Lexer::is_letter(char c){
+	return isalpha(c);
+}
+
+u8 Lexer::is_digit(char c){
+	return isdigit(c);
+}
+
+u8 Lexer::is_string(char c) {
+	return c == '"' || c == '\'';
+}
+
+
+u8 Lexer::check_keyword(std::string rest, Token::Type t) {
+	for(int i=0;i<rest.size();i++)
+		if (peek(i) != rest.at(i))
+			return 0;
+	advance((u32)rest.size());
+	token(t);
+	return 1;
+}
+
+void Lexer::do_word(char start){
+
+	u8 found_keyword = 0;
+
+	switch (start) {
+		case 'b': found_keyword = check_keyword("reak", Token::Type::BREAK); break;
+		case 'c': found_keyword = check_keyword("ontinue", Token::Type::CONTINUE); break;
+		case 'f': found_keyword = check_keyword("or", Token::Type::FOR); break;
+		case 'i': {
+			found_keyword = check_keyword("f", Token::Type::IF); 
+			if (!found_keyword) found_keyword = check_keyword("nterface", Token::Type::INTERFACE);
+			if (!found_keyword) found_keyword = check_keyword("n", Token::Type::INN);
+			break;
+		}
+	}
+
+	if (!found_keyword) {
+		// get the first word character
+		std::stringstream ss;
+		ss << start;
+		while (!end() && (is_letter(peek()) || is_digit(peek()) || peek() == '_'))
+			ss << next();
+		token(Token::Type::IDENTIFIER, ss.str());
+	}
+}
+
+void Lexer::do_number(char start){
+	std::stringstream ss;
+	ss << start;
+	while (!end() && (is_digit(peek()) || peek() == '.' || peek() == '_'))
+		ss << next();
+	token(Token::Type::NUMBER, ss.str());
+}
+
+void Lexer::do_string(char start) {
+	std::stringstream ss;
+	while (!end() && peek() != start)
+		ss << next();
+	// consume past the delimiter
+	next();
+	token(Token::Type::STRING, ss.str());
+}
+
+void Lexer::do_comment(){
+}
+
+void Lexer::do_documentation(){
+}
