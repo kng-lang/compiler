@@ -32,13 +32,67 @@ std::string StmtBlockAST::to_json() {
 }
 
 std::string StmtExpressionAST::to_json(){
-	return "{}";
+	return "{StmtExpressionAST}";
 }
 
 std::string StmtDefineAST::to_json(){
 	return "{StmtDefineAST}";
 }
 
-std::string StmtQuickDefineAST::to_json(){
-	return "{StmtQuickDefineAST}";
+std::string StmtAssignAST::to_json() {
+	return "{StmtAssignAST}";
+}
+
+std::string StmtInterfaceSetAST::to_json() {
+	return "{StmtInterfaceSetAST}";
+}
+
+std::string StmtReturnAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtReturnAST\",\n\"value\":" << ((value != nullptr) ? value->to_json() : "null") << "\n}";
+	return ss.str();
+}
+
+std::string StmtContinueAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtContinueAST\"\n}";
+	return ss.str();
+}
+
+std::string StmtBreakAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtBreakAST\"\n}";
+	return ss.str();
+}
+
+std::string StmtIfAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtIfAST\",\n\"if_cond\":" << if_cond->to_json() << ",\n\"if_cond\":" << if_stmt->to_json() << "\n}";
+	return ss.str();
+}
+
+
+
+
+
+
+
+
+
+
+std::string ExprInterfaceGetAST::to_json() {
+	return "{ExprInterfaceGetAST}";
+}
+
+std::string ExprBinAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprBinAST\",\n\"left\":" << lhs->to_json() << ",\n\"rhs\":" << rhs->to_json() << "}\n";
+	return ss.str();
+}
+
+
+std::string ExprLiteralAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprLiteralAST\",\n\"type\":null,\n\"value\": null}\n";
+	return ss.str();
 }

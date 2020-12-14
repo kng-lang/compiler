@@ -1,10 +1,11 @@
 #pragma once
 
+#include <memory>
 #include <map>
 #include "common.h"
-#include "ast.h"
 
 struct Type;
+struct AST;
 
 // the signature of an interface is made up of the type of its members
 struct InterfaceSignature{
@@ -37,6 +38,7 @@ struct Type {
 	InterfaceSignature interface_signature;
 	FnSignature fn_signature;
 
+	Type(){}
 	Type(Types t) : t(t){}
 
 	// matches basic determines whether a type's type (e.g. u8, interface, etc) is the same
@@ -45,9 +47,23 @@ struct Type {
 	u8 matches_deep(Type other);
 };
 
+struct SymTable;
+
+struct SymTableEntry {
+
+	enum EntryType {
+		TYPE,
+		SYM_TABLE,
+	};
+
+	u8 entry_type;
+	// @TODO these 2 should be in a union
+	Type type;
+	std::shared_ptr<SymTable> sym_table;
+};
 
 struct SymTable {
-	std::unordered_map<std::string, Type> types;
+	std::unordered_map<std::string, SymTableEntry> entries;
 };
 
 inline extern Type u8_type();

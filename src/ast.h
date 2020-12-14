@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include "common.h"
+#include "types.h"
 
 struct AST {
 	virtual void debug();
@@ -36,9 +37,67 @@ struct StmtExpressionAST : public StatementAST {
 };
 
 struct StmtDefineAST : public StatementAST {
+	std::string identifier;
+	Type type;
+	std::shared_ptr<ExpressionAST> value;
 	virtual std::string to_json();
 };
 
-struct StmtQuickDefineAST : public StatementAST {
+struct StmtAssignAST : public StatementAST {
+	virtual std::string to_json();
+};
+
+struct StmtInterfaceSetAST : public StatementAST {
+	std::string i_identifier;
+	std::string m_identifier;
+	std::shared_ptr<ExpressionAST> value;
+	virtual std::string to_json();
+};
+
+struct StmtReturnAST : public StatementAST {
+	std::shared_ptr<ExpressionAST> value;
+	StmtReturnAST(){}
+	virtual std::string to_json();
+};
+
+struct StmtContinueAST: public StatementAST {
+	virtual std::string to_json();
+};
+
+struct StmtBreakAST : public StatementAST {
+	virtual std::string to_json();
+};
+
+struct StmtIfAST : public StatementAST {
+	std::shared_ptr<AST> if_cond;
+	std::shared_ptr<AST> if_stmt;
+	virtual std::string to_json();
+};
+
+struct StmtLoopAST : public StatementAST {
+
+};
+
+struct ExprVarAST : public ExpressionAST {
+	std::string identifier;
+	ExprVarAST(std::string identifier) : identifier(identifier){}
+};
+
+struct ExprInterfaceGetAST : public ExpressionAST {
+	std::string i_identifier;
+	std::string m_identifier;
+	virtual std::string to_json();
+};
+
+
+struct ExprBinAST : public ExpressionAST {
+	std::shared_ptr<ExpressionAST> lhs;
+	std::shared_ptr<ExpressionAST> rhs;
+	virtual std::string to_json();
+};
+
+struct ExprLiteralAST : public ExpressionAST {
+	Type type;
+	ExprLiteralAST(){}
 	virtual std::string to_json();
 };

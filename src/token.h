@@ -69,6 +69,7 @@ struct Token{
 		IF,
 		INN,
 		FOR,
+		RETURN,
 		BREAK,
 		CONTINUE,
 

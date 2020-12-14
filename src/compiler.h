@@ -19,5 +19,5 @@ struct Compiler {
 
 
 
-	void compile(CompileFile compile_file);
+	void compile(CompileFile compile_file, CompileOptions options);
 };

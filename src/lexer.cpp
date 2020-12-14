@@ -183,6 +183,7 @@ void Lexer::do_word(char start){
 			if (!found_keyword) found_keyword = check_keyword("n", Token::Type::INN);
 			break;
 		}
+		case 'r': found_keyword = check_keyword("eturn", Token::Type::RETURN); break;
 	}
 
 	if (!found_keyword) {

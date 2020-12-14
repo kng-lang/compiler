@@ -76,6 +76,7 @@ const char* Token::debug_types[] = {
 		"IF",
 		"IN",
 		"FOR",
+		"RETURN",
 		"BREAK",
 		"CONTINUE",
 

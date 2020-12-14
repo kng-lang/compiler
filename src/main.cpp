@@ -39,12 +39,16 @@ int main(int argc, char** argv) {
         buffer << f.rdbuf();
 
         std::string contents = buffer.str();
-       
-        log("file contents: {}", contents);
 
         Compiler compiler;
 
-        compiler.compile({ file, contents });
+        CompileOptions options;
+        if (debug) {
+            options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
+            options.debug_emission_flags |= EMIT_AST_DEBUG;
+        }
+
+        compiler.compile({ file, contents},options);
     }
 
 

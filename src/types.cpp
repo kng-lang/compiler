@@ -1,4 +1,5 @@
 #include "types.h"
+#include "ast.h"
 
 Type u8_type() {
 	return Type(Type::Types::U8);
