@@ -206,7 +206,6 @@ std::shared_ptr<AST> Parser::parse_single(){
 	auto t = next();
 	switch (t.type) {
 		case Token::Type::IDENTIFIER: {
-			log("found identifier!");
 			return std::make_shared<ExprVarAST>(t);
 		}
 		case Token::Type::NUMBER: {

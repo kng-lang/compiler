@@ -88,14 +88,14 @@ struct StmtAssignAST : public StatementAST {
 };
 
 struct StmtInterfaceAssignAST : public StatementAST {
-	std::shared_ptr<AST> interface_expr;
-	Token member_identifier;
-	std::shared_ptr<AST> value;
+	std::shared_ptr<AST> variable; // the actual interface
+	Token member;				   // the interface member
+	std::shared_ptr<AST> value;    // the value to assign
 
-	StmtInterfaceAssignAST(std::shared_ptr<AST> interface_expr,
-						   Token member_identifier,
+	StmtInterfaceAssignAST(std::shared_ptr<AST> variable,
+						   Token member,
 						   std::shared_ptr<AST> value
-		) : interface_expr(interface_expr), member_identifier(member_identifier), value(value) {}
+		) : variable(variable), member(member), value(value) {}
 
 	virtual std::string to_json();
 	virtual Type type() { return Type::STMT_INTER_ASSIGN; }

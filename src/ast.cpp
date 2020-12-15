@@ -46,7 +46,9 @@ std::string StmtAssignAST::to_json() {
 }
 
 std::string StmtInterfaceAssignAST::to_json() {
-	return "{StmtInterfaceAssignAST}";
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtInterfaceAssignAST\",\n\"interface\":" << variable->to_json() <<  ",\n\"member\":" << member.to_json() << ",\n\"value\":" << value->to_json() << "}\n";
+	return ss.str();
 }
 
 std::string StmtReturnAST::to_json() {
