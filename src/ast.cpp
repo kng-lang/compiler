@@ -40,11 +40,13 @@ std::string StmtDefineAST::to_json(){
 }
 
 std::string StmtAssignAST::to_json() {
-	return "{StmtAssignAST}";
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtAssignAST\",\n\"variable\":" << variable.to_json() << ",\n\"value\":" << value->to_json() << "}\n";
+	return ss.str();
 }
 
-std::string StmtInterfaceSetAST::to_json() {
-	return "{StmtInterfaceSetAST}";
+std::string StmtInterfaceAssignAST::to_json() {
+	return "{StmtInterfaceAssignAST}";
 }
 
 std::string StmtReturnAST::to_json() {
@@ -78,7 +80,11 @@ std::string StmtIfAST::to_json() {
 
 
 
-
+std::string ExprVarAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprVarAST\",\n\"variable\":" << identifier.to_json() << "\n}\n";
+	return ss.str();
+}
 
 std::string ExprInterfaceGetAST::to_json() {
 	return "{ExprInterfaceGetAST}";

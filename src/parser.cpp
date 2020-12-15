@@ -4,7 +4,7 @@
 std::shared_ptr<AST> Parser::parse() {
 	auto program = ProgramAST();
 	// @TODO ignore newlines when parsing stuff
-	while (peek().type != Token::Type::END)	
+	while (!end() && peek().type != Token::Type::END)	
 		program.stmts.push_back(parse_stmt());
 	this->root_ast = std::make_shared<ProgramAST>(program);
 	return this->root_ast;
@@ -30,7 +30,10 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 		}
 		case Token::Type::IF: {
 			stmt = parse_if();
-			log("done parsing if");
+			break;
+		}
+		case Token::Type::FOR: {
+			stmt = parse_if();
 			break;
 		}
 		case Token::Type::LCURLY: {
@@ -41,7 +44,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			// if we are dealing with an identifier, we could be doing various operations
 			switch (peek(1).type) {
 				case Token::Type::COLON: stmt = parse_define(); break;
-				default: break;
+				default: stmt = parse_expression(); break;
 			}
 			break;
 		}; // @TODO how do we know we are doing an assignment or expression?
@@ -67,7 +70,9 @@ std::shared_ptr<AST> Parser::parse_if(){
 }
 
 std::shared_ptr<AST> Parser::parse_for(){
-	return nullptr;
+	StmtLoopAST loop_ast;
+	consume(Token::Type::FOR);
+	return std::make_shared<StmtLoopAST>(loop_ast);
 }
 
 // a stmt block is simply a list of statements.
@@ -123,10 +128,28 @@ std::shared_ptr<AST> Parser::parse_quick_define() {
 std::shared_ptr<AST> Parser::parse_expression() { 
 	return parse_assign();
 }
+
 std::shared_ptr<AST> Parser::parse_assign() { 
 	auto higher_precedence = parse_lor();
+	if (consume(Token::ASSIGN)) {
+		auto assign_value = parse_lor();
+		// we need to check if we are setting a variable, or an interface member
+		switch (higher_precedence->type()) {
+			case AST::Type::EXPR_VAR: {
+				auto variable_token = std::dynamic_pointer_cast<ExprVarAST>(higher_precedence);
+				return std::make_shared<StmtAssignAST>(variable_token->identifier, assign_value);
+			}
+			case AST::Type::EXPR_INTER_GET: {
+				auto member_get = std::dynamic_pointer_cast<ExprInterfaceGetAST>(higher_precedence);
+				auto interface_value = member_get->value;
+				auto member_token = member_get->member;
+				return std::make_shared<StmtInterfaceAssignAST>(interface_value, member_token, assign_value);
+			}
+		}
+	}
 	return higher_precedence;
 }
+
 std::shared_ptr<AST> Parser::parse_lor() { 
 	auto higher_precedence = parse_land();
 	return higher_precedence;
@@ -179,11 +202,12 @@ std::shared_ptr<AST> Parser::parse_single(){
 
 
 	// @TODO implement groups e.g. (1+2) + (1+3)
-
+	log("parsing single!");
 	auto t = next();
 	switch (t.type) {
 		case Token::Type::IDENTIFIER: {
-			return std::make_shared<ExprVarAST>(t.value);
+			log("found identifier!");
+			return std::make_shared<ExprVarAST>(t);
 		}
 		case Token::Type::NUMBER: {
 			ExprLiteralAST lit_ast;
