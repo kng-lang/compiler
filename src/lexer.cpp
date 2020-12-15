@@ -1,8 +1,10 @@
 #include "lexer.h"
+#include "compiler.h"
 
-
-
-
+Lexer::Lexer(std::string& file_contents, Compiler* compiler){
+	this->compiler = compiler;
+	this->src = file_contents;
+}
 
 TokenList Lexer::scan() {
 	while (!end()) {
@@ -63,6 +65,7 @@ void Lexer::token(Token::Type type, std::string value) {
 	Token tok;
 	tok.index = this->indexSavePoint;
 	tok.line = this->lineSavePoint;
+	tok.length = this->current - this->indexSavePoint;
 	tok.type = type;
 	tok.value = value;
 	tokens.push_back(tok);

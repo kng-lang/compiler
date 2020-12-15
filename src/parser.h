@@ -5,23 +5,21 @@
 #include "common.h"
 #include "ast.h"
 #include "token.h"
-#include "errhandler.h"
+#include "error.h"
 #include "types.h"
 
+struct Compiler;
+
 struct Parser {
+	Compiler* compiler;
 	std::vector<Token> tokens;
-	// current char being scanned
 
 	u32 current = 0;
 	ErrorHandler* err_handler;
 	std::shared_ptr<AST> root_ast;
 
-	Parser() : root_ast(){
-	}
-
-	Parser(std::vector<Token> tokens, ErrorHandler* err_handler) : root_ast(), tokens(tokens), err_handler(err_handler) {
-		root_ast = std::make_shared<AST>();
-	}
+	Parser();
+	Parser(TokenList& tokens, Compiler* compiler);
 
 	std::shared_ptr<AST> parse();
 	std::shared_ptr<AST> parse_stmt_block();

@@ -1,7 +1,16 @@
 #include "parser.h"
+#include "compiler.h"
+
+Parser::Parser(){}
+
+Parser::Parser(TokenList& tokens, Compiler* compiler){
+	this->tokens = tokens.tokens;
+	this->compiler = compiler;
+}
 
 
 std::shared_ptr<AST> Parser::parse() {
+	this->root_ast = std::make_shared<AST>();
 	auto program = ProgramAST();
 	// @TODO ignore newlines when parsing stuff
 	while (!end() && peek().type != Token::Type::END)	
@@ -52,10 +61,11 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 	}
 	
 	// we use ; when we want multiple statements on one line
-	if (peek().type == Token::Type::SEMI_COLON)
-		next();
-	else
-		consume(Token::Type::NEWLINE, "newline required as statement delimiter");
+	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON)))
+		// @TODO this prev() stuff should probably be done with a function
+		compiler->error_handler.error("expected ; or newline as statement delimiter", 
+			prev().index+prev().length+1, prev().line, prev().index + prev().length + 1, prev().line);
+
 	return stmt;
 }
 

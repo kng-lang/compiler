@@ -2,30 +2,29 @@
 #include <fstream>
 
 #include "compiler.h"
-#include "errhandler.h"
+#include "error.h"
 #include "lexer.h"
 #include "parser.h"
 
 
-void Compiler::compile(CompileFile compile_file, CompileOptions options) {
+void Compiler::compile(CompileFile compile_file, CompileOptions options, ErrorHandler error_handler) {
 
 	this->compile_file = compile_file;
 	this->options = options;
+	this->error_handler = error_handler;
 
 	log("kng compiler v0_1");
-
-	ErrorHandler e(compile_file.file_contents);
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 	log("compilation started");
 
 	// lexical analysis
-	Lexer l(compile_file.file_contents, &e);
+	Lexer l(compile_file.file_contents, this);
 	auto tokens = l.scan();
 	if (options.debug_emission_flags & EMIT_TOKEN_DEBUG)
 		lexer_debug_output = tokens.to_json();
 	// parsing to an ast
-	Parser p(tokens.tokens, &e);
+	Parser p(tokens, this);
 	auto ast = p.parse();
 	if (options.debug_emission_flags & EMIT_AST_DEBUG)
 		parser_debug_output = ast->to_json();

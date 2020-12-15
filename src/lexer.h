@@ -3,15 +3,19 @@
 #include <vector>
 
 #include "common.h"
-#include "errhandler.h"
+#include "error.h"
 #include "token.h"
 #include <string>
 #include <sstream>
 
+struct Compiler;
+
 struct Lexer {
 
+
+	Compiler* compiler;
 	// the actual source file
-	const std::string src;
+	std::string src;
 	// current char being scanned
 	u32 current = 0;
 	// index and line along with offsets used for error handling
@@ -20,12 +24,10 @@ struct Lexer {
 	u32 indexSavePoint = index;
 	u32 lineSavePoint = line;
 
-	ErrorHandler* err_handler;
 	std::vector<Token> tokens;
 
 	Lexer(){}
-	Lexer(std::string src, ErrorHandler* err_handler) : src(src), err_handler(err_handler) {
-	}
+	Lexer(std::string& file_contents, Compiler* compiler);
 
 
 	void token(Token::Type type);

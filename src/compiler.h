@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error.h"
 #include "options.h"
 
 // cmd line arguments usage
@@ -13,11 +14,12 @@ struct CompileFile {
 struct Compiler {
 	CompileFile compile_file;
 	CompileOptions options;
+	ErrorHandler error_handler;
 
 	std::string lexer_debug_output;
 	std::string parser_debug_output;
 
 
 
-	void compile(CompileFile compile_file, CompileOptions options);
+	void compile(CompileFile compile_file, CompileOptions options, ErrorHandler error_handler);
 };

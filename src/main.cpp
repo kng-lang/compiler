@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
     options.add_options()
         ("f,file", "File to compile", cxxopts::value<std::string>())
         ("d,debug", "Enable debugging", cxxopts::value<bool>()->default_value("false"))
+        ("e,error", "Error level", cxxopts::value<u8>())
         ("h,help", "Print usage")
         ;
 
@@ -41,6 +42,8 @@ int main(int argc, char** argv) {
         std::string contents = buffer.str();
 
         Compiler compiler;
+        CompileFile compile_file = { file, contents };
+        ErrorHandler err_handler(&compiler);
 
         CompileOptions options;
         if (debug) {
@@ -48,7 +51,7 @@ int main(int argc, char** argv) {
             options.debug_emission_flags |= EMIT_AST_DEBUG;
         }
 
-        compiler.compile({ file, contents},options);
+        compiler.compile(compile_file,options,err_handler);
     }
 
 
