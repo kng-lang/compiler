@@ -24,7 +24,13 @@ std::string select_area(std::string& original, u32 to, u32 from){
 // used to select the area that is the problem
 std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line) {
 	std::stringstream ss;
-	ss << original;
+
+	auto lines = split_string_by_newline(original);
+	u32 min_line = (p_start_line - 1) >= 1 ? p_start_line - 1 : 1;
+	u32 max_line = (p_start_line + 1) <= lines.size() ? p_start_line + 1 : p_start_line;
+
+	for (int i = min_line; i <= max_line; i++)
+		ss << lines.at(i-1) << "\n";
 	return ss.str();
 }
 
@@ -42,14 +48,14 @@ void ErrorHandler::error(
 
 
 	auto problem_string = select_problem_area(
-		compiler->compile_file.file_contents, 0,0,0,0
+		compiler->compile_file.file_contents, p_start_index, p_start_line, p_end_index, p_end_line
 		);
 
-	problem_string = get_src_at_line(compiler->compile_file.file_contents, p_end_line);
+	problem_string = get_src_at_line(compiler->compile_file.file_contents, p_start_line);
 
 	// @TODO calculate where the start of the line is on the error line
 	warn("");
-	warn("error on line {} in {}", p_start_line, compiler->compile_file.filename);
+	warn("error on index {} line {} in {}", p_start_index, p_start_line, compiler->compile_file.filename);
 	warn("");
 	warn("{}", problem_string);
 	warn("{}", build_pointer(p_end_index));

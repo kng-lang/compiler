@@ -155,6 +155,11 @@ std::shared_ptr<AST> Parser::parse_assign() {
 				auto member_token = member_get->member;
 				return std::make_shared<StmtInterfaceAssignAST>(interface_value, member_token, assign_value);
 			}
+			default: {
+				//@TODO use AST position information
+				compiler->error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
+				break;
+			}
 		}
 	}
 	return higher_precedence;

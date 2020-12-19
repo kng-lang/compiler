@@ -14,15 +14,21 @@ struct Compiler;
 
 struct Error{
 	// these are the possible levels
-	enum class Levels{
+	enum class Level{
 		RECOVERABLE, // errors that the compiler can fix
 		WARNING,     // errors that the compiler cannot fix but can still complete compilation 
 		CRITICAL,	 // errors that the compiler cannot recover from
 	};
 
-	enum class Types{
-		MISSING_DELIMITER,	// e.g. missing newline or ;
+	enum class Type{
+		MISSING_DELIMITER,	  // e.g. missing newline or ;
+		TYPE_MISMATCH,		  // e.g. x : s32 = "hello world!"
+		UNEXPECTED_CHARACTER, // e.g. x : s32 u32
+		UNEXPECTED_EOF,       // e.g. if x { EOF
 	};
+
+	Level level;
+	Type type;
 };
 
 struct ErrorTable {
@@ -41,12 +47,14 @@ struct ErrorHandler {
 	ErrorHandler(){}
 	ErrorHandler(Compiler* compiler) : compiler(compiler) {}
 
+
+	// @TODO report how to fix the error with colour coding e.g. the original in white and the fix in red
 	virtual void error(
 		const std::string problem, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line
 	);
 };
 
-extern std::string get_src_at_line(u32 line);
+extern std::string get_src_at_line(const std::string& src, u32 line);
 extern std::vector<std::string> split_string_by_newline(const std::string& str);
 extern std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line);
 extern std::string select_area(std::string& original, u32 to, u32 from);

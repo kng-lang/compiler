@@ -6,6 +6,28 @@
 #include "types.h"
 #include "token.h"
 
+struct StatementAST;
+struct ExpressionAST;
+struct ErrorAST;
+struct ProgramAST;
+struct StmtBlockAST;
+struct StmtExpressionAST;
+struct StmtDefineAST;
+struct StmtInterfaceDefineAST; // e.g. app.main := () io.println "hello world"
+struct StmtAssignAST;
+struct StmtInterfaceAssignAST;
+struct StmtReturnAST;
+struct StmtContinueAST;
+struct StmtBreakAST;
+struct StmtIfAST;
+struct StmtLoopAST;
+struct ExprVarAST;
+struct ExprInterfaceGetAST;
+struct ExprBinAST;
+struct ExprUnAST;
+struct ExprGroupAST;
+struct ExprLiteralAST;
+
 struct AST {
 	
 	enum class Type{
@@ -27,8 +49,14 @@ struct AST {
 		EXPR_VAR,
 		EXPR_INTER_GET,
 		EXPR_BIN,
+		EXPR_UN,
 		EXPR_LIT,
 	};
+	
+	u32 index;
+	u32 line;
+	u32 end_index;
+	u32 end_line;
 
 	virtual void debug();
 	virtual std::string to_json();
@@ -147,8 +175,17 @@ struct ExprInterfaceGetAST : public ExpressionAST {
 struct ExprBinAST : public ExpressionAST {
 	std::shared_ptr<AST> lhs;
 	std::shared_ptr<AST> rhs;
+	Token op;
 	virtual std::string to_json();
 	virtual Type type() { return Type::EXPR_BIN; }
+};
+
+struct ExprUnAST : public ExpressionAST {
+	std::shared_ptr<AST> ast;
+	Token op;
+	u8 side; // left or right
+	virtual std::string to_json();
+	virtual Type type() { return Type::EXPR_UN; }
 };
 
 // @TODO technically a function is a literal?
@@ -157,4 +194,25 @@ struct ExprLiteralAST : public ExpressionAST {
 	ExprLiteralAST(){}
 	virtual std::string to_json();
 	virtual Type type() { return Type::EXPR_LIT; }
+};
+
+struct ASTVisitor {
+	virtual std::shared_ptr<AST> visit_program(std::shared_ptr<ProgramAST> program_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_block(std::shared_ptr<StmtBlockAST> stmt_block_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_expression(std::shared_ptr<StmtExpressionAST> stmt_expression_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_define(std::shared_ptr<StmtDefineAST> stmt_define_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_interface_define(std::shared_ptr<StmtInterfaceDefineAST> stmt_interface_define_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_assign(std::shared_ptr<StmtAssignAST> stmt_assign_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_interface_assign(std::shared_ptr<StmtInterfaceAssignAST> stmt_interface_assign_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_return(std::shared_ptr<StmtReturnAST> stmt_return_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_continue_ast(std::shared_ptr<StmtContinueAST> stmt_continue_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_break_ast(std::shared_ptr<StmtBreakAST> stmt_break_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_if_ast(std::shared_ptr<StmtIfAST> stmt_if_ast) = 0;
+	virtual std::shared_ptr<AST> visit_stmt_loop_ast(std::shared_ptr<StmtLoopAST> stmt_loop_ast) = 0;
+	virtual std::shared_ptr<AST> visit_expr_var_ast(std::shared_ptr<ExprVarAST> expr_var_ast) = 0;
+	virtual std::shared_ptr<AST> visit_expr_interface_get_ast(std::shared_ptr<ExprInterfaceGetAST> expr_interface_get_ast) = 0;
+	virtual std::shared_ptr<AST> visit_expr_bin_ast(std::shared_ptr<ExprBinAST> expr_bin_ast) = 0;
+	virtual std::shared_ptr<AST> visit_expr_un_ast(std::shared_ptr<ExprUnAST> expr_un_ast) = 0;
+	virtual std::shared_ptr<AST> visit_expr_group_ast(std::shared_ptr<ExprGroupAST> expr_group_ast) = 0;
+	virtual std::shared_ptr<AST> visit_expr_literal_ast(std::shared_ptr<ExprLiteralAST> expr_literal_ast) = 0;
 };

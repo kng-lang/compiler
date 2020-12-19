@@ -13,8 +13,8 @@ TokenList Lexer::scan() {
 		auto current = next();
 		switch (current) {
 			// @TODO these are sequential i.e. \r\n is a newline
-			case '\n':
-			case '\r': token(Token::Type::NEWLINE); index = 1; line++; break;
+			case '\n': token(Token::Type::NEWLINE); line++; break;
+			case '\r': token(Token::Type::NEWLINE); line++; break;
 			case '+': token(Token::Type::PLUS); break;
 			case '-': token(Token::Type::MINUS); break;
 			case '*': token(Token::Type::STAR); break;

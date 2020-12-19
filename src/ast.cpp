@@ -94,10 +94,15 @@ std::string ExprInterfaceGetAST::to_json() {
 
 std::string ExprBinAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprBinAST\",\n\"left\":" << lhs->to_json() << ",\n\"rhs\":" << rhs->to_json() << "}\n";
+	ss << "{\n\"type\": \"ExprBinAST\",\n\"left\":" << lhs->to_json() << ",\n\"op\":" << op.to_json()<< "\,\n\"rhs\":" << rhs->to_json() << "}\n";
 	return ss.str();
 }
 
+std::string ExprUnAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprUnAST\",\n\"ast\":" << ast->to_json() << ",\n\"op\":" << op.to_json() << "}\n";
+	return ss.str();
+}
 
 std::string ExprLiteralAST::to_json() {
 	std::stringstream ss;

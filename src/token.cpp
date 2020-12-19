@@ -14,7 +14,7 @@ std::string TokenList::to_json(){
 
 std::string Token::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\":" << "\"" << debug_types[type] << "\",\n\"value\":\"" << value << "\"\n}";
+	ss << "{\n\"type\":" << "\"" << debug_types[type] << "\",\n\"index\": " << index << ",\"line\": " << line << ",\n\"value\":\"" << value << "\"\n}";
 	return ss.str();
 }
 
