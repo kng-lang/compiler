@@ -9,6 +9,10 @@ std::string AST::to_json() {
 	return "{AST}";
 }
 
+std::string ErrorAST::to_json() {
+	return "{ErrorAST}";
+}
+
 std::string ProgramAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"ProgramAST\",\n\"stmts\":[\n";
@@ -94,13 +98,19 @@ std::string ExprInterfaceGetAST::to_json() {
 
 std::string ExprBinAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprBinAST\",\n\"left\":" << lhs->to_json() << ",\n\"op\":" << op.to_json()<< "\,\n\"rhs\":" << rhs->to_json() << "}\n";
+	ss << "{\n\"type\": \"ExprBinAST\",\n\"lhs\":" << lhs->to_json() << ",\n\"op\":" << op.to_json()<< ",\n\"rhs\":" << rhs->to_json() << "}\n";
+	return ss.str();
+}
+
+std::string ExprGroupAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprGroupAST\",\n\"expr\":" << expression->to_json() << "}\n";
 	return ss.str();
 }
 
 std::string ExprUnAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprUnAST\",\n\"ast\":" << ast->to_json() << ",\n\"op\":" << op.to_json() << "}\n";
+	ss << "{\n\"type\": \"ExprUnAST\",\n\"op\":" << op.to_json() << ",\n\"ast\":" << ast->to_json() << ",\n\"side\":" << side << "}\n";
 	return ss.str();
 }
 

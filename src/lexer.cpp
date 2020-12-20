@@ -26,6 +26,7 @@ TokenList Lexer::scan() {
 			case '}': token(Token::Type::RCURLY); break;
 			case '_': token(Token::Type::UNDERSCORE); break;
 			case ';': token(Token::Type::SEMI_COLON); break;
+			case '^': token(Token::Type::REFERENCE); break;
 
 			case '&': decide(Token::Type::BAND, Token::Type::LAND); break;
 			case '|': decide(Token::Type::BOR, Token::Type::LOR); break;

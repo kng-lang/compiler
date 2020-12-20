@@ -50,6 +50,7 @@ struct AST {
 		EXPR_INTER_GET,
 		EXPR_BIN,
 		EXPR_UN,
+		EXPR_GROUP,
 		EXPR_LIT,
 	};
 	
@@ -76,6 +77,7 @@ struct ExpressionAST : public AST {
 
 struct ErrorAST : public StatementAST {
 	std::string error_msg;
+	virtual std::string to_json();
 	virtual Type type() { return Type::ERR; }
 };
 
@@ -176,16 +178,30 @@ struct ExprBinAST : public ExpressionAST {
 	std::shared_ptr<AST> lhs;
 	std::shared_ptr<AST> rhs;
 	Token op;
+	ExprBinAST(){}
+	ExprBinAST(std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, Token op) : lhs(lhs), rhs(rhs), op(op){}
 	virtual std::string to_json();
 	virtual Type type() { return Type::EXPR_BIN; }
 };
 
 struct ExprUnAST : public ExpressionAST {
-	std::shared_ptr<AST> ast;
 	Token op;
-	u8 side; // left or right
+	std::shared_ptr<AST> ast;
+	u8 side; // left (0), right (1)
+
+	ExprUnAST(){}
+	ExprUnAST(Token op, std::shared_ptr<AST> ast, u8 side) : op(op), ast(ast), side(side){}
+
 	virtual std::string to_json();
 	virtual Type type() { return Type::EXPR_UN; }
+};
+
+struct ExprGroupAST : public ExpressionAST {
+	std::shared_ptr<AST> expression;
+	ExprGroupAST(){}
+	ExprGroupAST(std::shared_ptr<AST> expression) : expression(expression) {}
+	virtual std::string to_json();
+	virtual Type type() { return Type::EXPR_GROUP; }
 };
 
 // @TODO technically a function is a literal?

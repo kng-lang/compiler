@@ -32,10 +32,11 @@ const char* Token::debug_types[] = {
 		"TRUE",
 		"FALSE",
 
-
+		"REFERENCE",
 		"DOT",
 		"DOUBLEDOT",
 		"TRIPLEDOT",
+
 		"SEMI_COLON", // inserted automatically
 		"COLON",
 		"QUESTION",

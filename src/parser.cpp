@@ -61,11 +61,12 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 	}
 	
 	// we use ; when we want multiple statements on one line
-	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON)))
+	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
 		// @TODO this prev() stuff should probably be done with a function
-		compiler->error_handler.error("expected ; or newline as statement delimiter", 
-			prev().index+prev().length+1, prev().line, prev().index + prev().length + 1, prev().line);
-
+		compiler->error_handler.error("expected ; or newline as statement delimiter",
+			prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+		return std::make_shared<ErrorAST>();
+	}
 	return stmt;
 }
 
@@ -158,7 +159,7 @@ std::shared_ptr<AST> Parser::parse_assign() {
 			default: {
 				//@TODO use AST position information
 				compiler->error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
-				break;
+				return std::make_shared<ErrorAST>();
 			}
 		}
 	}
@@ -195,14 +196,35 @@ std::shared_ptr<AST> Parser::parse_shift() {
 }
 std::shared_ptr<AST> Parser::parse_pm() {
 	auto higher_precedence = parse_mdmr();
+	if(expect(Token::Type::PLUS) || expect(Token::Type::MINUS)){
+		auto op = next();
+		auto rhs = parse_pm();
+		auto pm = ExprBinAST(higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(pm);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_mdmr() {
 	auto higher_precedence = parse_un();
+	// @TODO need to lex /, // and ///
+	if (expect(Token::Type::STAR) || expect(Token::Type::DIV) || expect(Token::Type::MOD)) {
+		auto op = next();
+		auto rhs = parse_mdmr();
+		auto mdmr = ExprBinAST(higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(mdmr);
+	}
 	return higher_precedence;
 }
+
 std::shared_ptr<AST> Parser::parse_un() {
 	auto higher_precedence = parse_cast();
+	if (expect(Token::Type::REFERENCE) || expect(Token::Type::BANG)) {
+		auto op = next();
+		auto ast = parse_un();
+#define LEFT 0
+#define RIGHT 1
+		auto un = ExprUnAST(op, ast, LEFT);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_cast() {
@@ -237,6 +259,16 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::FLSE: {
 			break;
 		}
+		case Token::Type::LPAREN: {
+			auto expression = parse_expression();
+			if (!consume(Token::Type::RPAREN)) {
+				compiler->error_handler.error("expected ) as statement delimiter",
+					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				return std::make_shared<ErrorAST>();
+			}
+			auto group = ExprGroupAST(expression);
+			return std::make_shared<ExprGroupAST>(group);
+		}
 	}
 	// @TODO error here
 	return nullptr; 
@@ -259,10 +291,15 @@ Token Parser::consume(Token::Type type, const std::string err_msg){
 }
 
 u8 Parser::consume(Token::Type type) {
-	if (peek().type != type)
-		return 0;
-	next();
-	return 1;
+	if (expect(type)) {
+		next();
+		return 1;
+	}
+	return 0;
+}
+
+u8 Parser::expect(Token::Type type) {
+	return peek().type == type;
 }
 
 Token Parser::prev() {

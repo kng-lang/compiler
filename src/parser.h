@@ -48,6 +48,7 @@ struct Parser {
 	u8 end();
 	Token consume(Token::Type type, const std::string err_msg); 
 	u8 consume(Token::Type type);
+	u8 expect(Token::Type type);
 	Token prev();
 	Token peek();
 	Token peek(u32 amount);

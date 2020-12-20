@@ -25,9 +25,11 @@ struct Token{
 		TRU,
 		FLSE,
 
+		REFERENCE,
 		DOT,
 		DOUBLEDOT,
 		TRIPLEDOT,
+
 
 		SEMI_COLON, // inserted automatically
 		COLON,
