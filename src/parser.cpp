@@ -3,9 +3,9 @@
 
 Parser::Parser(){}
 
-Parser::Parser(TokenList& tokens, Compiler* compiler){
+Parser::Parser(TokenList& tokens, CompilationUnit* unit){
 	this->tokens = tokens.tokens;
-	this->compiler = compiler;
+	this->unit = unit;
 	this->sym_table = std::make_shared<SymTable>();
 }
 
@@ -73,7 +73,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 	// we use ; when we want multiple statements on one line
 	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
 		// @TODO this prev() stuff should probably be done with a function
-		compiler->error_handler.error("expected ; or newline as statement delimiter",
+		unit->error_handler.error("expected ; or newline as statement delimiter",
 			prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 		return std::make_shared<ErrorAST>();
 	}
@@ -97,19 +97,33 @@ std::shared_ptr<AST> Parser::parse_directive() {
 		log("#run {}", peek().to_json());
 		// @TODO do
 	}else if (!s.compare("import")) {
-		if (expect(Token::Type::STRING)) {
-			auto s = next();
-			log("importing {}", s.value);
-		}
-		else {
-			compiler->error_handler.error("expected string as filename to import",
+		if (!expect(Token::Type::STRING)) {
+			unit->error_handler.error("expected string as filename to import",
 				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 			return std::make_shared<ErrorAST>();
 		}
+		auto path = next();
+		if (!unit->importer->valid_import_path(path.value)) {
+			unit->error_handler.error("import path is invalid",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return std::make_shared<ErrorAST>();
+		}
+
+
 	}
 	else if (!s.compare("include")) {
-		log("#include");
 		// @TODO do
+		if (!expect(Token::Type::STRING)) {
+			unit->error_handler.error("expected string as filename to include",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return std::make_shared<ErrorAST>();
+		}
+		auto path = next();
+		if (!unit->importer->valid_include_path(path.value)) {
+			unit->error_handler.error("include path is invalid",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return std::make_shared<ErrorAST>();
+		}
 	}
 	return parse_stmt();
 }
@@ -207,7 +221,7 @@ std::shared_ptr<AST> Parser::parse_assign() {
 			}
 			default: {
 				//@TODO use AST position information
-				compiler->error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
+				unit->error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
 				return std::make_shared<ErrorAST>();
 			}
 		}
@@ -336,7 +350,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::LPAREN: {
 			auto expression = parse_expression();
 			if (!consume(Token::Type::RPAREN)) {
-				compiler->error_handler.error("expected ) as statement delimiter",
+				unit->error_handler.error("expected ) as statement delimiter",
 					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 				return std::make_shared<ErrorAST>();
 			}
@@ -345,7 +359,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 		}
 	}
 	// @TODO error here
-	compiler->error_handler.error("unexpected code?",
+	unit->error_handler.error("unexpected code?",
 		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 	return std::make_shared<ErrorAST>(); 
 }

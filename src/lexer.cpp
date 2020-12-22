@@ -1,8 +1,8 @@
 #include "lexer.h"
 #include "compiler.h"
 
-Lexer::Lexer(std::string& file_contents, Compiler* compiler){
-	this->compiler = compiler;
+Lexer::Lexer(std::string& file_contents, CompilationUnit* unit){
+	this->unit = unit;
 	this->src = file_contents;
 }
 

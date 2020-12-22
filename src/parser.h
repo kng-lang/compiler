@@ -11,7 +11,7 @@
 struct Compiler;
 
 struct Parser : public TokenConsumer{
-	Compiler* compiler;
+	CompilationUnit* unit;
 
 	//u32 current = 0;
 	ErrorHandler* err_handler;
@@ -19,7 +19,7 @@ struct Parser : public TokenConsumer{
 	std::shared_ptr<SymTable> sym_table;
 
 	Parser();
-	Parser(TokenList& tokens, Compiler* compiler);
+	Parser(TokenList& tokens, CompilationUnit* unit);
 
 	std::shared_ptr<AST> parse();
 	std::shared_ptr<AST> parse_stmt_block();

@@ -13,7 +13,7 @@ struct Compiler;
 struct Lexer {
 
 
-	Compiler* compiler;
+	CompilationUnit* unit;
 	// the actual source file
 	std::string src;
 	// current char being scanned
@@ -27,7 +27,7 @@ struct Lexer {
 	std::vector<Token> tokens;
 
 	Lexer(){}
-	Lexer(std::string& file_contents, Compiler* compiler);
+	Lexer(std::string& file_contents, CompilationUnit* unit);
 
 
 	void token(Token::Type type);

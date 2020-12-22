@@ -1,10 +1,9 @@
 #pragma once
 
 #include "common.h"
-#include "options.h"
 #include "ast.h"
 
-struct CodeGen {};
+struct CodeGen {}; //: public ASTVisitor {};
 
 struct LLVMCodeGen : public CodeGen {};
 

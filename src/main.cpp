@@ -43,7 +43,6 @@ int main(int argc, char** argv) {
 
         Compiler compiler;
         CompileFile compile_file = { file, contents };
-        ErrorHandler err_handler(&compiler);
 
         CompileOptions options;
         if (debug) {
@@ -51,7 +50,7 @@ int main(int argc, char** argv) {
             options.debug_emission_flags |= EMIT_AST_DEBUG;
         }
 
-        compiler.compile(compile_file,options,err_handler);
+        compiler.compile(compile_file, options);
     }
 
 

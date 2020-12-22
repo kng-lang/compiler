@@ -48,14 +48,14 @@ void ErrorHandler::error(
 
 
 	auto problem_string = select_problem_area(
-		compiler->compile_file.file_contents, p_start_index, p_start_line, p_end_index, p_end_line
+		unit->compile_file.file_contents, p_start_index, p_start_line, p_end_index, p_end_line
 		);
 
-	problem_string = get_src_at_line(compiler->compile_file.file_contents, p_start_line);
+	problem_string = get_src_at_line(unit->compile_file.file_contents, p_start_line);
 
 	// @TODO calculate where the start of the line is on the error line
 	warn("");
-	warn("error on index {} line {} in {}", p_start_index, p_start_line, compiler->compile_file.filename);
+	warn("error on index {} line {} in {}", p_start_index, p_start_line, unit->compile_file.file_path);
 	warn("");
 	warn("{}", problem_string);
 	warn("{}", build_pointer(p_end_index));

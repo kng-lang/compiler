@@ -6,11 +6,11 @@
 
 #include <stack>
 #include <sstream>
-
 #include "common.h"
 
 
 struct Compiler;
+struct CompilationUnit;
 
 struct Error{
 	// these are the possible levels
@@ -40,12 +40,12 @@ struct ErrorHandler {
 
 	// the level of messages to be reported
 	u8 report_level = 0;
-	Compiler* compiler = NULL;
+	CompilationUnit* unit = NULL;
 
 	std::stack<Error> errors_occured;
 
 	ErrorHandler(){}
-	ErrorHandler(Compiler* compiler) : compiler(compiler) {}
+	ErrorHandler(CompilationUnit* unit) : unit(unit) {}
 
 
 	// @TODO report how to fix the error with colour coding e.g. the original in white and the fix in red
