@@ -61,4 +61,5 @@ void ErrorHandler::error(
 	warn("{}", build_pointer(p_end_index));
 	warn("{}", problem);
 	warn("");
+	warn("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 }

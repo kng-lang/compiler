@@ -15,6 +15,7 @@ TokenList Lexer::scan() {
 			// @TODO these are sequential i.e. \r\n is a newline
 			case '\n': token(Token::Type::NEWLINE); line++; break;
 			case '\r': token(Token::Type::NEWLINE); line++; break;
+			case '#': token(Token::Type::HASH); break;
 			case '+': token(Token::Type::PLUS); break;
 			case '-': token(Token::Type::MINUS); break;
 			case '*': token(Token::Type::STAR); break;
@@ -27,6 +28,7 @@ TokenList Lexer::scan() {
 			case '_': token(Token::Type::UNDERSCORE); break;
 			case ';': token(Token::Type::SEMI_COLON); break;
 			case '^': token(Token::Type::REFERENCE); break;
+			case ',': token(Token::Type::COMMA); break;
 
 			case '&': decide(Token::Type::BAND, Token::Type::LAND); break;
 			case '|': decide(Token::Type::BOR, Token::Type::LOR); break;
@@ -38,7 +40,7 @@ TokenList Lexer::scan() {
 			case '>': decide(Token::Type::GREATER, Token::Type::GEQ, Token::Type::RSHIFT); break;
 			case '<': decide(Token::Type::LESS, Token::Type::LEQ, Token::Type::LSHIFT); break;
 
-			case '/': do_comment();
+			case '/': do_comment(); break;
 
 			default: {
 				if (is_letter(current)) {
@@ -178,6 +180,7 @@ void Lexer::do_word(char start){
 	u8 found_keyword = 0;
 
 	switch (start) {
+		case 'a': found_keyword = check_keyword("s", Token::Type::AS); break;
 		case 'b': found_keyword = check_keyword("reak", Token::Type::BREAK); break;
 		case 'c': found_keyword = check_keyword("ontinue", Token::Type::CONTINUE); break;
 		case 'f': found_keyword = check_keyword("or", Token::Type::FOR); break;

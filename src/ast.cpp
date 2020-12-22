@@ -92,6 +92,16 @@ std::string ExprVarAST::to_json() {
 	return ss.str();
 }
 
+std::string ExprPatternAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprPatternAST\",\nasts: [\n";
+	for (const auto& ast : asts) {
+		ss << ast->to_json() << ",\n";
+	}
+	ss << "]\n}\n";
+	return ss.str();
+}
+
 std::string ExprInterfaceGetAST::to_json() {
 	return "{ExprInterfaceGetAST}";
 }

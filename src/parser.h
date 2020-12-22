@@ -10,13 +10,13 @@
 
 struct Compiler;
 
-struct Parser {
+struct Parser : public TokenConsumer{
 	Compiler* compiler;
-	std::vector<Token> tokens;
 
-	u32 current = 0;
+	//u32 current = 0;
 	ErrorHandler* err_handler;
 	std::shared_ptr<AST> root_ast;
+	std::shared_ptr<SymTable> sym_table;
 
 	Parser();
 	Parser(TokenList& tokens, Compiler* compiler);
@@ -25,12 +25,15 @@ struct Parser {
 	std::shared_ptr<AST> parse_stmt_block();
 	u8 end_of_block();
 	std::shared_ptr<AST> parse_stmt();
+	void do_newline();
+	std::shared_ptr<AST> parse_directive();
 	std::shared_ptr<AST> parse_if();
 	std::shared_ptr<AST> parse_for();
 	std::shared_ptr<AST> parse_expression();
 	std::shared_ptr<AST> parse_define();
 	std::shared_ptr<AST> parse_quick_define();
 	std::shared_ptr<AST> parse_assign();
+	std::shared_ptr<AST> parse_pattern();
 	std::shared_ptr<AST> parse_lor(); // parse logical or
 	std::shared_ptr<AST> parse_land(); // parse logical and
 	std::shared_ptr<AST> parse_bor(); // parse bitwise or
@@ -44,15 +47,4 @@ struct Parser {
 	std::shared_ptr<AST> parse_cast();
 	std::shared_ptr<AST> parse_call();
 	std::shared_ptr<AST> parse_single();
-
-	u8 end();
-	Token consume(Token::Type type, const std::string err_msg); 
-	u8 consume(Token::Type type);
-	u8 expect(Token::Type type);
-	Token prev();
-	Token peek();
-	Token peek(u32 amount);
-	Token peek_ahead();
-	Token next();
-	Token advance(u32 amount);
 };

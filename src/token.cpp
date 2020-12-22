@@ -24,6 +24,7 @@ const char* Token::debug_types[] = {
 		"DOC",
 		"UNDERSCORE",
 		"NEWLINE",
+		"HASH",
 
 		"IDENTIFIER",
 
@@ -73,6 +74,7 @@ const char* Token::debug_types[] = {
 		"BOR",
 		"BAND",
 
+		"AS",
 		"INTERFACE",
 		"IF",
 		"IN",
@@ -84,3 +86,53 @@ const char* Token::debug_types[] = {
 		"ASSIGN",
 		"QUICK_ASSIGN"
 };
+
+u8 TokenConsumer::end() {
+	return current >= tokens.size();
+}
+
+Token TokenConsumer::consume(Token::Type type, const std::string err_msg) {
+	if (peek().type != type)
+		// we need to insert an error AST here
+		log(err_msg);
+	return next();
+}
+
+
+u8 TokenConsumer::consume(Token::Type type) {
+	if (expect(type)) {
+		next();
+		return 1;
+	}
+	return 0;
+}
+
+u8 TokenConsumer::expect(Token::Type type) {
+	return peek().type == type;
+}
+
+Token TokenConsumer::prev() {
+	return peek(-1);
+}
+
+Token TokenConsumer::peek() {
+	return tokens.at(current);
+}
+
+Token TokenConsumer::peek(u32 amount) {
+	return tokens.at(current + amount);
+}
+
+Token TokenConsumer::peek_ahead() {
+	return tokens.at(current + 1);
+}
+
+Token TokenConsumer::next() {
+	return advance(1);
+}
+
+Token TokenConsumer::advance(u32 amount) {
+	Token t = tokens.at(current);
+	current += amount;
+	return t;
+}

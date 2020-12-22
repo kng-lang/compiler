@@ -16,6 +16,7 @@ struct Token{
 		DOC, // documentation
 		UNDERSCORE,
 		NEWLINE,
+		HASH,
 
 
 		IDENTIFIER,
@@ -67,6 +68,7 @@ struct Token{
 		BOR,
 		BAND,
 
+		AS,
 		INTERFACE,
 		IF,
 		INN,
@@ -101,4 +103,20 @@ struct TokenList {
 
 	TokenList() {}
 	TokenList(std::vector<Token> tokens) : tokens(tokens) {}
+};
+
+struct TokenConsumer {
+	std::vector<Token> tokens;
+	u32 current = 0;
+
+	virtual u8 end();
+	virtual Token consume(Token::Type type, const std::string err_msg);
+	virtual u8 consume(Token::Type type);
+	virtual u8 expect(Token::Type type);
+	virtual Token prev();
+	virtual Token peek();
+	virtual Token peek(u32 amount);
+	virtual Token peek_ahead();
+	virtual Token next();
+	virtual Token advance(u32 amount);
 };

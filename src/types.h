@@ -56,6 +56,11 @@ struct SymTableEntry {
 		SYM_TABLE,
 	};
 
+	SymTableEntry(){}
+	SymTableEntry(Type t) : entry_type(TYPE), type(t) {}
+	SymTableEntry(std::shared_ptr<SymTable> sym_table) 
+		: entry_type(SYM_TABLE), sym_table(sym_table) {}
+
 	u8 entry_type;
 	// @TODO these 2 should be in a union
 	Type type;
@@ -64,6 +69,15 @@ struct SymTableEntry {
 
 struct SymTable {
 	std::unordered_map<std::string, SymTableEntry> entries;
+	std::shared_ptr<SymTable> parent_sym_table;
+
+	SymTable(){}
+	SymTable(std::shared_ptr<SymTable> parent_sym_table) : parent_sym_table(parent_sym_table){}
+
+	void add_symbol(std::string identifier, SymTableEntry entry);
+	std::shared_ptr<SymTable> enter_scope(std::shared_ptr<SymTable> parent_sym_table);
+	std::shared_ptr<SymTable> enter_scope(std::string identifier, std::shared_ptr<SymTable> parent_sym_table);
+	std::shared_ptr<SymTable> pop_scope();
 };
 
 inline extern Type u8_type();

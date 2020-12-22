@@ -6,6 +6,7 @@ Parser::Parser(){}
 Parser::Parser(TokenList& tokens, Compiler* compiler){
 	this->tokens = tokens.tokens;
 	this->compiler = compiler;
+	this->sym_table = std::make_shared<SymTable>();
 }
 
 
@@ -20,8 +21,16 @@ std::shared_ptr<AST> Parser::parse() {
 }
 
 std::shared_ptr<AST> Parser::parse_stmt(){
+
+	// consume empty newlines
+	do_newline();
+
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
 	switch (peek().type) {
+		case Token::Type::HASH: {
+			stmt = parse_directive();
+			break;
+		}
 		case Token::Type::RETURN:{
 			next();
 			stmt = std::make_shared<StmtReturnAST>();
@@ -60,6 +69,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 		default: stmt = parse_expression(); break;
 	}
 	
+	// @TODO it doesnt work if we dont have a newline at the end
 	// we use ; when we want multiple statements on one line
 	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
 		// @TODO this prev() stuff should probably be done with a function
@@ -68,6 +78,40 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 		return std::make_shared<ErrorAST>();
 	}
 	return stmt;
+}
+
+void Parser::do_newline() {
+	while (expect(Token::Type::NEWLINE))
+		next();
+}
+
+std::shared_ptr<AST> Parser::parse_directive() {
+	consume(Token::HASH);
+	// all directives need an identifier
+	if (!expect(Token::Type::IDENTIFIER)) {
+		// @TODO err here
+		return NULL;
+	}
+	std::string s = next().value;
+	if(!s.compare("run")){
+		log("#run {}", peek().to_json());
+		// @TODO do
+	}else if (!s.compare("import")) {
+		if (expect(Token::Type::STRING)) {
+			auto s = next();
+			log("importing {}", s.value);
+		}
+		else {
+			compiler->error_handler.error("expected string as filename to import",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return std::make_shared<ErrorAST>();
+		}
+	}
+	else if (!s.compare("include")) {
+		log("#include");
+		// @TODO do
+	}
+	return parse_stmt();
 }
 
 std::shared_ptr<AST> Parser::parse_if(){
@@ -95,9 +139,13 @@ std::shared_ptr<AST> Parser::parse_stmt_block() {
 
 	consume(Token::Type::LCURLY, "'{' expected");
 
+	sym_table = sym_table->enter_scope(sym_table);
+	
 	while (!end_of_block()) {
 		stmt_block.stmts.push_back(parse_stmt());
 	}
+	
+	sym_table = sym_table->pop_scope();
 
 	consume(Token::Type::RCURLY, "'}' expected");
 
@@ -140,10 +188,11 @@ std::shared_ptr<AST> Parser::parse_expression() {
 	return parse_assign();
 }
 
+
 std::shared_ptr<AST> Parser::parse_assign() { 
-	auto higher_precedence = parse_lor();
+	auto higher_precedence = parse_pattern();
 	if (consume(Token::ASSIGN)) {
-		auto assign_value = parse_lor();
+		auto assign_value = parse_pattern();
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
 			case AST::Type::EXPR_VAR: {
@@ -162,6 +211,25 @@ std::shared_ptr<AST> Parser::parse_assign() {
 				return std::make_shared<ErrorAST>();
 			}
 		}
+	}
+	return higher_precedence;
+}
+
+// e.g. x = 1, a, 2, b
+// @TODO we need to be able to assign to patterns e.g. a, b, c = 1, 2, 3 so we need to swap the precedence
+std::shared_ptr<AST> Parser::parse_pattern() {
+	auto higher_precedence = parse_lor();
+	// @TODO figure out how to check a pattern when no comma is used
+	if (consume(Token::Type::COMMA)) {
+		std::vector<std::shared_ptr<AST>> asts;
+		asts.push_back(higher_precedence);
+		while (!expect(Token::Type::END)) {
+			asts.push_back(parse_lor());
+			// consume comma if it exists e.g. a, b, c or a b c
+			consume(Token::Type::COMMA);
+		}
+		auto pattern = ExprPatternAST(asts);
+		return std::make_shared<ExprPatternAST>(pattern);
 	}
 	return higher_precedence;
 }
@@ -229,17 +297,20 @@ std::shared_ptr<AST> Parser::parse_un() {
 }
 std::shared_ptr<AST> Parser::parse_cast() {
 	auto higher_precedence = parse_call();
+	if (consume(Token::AS)) {
+		auto op = next();
+		// @TODO do type stuff?
+		auto typ = next();
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_call() {
 	auto higher_precedence = parse_single();
+	// check if next is var args
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_single(){ 
-
-
 	// @TODO implement groups e.g. (1+2) + (1+3)
-	log("parsing single!");
 	auto t = next();
 	switch (t.type) {
 		case Token::Type::IDENTIFIER: {
@@ -251,12 +322,15 @@ std::shared_ptr<AST> Parser::parse_single(){
 			break;
 		}
 		case Token::Type::STRING: {
+			return std::make_shared<ExprLiteralAST>();
 			break;
 		}
 		case Token::Type::TRU: {
+			return std::make_shared<ExprLiteralAST>();
 			break;
 		}
 		case Token::Type::FLSE: {
+			return std::make_shared<ExprLiteralAST>();
 			break;
 		}
 		case Token::Type::LPAREN: {
@@ -271,59 +345,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 		}
 	}
 	// @TODO error here
-	return nullptr; 
-
-}
-
-
-
-
-
-u8 Parser::end() {
-	return current >= tokens.size();
-}
-
-Token Parser::consume(Token::Type type, const std::string err_msg){
-	if (peek().type != type)
-		// we need to insert an error AST here
-		log(err_msg);
-	return next();
-}
-
-u8 Parser::consume(Token::Type type) {
-	if (expect(type)) {
-		next();
-		return 1;
-	}
-	return 0;
-}
-
-u8 Parser::expect(Token::Type type) {
-	return peek().type == type;
-}
-
-Token Parser::prev() {
-	return peek(-1);
-}
-
-Token Parser::peek() {
-	return tokens.at(current);
-}
-
-Token Parser::peek(u32 amount) {
-	return tokens.at(current + amount);
-}
-
-Token Parser::peek_ahead() {
-	return tokens.at(current + 1);
-}
-
-Token Parser::next() {
-	return advance(1);
-}
-
-Token Parser::advance(u32 amount) {
-	Token t = tokens.at(current);
-	current += amount;
-	return t;
+	compiler->error_handler.error("unexpected code?",
+		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+	return std::make_shared<ErrorAST>(); 
 }

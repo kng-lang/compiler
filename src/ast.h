@@ -22,6 +22,7 @@ struct StmtBreakAST;
 struct StmtIfAST;
 struct StmtLoopAST;
 struct ExprVarAST;
+struct ExprPatternAST;
 struct ExprInterfaceGetAST;
 struct ExprBinAST;
 struct ExprUnAST;
@@ -47,6 +48,7 @@ struct AST {
 		STMT_IF,
 		STMT_LOOP,
 		EXPR_VAR,
+		EXPR_PATTERN,
 		EXPR_INTER_GET,
 		EXPR_BIN,
 		EXPR_UN,
@@ -164,6 +166,15 @@ struct ExprVarAST : public ExpressionAST {
 	ExprVarAST(Token identifier) : identifier(identifier){}
 	virtual std::string to_json();
 	virtual Type type() { return Type::EXPR_VAR; }
+};
+
+
+struct ExprPatternAST : public ExpressionAST {
+	std::vector<std::shared_ptr<AST>> asts;
+	ExprPatternAST(){}
+	ExprPatternAST(std::vector<std::shared_ptr<AST>> asts) : asts(asts) {}
+	virtual std::string to_json();
+	virtual Type type() { return Type::EXPR_PATTERN; }
 };
 
 struct ExprInterfaceGetAST : public ExpressionAST {

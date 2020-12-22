@@ -23,6 +23,7 @@ void Compiler::compile(CompileFile compile_file, CompileOptions options, ErrorHa
 	auto tokens = l.scan();
 	if (options.debug_emission_flags & EMIT_TOKEN_DEBUG)
 		lexer_debug_output = tokens.to_json();
+
 	// parsing to an ast
 	Parser p(tokens, this);
 	auto ast = p.parse();
