@@ -1,13 +1,22 @@
 
 #include <fstream>
-
+#include <sstream>
 #include "compiler.h"
 #include "error.h"
 #include "lexer.h"
 #include "parser.h"
+#include "types.h"
 
+CompileFile::CompileFile(std::string& path) {
+	// open a test file
+	std::ifstream f;
+	f.open(path);
+	std::stringstream buffer;
+	buffer << f.rdbuf();
+	file_contents = buffer.str();
+}
 
-void Compiler::compile(CompileFile compile_file, CompileOptions options) {
+void Compiler::compile(std::string& path, CompileOptions options) {
 
 	this->options = options;
 
@@ -16,14 +25,15 @@ void Compiler::compile(CompileFile compile_file, CompileOptions options) {
 	auto t1 = std::chrono::high_resolution_clock::now();
 	log("compilation started");
 
-	Importer importer;
+	importer = Importer(this);
 
-	auto unit = CompilationUnit(compile_file, this);
+	auto unit = importer.include(path, std::make_shared<SymTable>());
 	unit.compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 	log("compilation finished in {} ms.", time);
+	log("compiled {} files & {} lines", importer.n_units, importer.n_lines);
 }
 
 u8 CompilationUnit::compile() {
@@ -31,7 +41,7 @@ u8 CompilationUnit::compile() {
 	return 1;
 }
 
-TokenList& CompilationUnit::compile_to_tokens() {
+TokenList CompilationUnit::compile_to_tokens() {
 	// lexical analysis
 	Lexer l(compile_file.file_contents, this);
 	auto tokens = l.scan();
@@ -61,7 +71,7 @@ u8 Importer::valid_import_path(std::string& path) {
 	// e.g. #include "https://www.github.com/kng/lib/examples/"
 
 	// then check absolute
-	return 0;
+	return 1;
 }
 
 u8 Importer::valid_include_path(std::string& path) {
@@ -75,17 +85,23 @@ u8 Importer::valid_include_path(std::string& path) {
 
 	// then check absolute
 
-	return 0;
-}
-
-u8 Importer::import(std::string& path) {
 	return 1;
 }
 
-u8 Importer::include(std::string& path) {
-	// only import if the file hasn't already been imported
-	if (!units.count(path)) {
+u8 Importer::already_included(std::string& path) {
+	return units.count(path)>0;
+}
 
-	}
-	return 1;
+CompilationUnit Importer::import(std::string& path) {
+	CompileFile f(path);
+	CompilationUnit unit(f, compiler);
+	return unit;
+}
+
+CompilationUnit Importer::include(std::string& path, std::shared_ptr<SymTable> sym_table) {
+	CompileFile f(path);
+	CompilationUnit unit(f, compiler);
+	n_units++;
+	n_lines += count_lines(f.file_contents);
+	return unit;
 }

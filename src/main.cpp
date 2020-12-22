@@ -30,27 +30,16 @@ int main(int argc, char** argv) {
     std::string file;
     if (result.count("file")) {
         file = result["file"].as<std::string>();
-        log("file: {}", file);
         
-        // open a test file
-        std::ifstream f;
-        f.open(file);
-
-        std::stringstream buffer;
-        buffer << f.rdbuf();
-
-        std::string contents = buffer.str();
-
         Compiler compiler;
-        CompileFile compile_file = { file, contents };
 
         CompileOptions options;
         if (debug) {
             options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
             options.debug_emission_flags |= EMIT_AST_DEBUG;
         }
-
-        compiler.compile(compile_file, options);
+        
+        compiler.compile(file, options);
     }
 
 

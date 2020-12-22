@@ -87,42 +87,27 @@ void Parser::do_newline() {
 
 std::shared_ptr<AST> Parser::parse_directive() {
 	consume(Token::HASH);
-	// all directives need an identifier
-	if (!expect(Token::Type::IDENTIFIER)) {
-		// @TODO err here
-		return NULL;
-	}
-	std::string s = next().value;
-	if(!s.compare("run")){
-		log("#run {}", peek().to_json());
-		// @TODO do
-	}else if (!s.compare("import")) {
-		if (!expect(Token::Type::STRING)) {
-			unit->error_handler.error("expected string as filename to import",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
-			return std::make_shared<ErrorAST>();
-		}
-		auto path = next();
-		if (!unit->importer->valid_import_path(path.value)) {
-			unit->error_handler.error("import path is invalid",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
-			return std::make_shared<ErrorAST>();
-		}
-
-
-	}
-	else if (!s.compare("include")) {
-		// @TODO do
-		if (!expect(Token::Type::STRING)) {
-			unit->error_handler.error("expected string as filename to include",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
-			return std::make_shared<ErrorAST>();
-		}
-		auto path = next();
-		if (!unit->importer->valid_include_path(path.value)) {
-			unit->error_handler.error("include path is invalid",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
-			return std::make_shared<ErrorAST>();
+	switch (next().type) {
+		case Token::Type::INCLUDE: {
+			// @TODO do
+			if (!expect(Token::Type::STRING)) {
+				unit->error_handler.error("expected string as filename to include",
+					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				return std::make_shared<ErrorAST>();
+			}
+			auto path = next();
+			if (!unit->importer->valid_include_path(path.value)) {
+				unit->error_handler.error("include path is invalid",
+					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				return std::make_shared<ErrorAST>();
+			}
+			// finally if we have't already included this file then include it!
+			if (!unit->importer->already_included(path.value)) {
+				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
+				CompilationUnit compilation_unit = unit->importer->include(path.value, sym_table);
+				auto ast = compilation_unit.compile_to_ast();
+			}
+			break;
 		}
 	}
 	return parse_stmt();

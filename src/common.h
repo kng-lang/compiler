@@ -25,4 +25,4 @@ typedef int32_t s32;
 typedef float f32;
 typedef double f64;
 
-u32 count_lines(std::string s);
+u32 count_lines(std::string& s);

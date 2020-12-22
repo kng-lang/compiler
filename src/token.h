@@ -17,6 +17,8 @@ struct Token{
 		UNDERSCORE,
 		NEWLINE,
 		HASH,
+		INCLUDE,
+		IMPORT,
 
 
 		IDENTIFIER,

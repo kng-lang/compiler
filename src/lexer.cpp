@@ -167,9 +167,12 @@ u8 Lexer::is_string(char c) {
 
 
 u8 Lexer::check_keyword(std::string rest, Token::Type t) {
-	for(int i=0;i<rest.size();i++)
+	int i = 0;
+	for(i;i<rest.size();i++)
 		if (peek(i) != rest.at(i))
 			return 0;
+	if (!end() && (is_letter(peek(i+1)) || is_digit(peek(i+1)) || peek(i+1) == '_'))
+		return 0;
 	advance((u32)rest.size());
 	token(t);
 	return 1;
@@ -188,6 +191,8 @@ void Lexer::do_word(char start){
 			found_keyword = check_keyword("f", Token::Type::IF); 
 			if (!found_keyword) found_keyword = check_keyword("nterface", Token::Type::INTERFACE);
 			if (!found_keyword) found_keyword = check_keyword("n", Token::Type::INN);
+			if (!found_keyword) found_keyword = check_keyword("nclude", Token::Type::INCLUDE);
+			if (!found_keyword) found_keyword = check_keyword("mport", Token::Type::IMPORT);
 			break;
 		}
 		case 'r': found_keyword = check_keyword("eturn", Token::Type::RETURN); break;

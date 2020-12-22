@@ -1,8 +1,21 @@
 #pragma once
 
+#include <memory>
 #include <map>
 #include "common.h"
 #include "error.h"
+
+
+/*
+
+ways to handle #include
+
+1. literally paste into the AST during parsing, we pass the current symtable to the parser
+
+2. during directives processing, when we encounter a #include, we tell the includer to include that file later and pass it a copy of the symtable at that moment in time
+
+
+*/
 
 // cmd line arguments usage
 // kngc -emit_tokens -emit_ast -x86
@@ -34,20 +47,29 @@ struct AST;
 struct CompileFile {
 	std::string file_path;
 	std::string file_contents;
+
+	CompileFile(){}
+	CompileFile(std::string& path);
 };
 
 struct CompilationUnit;
+struct SymTable;
 
 struct Importer {
-	u8 valid_import_path(std::string& path);
-	u8 valid_include_path(std::string& path);
-
-	u8 import(std::string& path);
-	u8 include(std::string& path);
-
+	Compiler* compiler;
 	// the importer manages the compilation units
 	std::map<std::string, CompilationUnit> units;
+	u32 n_units = 0;
+	u32 n_lines = 0;
 
+	Importer(){}
+	Importer(Compiler* compiler) : compiler(compiler){}
+	u8 valid_import_path(std::string& path);
+	u8 valid_include_path(std::string& path);
+	u8 already_included(std::string& path);
+	CompilationUnit new_unit(std::string& path, Compiler* compiler);
+	CompilationUnit import(std::string& path);
+	CompilationUnit include(std::string& path, std::shared_ptr<SymTable> sym_table);
 };
 
 struct Compiler {
@@ -57,7 +79,7 @@ struct Compiler {
 	std::string lexer_debug_output;
 	std::string parser_debug_output;
 
-	void compile(CompileFile compile_file, CompileOptions options);
+	void compile(std::string& path, CompileOptions options);
 };
 
 struct Importer;
@@ -74,6 +96,6 @@ struct CompilationUnit {
 		: compile_file(compile_file), compiler(compiler), importer(&compiler->importer), compile_options(compiler->options){}
 
 	u8 compile();
-	TokenList& compile_to_tokens();
+	TokenList compile_to_tokens();
 	std::shared_ptr<AST> compile_to_ast();
 };
