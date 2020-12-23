@@ -104,8 +104,9 @@ std::shared_ptr<AST> Parser::parse_directive() {
 			// finally if we have't already included this file then include it!
 			if (!unit->importer->already_included(path.value)) {
 				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
-				CompilationUnit compilation_unit = unit->importer->include(path.value, sym_table);
-				auto ast = compilation_unit.compile_to_ast();
+				auto compilation_unit = unit->importer->include(path.value, sym_table);
+				auto ast = compilation_unit->compile_to_ast();
+				return ast;
 			}
 			break;
 		}

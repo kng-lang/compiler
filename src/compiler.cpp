@@ -28,12 +28,11 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 	importer = Importer(this);
 
 	auto unit = importer.include(path, std::make_shared<SymTable>());
-	unit.compile();
+	unit->compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	log("compilation finished in {} ms.", time);
-	log("compiled {} files & {} lines", importer.n_units, importer.n_lines);
+	log("compiled {} files and {} lines in {} ms.", importer.n_units, importer.n_lines, time);
 }
 
 u8 CompilationUnit::compile() {
@@ -89,19 +88,21 @@ u8 Importer::valid_include_path(std::string& path) {
 }
 
 u8 Importer::already_included(std::string& path) {
+	log("checking already included {} {}", path, units.count(path));
 	return units.count(path)>0;
 }
 
-CompilationUnit Importer::import(std::string& path) {
+std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
 	CompileFile f(path);
-	CompilationUnit unit(f, compiler);
+	auto unit = std::make_shared<CompilationUnit>(f, compiler);
 	return unit;
 }
 
-CompilationUnit Importer::include(std::string& path, std::shared_ptr<SymTable> sym_table) {
+std::shared_ptr<CompilationUnit> Importer::include(std::string& path, std::shared_ptr<SymTable> sym_table) {
 	CompileFile f(path);
-	CompilationUnit unit(f, compiler);
+	auto unit = std::make_shared<CompilationUnit>(f, compiler);
 	n_units++;
 	n_lines += count_lines(f.file_contents);
+	units[path] = unit;
 	return unit;
 }

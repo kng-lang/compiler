@@ -30,13 +30,14 @@ struct CompileOptions {
 		X64,
 		CLR,
 	};
-
-
 	CompileTarget compile_target;
 	// which debug information should be emitted during compilation
 	u8 debug_emission_flags = 0;
 	// by default only show critical errors
 	u8 error_level = 3;
+	// number of threads to use during compilation (1 is the default)
+	u8 threads = 1;
+	// the target output
 	std::string output_filename;
 };
 
@@ -58,7 +59,7 @@ struct SymTable;
 struct Importer {
 	Compiler* compiler;
 	// the importer manages the compilation units
-	std::map<std::string, CompilationUnit> units;
+	std::map<std::string, std::shared_ptr<CompilationUnit>> units;
 	u32 n_units = 0;
 	u32 n_lines = 0;
 
@@ -67,9 +68,9 @@ struct Importer {
 	u8 valid_import_path(std::string& path);
 	u8 valid_include_path(std::string& path);
 	u8 already_included(std::string& path);
-	CompilationUnit new_unit(std::string& path, Compiler* compiler);
-	CompilationUnit import(std::string& path);
-	CompilationUnit include(std::string& path, std::shared_ptr<SymTable> sym_table);
+	std::shared_ptr<CompilationUnit> new_unit(std::string& path, Compiler* compiler);
+	std::shared_ptr<CompilationUnit> import(std::string& path);
+	std::shared_ptr<CompilationUnit> include(std::string& path, std::shared_ptr<SymTable> sym_table);
 };
 
 struct Compiler {

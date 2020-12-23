@@ -12,6 +12,7 @@ int main(int argc, char** argv) {
         ("f,file", "File to compile", cxxopts::value<std::string>())
         ("d,debug", "Enable debugging", cxxopts::value<bool>()->default_value("false"))
         ("e,error", "Error level", cxxopts::value<u8>())
+        ("t,threads", "Number of threads", cxxopts::value<u8>())
         ("h,help", "Print usage")
         ;
 
@@ -34,6 +35,9 @@ int main(int argc, char** argv) {
         Compiler compiler;
 
         CompileOptions options;
+        if (result.count("threads")) {
+            options.threads = result["threads"].as<u8>();
+        }
         if (debug) {
             options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
             options.debug_emission_flags |= EMIT_AST_DEBUG;
