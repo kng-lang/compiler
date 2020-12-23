@@ -85,9 +85,9 @@ struct Token{
 	};
 
 	Type type;
-	u32 index;
-	u32 line;
-	u32 length;
+	u32 index  = 0;
+	u32 line   = 0;
+	u32 length = 0;
 
 	std::string value;
 

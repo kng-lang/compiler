@@ -21,8 +21,8 @@ struct Lexer {
 	// index and line along with offsets used for error handling
 	u32 index = 1;
 	u32 line = 1;
-	u32 indexSavePoint = index;
-	u32 lineSavePoint = line;
+	u32 indexSavePoint = 1;
+	u32 lineSavePoint = 1;
 
 	std::vector<Token> tokens;
 

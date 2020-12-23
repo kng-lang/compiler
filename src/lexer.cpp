@@ -13,8 +13,8 @@ TokenList Lexer::scan() {
 		auto current = next();
 		switch (current) {
 			// @TODO these are sequential i.e. \r\n is a newline
-			case '\n': token(Token::Type::NEWLINE); line++; break;
-			case '\r': token(Token::Type::NEWLINE); line++; break;
+			case '\n': token(Token::Type::NEWLINE); index = 1; line++; break;
+			case '\r': token(Token::Type::NEWLINE); index = 1; line++; break;
 			case '#': token(Token::Type::HASH); break;
 			case '+': token(Token::Type::PLUS); break;
 			case '-': token(Token::Type::MINUS); break;
@@ -64,11 +64,10 @@ void Lexer::token(Token::Type type) {
 }
 
 void Lexer::token(Token::Type type, std::string value) {
-	// @TODO implement index and line incrementing as its not working
 	Token tok;
 	tok.index = this->indexSavePoint;
 	tok.line = this->lineSavePoint;
-	tok.length = this->current - this->indexSavePoint;
+	tok.length = this->index - this->indexSavePoint;
 	tok.type = type;
 	tok.value = value;
 	tokens.push_back(tok);
@@ -104,8 +103,10 @@ void Lexer::decide(Token::Type t1, Token::Type t2, Token::Type t3){
 }
 
 void Lexer::skip_whitespace(){
-	while (peek() == ' ' || peek() == '\t')
+	while (peek() == ' ' || peek() == '\t') {
 		next();
+		resetSavePoint();
+	}
 }
 
 void Lexer::resetSavePoint() {
@@ -138,12 +139,11 @@ char Lexer::peek_ahead() {
 }
 
 char Lexer::next(){
-	index++;
 	return advance(1);
 }
 
 char Lexer::advance(u32 amount){
-	index+=amount;
+	index +=amount;
 	char c = src.at(current);
 	current += amount;
 	return c;

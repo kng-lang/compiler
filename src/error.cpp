@@ -34,11 +34,12 @@ std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_
 	return ss.str();
 }
 
-std::string build_pointer(u32 index){
+std::string build_pointer(u32 start, u32 end){
 	std::stringstream ss;
-	for (u32 i = 0; i < index-1; i++)
+	for (u32 i = 1; i < start; i++)
 		ss << " ";
-	ss << "^";
+	for (u32 i = start-1; i < end-1; i++)
+		ss << "^";
 	return ss.str();
 }
 
@@ -54,12 +55,10 @@ void ErrorHandler::error(
 	problem_string = get_src_at_line(unit->compile_file.file_contents, p_start_line);
 
 	// @TODO calculate where the start of the line is on the error line
-	warn("");
-	warn("error on index {} line {} in {}", p_start_index, p_start_line, unit->compile_file.file_path);
+	warn("error in {}:{}:{}", unit->compile_file.file_path, p_start_line, p_start_index);
 	warn("");
 	warn("{}", problem_string);
-	warn("{}", build_pointer(p_end_index));
-	warn("{}", problem);
+	warn("{}", build_pointer(p_start_index, p_end_index));
 	warn("");
-	warn("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+	warn("{}", problem);
 }

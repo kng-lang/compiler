@@ -7,7 +7,13 @@
 #include "parser.h"
 #include "types.h"
 
+CompilationUnit::CompilationUnit(CompileFile compile_file, Compiler* compiler)
+	: compile_file(compile_file), compiler(compiler), importer(&compiler->importer), compile_options(compiler->options){
+	this->error_handler = ErrorHandler(this);
+}
+
 CompileFile::CompileFile(std::string& path) {
+	this->file_path = path;
 	// open a test file
 	std::ifstream f;
 	f.open(path);
@@ -27,7 +33,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	importer = Importer(this);
 
-	auto unit = importer.include(path, std::make_shared<SymTable>());
+	auto unit = importer.include(path, path, std::make_shared<SymTable>());
 	unit->compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
@@ -73,7 +79,13 @@ u8 Importer::valid_import_path(std::string& path) {
 	return 1;
 }
 
-u8 Importer::valid_include_path(std::string& path) {
+Importer::DepStatus Importer::valid_include_path(std::string& current_path, std::string& path) {
+	// we need to check for circular dependencies
+	// first get the target dependencies' dependencies
+	auto to_imports_dependencies = unit_dependencies[path];
+	// then check if we are inside that
+	if (std::find(to_imports_dependencies.begin(), to_imports_dependencies.end(), current_path) != to_imports_dependencies.end())
+		return DepStatus::CYCLIC_DEP;
 
 	// first check the path relative to the current file
 
@@ -84,11 +96,10 @@ u8 Importer::valid_include_path(std::string& path) {
 
 	// then check absolute
 
-	return 1;
+	return DepStatus::OK;
 }
 
-u8 Importer::already_included(std::string& path) {
-	log("checking already included {} {}", path, units.count(path));
+u8 Importer::already_included(std::string& current_path, std::string& path) {
 	return units.count(path)>0;
 }
 
@@ -98,11 +109,13 @@ std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
 	return unit;
 }
 
-std::shared_ptr<CompilationUnit> Importer::include(std::string& path, std::shared_ptr<SymTable> sym_table) {
+std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path, std::shared_ptr<SymTable> sym_table) {
 	CompileFile f(path);
 	auto unit = std::make_shared<CompilationUnit>(f, compiler);
 	n_units++;
 	n_lines += count_lines(f.file_contents);
 	units[path] = unit;
+	// get the current unit
+	unit_dependencies[current_path].push_back(path);
 	return unit;
 }

@@ -57,20 +57,27 @@ struct CompilationUnit;
 struct SymTable;
 
 struct Importer {
+
+	enum class DepStatus {
+		OK = 0,
+		CYCLIC_DEP = 1
+	};
+
 	Compiler* compiler;
 	// the importer manages the compilation units
 	std::map<std::string, std::shared_ptr<CompilationUnit>> units;
+	std::map<std::string, std::vector<std::string>> unit_dependencies;
 	u32 n_units = 0;
 	u32 n_lines = 0;
 
 	Importer(){}
 	Importer(Compiler* compiler) : compiler(compiler){}
 	u8 valid_import_path(std::string& path);
-	u8 valid_include_path(std::string& path);
-	u8 already_included(std::string& path);
+	DepStatus valid_include_path(std::string& current_path, std::string& path);
+	u8 already_included(std::string& current_path, std::string& path);
 	std::shared_ptr<CompilationUnit> new_unit(std::string& path, Compiler* compiler);
 	std::shared_ptr<CompilationUnit> import(std::string& path);
-	std::shared_ptr<CompilationUnit> include(std::string& path, std::shared_ptr<SymTable> sym_table);
+	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path, std::shared_ptr<SymTable> sym_table);
 };
 
 struct Compiler {
@@ -93,9 +100,7 @@ struct CompilationUnit {
 	ErrorHandler error_handler;
 
 	CompilationUnit(){}
-	CompilationUnit(CompileFile compile_file, Compiler* compiler) 
-		: compile_file(compile_file), compiler(compiler), importer(&compiler->importer), compile_options(compiler->options){}
-
+	CompilationUnit(CompileFile compile_file, Compiler* compiler);
 	u8 compile();
 	TokenList compile_to_tokens();
 	std::shared_ptr<AST> compile_to_ast();

@@ -89,24 +89,35 @@ std::shared_ptr<AST> Parser::parse_directive() {
 	consume(Token::HASH);
 	switch (next().type) {
 		case Token::Type::INCLUDE: {
-			// @TODO do
+			//// @TODO allow expressions to be the filename so we can support #include (#run win ? "windows.k" : "unix.k")
+			//auto to_include = parse_expression();
+			//if (!(to_include->type() == AST::Type::EXPR_LIT)){
+			//	unit->error_handler.error("expected string as filename to include",
+			//		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			//	return std::make_shared<ErrorAST>();
+			//}
+
 			if (!expect(Token::Type::STRING)) {
 				unit->error_handler.error("expected string as filename to include",
-					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+					prev().index, prev().line, prev().index + prev().length, prev().line);
 				return std::make_shared<ErrorAST>();
 			}
 			auto path = next();
-			if (!unit->importer->valid_include_path(path.value)) {
-				unit->error_handler.error("include path is invalid",
-					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			auto valid_include = unit->importer->valid_include_path(unit->compile_file.file_path, path.value);
+			if (!(valid_include==Importer::DepStatus::OK)) {
+				std::string problem;
+				switch (valid_include) {
+				case Importer::DepStatus::CYCLIC_DEP: problem = "include path is causing a cyclic dependency"; break;
+				}
+				unit->error_handler.error(problem,
+					prev().index, prev().line, prev().index + prev().length, prev().line);
 				return std::make_shared<ErrorAST>();
 			}
 			// finally if we have't already included this file then include it!
-			if (!unit->importer->already_included(path.value)) {
+			if (!unit->importer->already_included(unit->compile_file.file_path, path.value)) {
 				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
-				auto compilation_unit = unit->importer->include(path.value, sym_table);
+				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value, sym_table);
 				auto ast = compilation_unit->compile_to_ast();
-				return ast;
 			}
 			break;
 		}
