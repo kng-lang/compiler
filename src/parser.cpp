@@ -351,13 +351,13 @@ std::shared_ptr<AST> Parser::parse_single(){
 			ExprLiteralAST lit_ast;
 			lit_ast.t = Type(Type::Types::U8, 0);
 			lit_ast.v.v.as_u8 = 1;
-			return std::make_shared<ExprLiteralAST>();
+			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::FLSE: {
 			ExprLiteralAST lit_ast;
 			lit_ast.t = Type(Type::Types::U8, 0);
 			lit_ast.v.v.as_u8 = 0;
-			return std::make_shared<ExprLiteralAST>();
+			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::LPAREN: {
 			auto expression = parse_expression();

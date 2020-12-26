@@ -167,11 +167,14 @@ u8 Lexer::is_string(char c) {
 
 
 u8 Lexer::check_keyword(std::string rest, Token::Type t) {
+	log("checking keyword src len {}", src.length());
 	int i = 0;
-	for(i;i<rest.size();i++)
+	for (i; i < rest.size() && !end(); i++) {
+		log("checking: {}, current: {}", peek(i), current+i);
 		if (peek(i) != rest.at(i))
 			return 0;
-	if (!end() && (is_letter(peek(i+1)) || is_digit(peek(i+1)) || peek(i+1) == '_'))
+	}
+	if (!(current + i > src.length() - 1) && (is_letter(peek(i+1)) || is_digit(peek(i+1)) || peek(i+1) == '_'))
 		return 0;
 	advance((u32)rest.size());
 	token(t);
@@ -189,7 +192,11 @@ void Lexer::do_word(char start){
 		}
 		case 'b': found_keyword = check_keyword("reak", Token::Type::BREAK); break;
 		case 'c': found_keyword = check_keyword("ontinue", Token::Type::CONTINUE); break;
-		case 'f': found_keyword = check_keyword("or", Token::Type::FOR); break;
+		case 'f': {
+			found_keyword = check_keyword("or", Token::Type::FOR);
+			if(!found_keyword) found_keyword = check_keyword("alse", Token::Type::FLSE);
+			break;
+		}
 		case 'i': {
 			found_keyword = check_keyword("f", Token::Type::IF); 
 			if (!found_keyword) found_keyword = check_keyword("nterface", Token::Type::INTERFACE);
@@ -206,9 +213,8 @@ void Lexer::do_word(char start){
 			if (!found_keyword) found_keyword = check_keyword("un", Token::Type::RUN); 
 			break;
 		}
-		case 'x': {
-			found_keyword = check_keyword("or", Token::Type::LAND); break;
-		}
+		case 't': found_keyword = check_keyword("rue", Token::Type::TRU); break;
+		case 'x': found_keyword = check_keyword("or", Token::Type::LAND); break;
 	}
 
 	if (!found_keyword) {
