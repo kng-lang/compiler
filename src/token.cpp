@@ -27,6 +27,11 @@ const char* Token::debug_types[] = {
 		"HASH",
 		"INCLUDE",
 		"IMPORT",
+		"RUN",
+		"LINK",
+		"HIDE",
+		"GUARD",
+		"EXPORT",
 
 		"IDENTIFIER",
 
@@ -68,6 +73,7 @@ const char* Token::debug_types[] = {
 		"LEQ",
 		"LOR",
 		"LAND",
+		"LXOR",
 
 		// bitwise operators
 		"LSHIFT",

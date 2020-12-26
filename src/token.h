@@ -19,6 +19,11 @@ struct Token{
 		HASH,
 		INCLUDE,
 		IMPORT,
+		RUN,
+		LINK,
+		HIDE,
+		GUARD,
+		EXPORT,
 
 
 		IDENTIFIER,
@@ -62,6 +67,7 @@ struct Token{
 		LEQ,
 		LOR,
 		LAND,
+		LXOR,
 
 		// bitwise operators
 		LSHIFT,

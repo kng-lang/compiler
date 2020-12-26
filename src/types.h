@@ -18,13 +18,17 @@ struct FnSignature {
 };
 
 struct Type {
+
+	const static char* debug_types[];
+
 	enum Types{
+		UNKNOWN,
 		U8,
 		U16,
 		U32,
 		U64,
-		I32,
-		I64,
+		S32,
+		S64,
 		F32,
 		F64,
 		CHAR,
@@ -33,18 +37,38 @@ struct Type {
 		SEQ,		// sequence of types
 		ANY,		// _
 	};
-
 	Types t;
+	// e.g. ^u8
+	u8 ref = 0;
+	// e.g. u8[5]
+	u8 arr = 0;
+	u32 arr_length = 0;
 	InterfaceSignature interface_signature;
 	FnSignature fn_signature;
 
 	Type(){}
 	Type(Types t) : t(t){}
+	Type(Types t, u8 ref) : t(t), ref(ref){}
+	Type(Types t, u8 arr, u32 arr_length) : t(t), arr(arr), arr_length(arr_length) {}
+
+	std::string to_json();
 
 	// matches basic determines whether a type's type (e.g. u8, interface, etc) is the same
 	u8 matches_basic(Type other);
 	// matches deep determines whether a type's full type signature matches (e.g. do the members match etc)
 	u8 matches_deep(Type other);
+};
+
+struct Value {
+	union v {
+		u8  as_u8;
+		u16 as_16;
+		u32 as_u32;
+		s32 as_s32;
+		s64 as_s64;
+		f32 as_f32;
+		f64 as_f64;
+	} v;
 };
 
 struct SymTable;
@@ -80,5 +104,4 @@ struct SymTable {
 	std::shared_ptr<SymTable> pop_scope();
 };
 
-inline extern Type u8_type();
 extern Type infer_type(std::shared_ptr<AST> ast);

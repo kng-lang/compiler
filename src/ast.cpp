@@ -9,8 +9,18 @@ std::string AST::to_json() {
 	return "{AST}";
 }
 
+void* AST::visit(ASTVisitor* visitor) {
+	return NULL;
+}
+
+
+
 std::string ErrorAST::to_json() {
 	return "{ErrorAST}";
+}
+
+void* ErrorAST::visit(ASTVisitor* visitor) {
+	return NULL;
 }
 
 std::string ProgramAST::to_json() {
@@ -22,8 +32,16 @@ std::string ProgramAST::to_json() {
 	return ss.str();
 }
 
+void* ProgramAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_program(this);
+}
+
 std::string StatementAST::to_json(){
 	return "{StatementAST}";
+}
+
+void* StatementAST::visit(ASTVisitor* visitor) {
+	return NULL;
 }
 
 std::string StmtBlockAST::to_json() {
@@ -35,12 +53,24 @@ std::string StmtBlockAST::to_json() {
 	return ss.str();
 }
 
+void* StmtBlockAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_block(this);
+}
+
 std::string StmtExpressionAST::to_json(){
 	return "{StmtExpressionAST}";
 }
 
+void* StmtExpressionAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_expression(this);
+}
+
 std::string StmtDefineAST::to_json(){
 	return "{StmtDefineAST}";
+}
+
+void* StmtDefineAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_define(this);
 }
 
 std::string StmtAssignAST::to_json() {
@@ -49,11 +79,20 @@ std::string StmtAssignAST::to_json() {
 	return ss.str();
 }
 
+void* StmtAssignAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_assign(this);
+}
+
 std::string StmtInterfaceAssignAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"StmtInterfaceAssignAST\",\n\"interface\":" << variable->to_json() <<  ",\n\"member\":" << member.to_json() << ",\n\"value\":" << value->to_json() << "}\n";
 	return ss.str();
 }
+
+void* StmtInterfaceAssignAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_interface_assign(this);
+}
+
 
 std::string StmtReturnAST::to_json() {
 	std::stringstream ss;
@@ -61,16 +100,29 @@ std::string StmtReturnAST::to_json() {
 	return ss.str();
 }
 
+void* StmtReturnAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_return(this);
+}
+
+
 std::string StmtContinueAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"StmtContinueAST\"\n}";
 	return ss.str();
 }
 
+void* StmtContinueAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_continue_ast(this);
+}
+
 std::string StmtBreakAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"StmtBreakAST\"\n}";
 	return ss.str();
+}
+
+void* StmtBreakAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_break_ast(this);
 }
 
 std::string StmtIfAST::to_json() {
@@ -80,7 +132,21 @@ std::string StmtIfAST::to_json() {
 }
 
 
+void* StmtIfAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_if_ast(this);
+}
 
+
+std::string StmtLoopAST::to_json() {
+	std::stringstream ss;
+	ss << "{loop}";
+	return ss.str();
+}
+
+
+void* StmtLoopAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_loop_ast(this);
+}
 
 
 
@@ -90,6 +156,10 @@ std::string ExprVarAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"ExprVarAST\",\n\"variable\":" << identifier.to_json() << "\n}\n";
 	return ss.str();
+}
+
+void* ExprVarAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_var_ast(this);
 }
 
 std::string ExprPatternAST::to_json() {
@@ -102,8 +172,16 @@ std::string ExprPatternAST::to_json() {
 	return ss.str();
 }
 
+void* ExprPatternAST::visit(ASTVisitor* visitor) {
+	return NULL;
+}
+
 std::string ExprInterfaceGetAST::to_json() {
 	return "{ExprInterfaceGetAST}";
+}
+
+void* ExprInterfaceGetAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_interface_get_ast(this);
 }
 
 std::string ExprBinAST::to_json() {
@@ -112,20 +190,41 @@ std::string ExprBinAST::to_json() {
 	return ss.str();
 }
 
+void* ExprBinAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_bin_ast(this);
+}
+
 std::string ExprGroupAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"ExprGroupAST\",\n\"expr\":" << expression->to_json() << "}\n";
 	return ss.str();
 }
 
+void* ExprGroupAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_group_ast(this);
+}
+
 std::string ExprUnAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprUnAST\",\n\"op\":" << op.to_json() << ",\n\"ast\":" << ast->to_json() << ",\n\"side\":" << side << "}\n";
+	ss << "{\n\"type\": \"ExprUnAST\",\n\"op\":" << op.to_json() << ",\n\"ast\":" << ast->to_json() << ",\n\"side\":" << side << "\n}\n";
 	return ss.str();
+}
+
+void* ExprUnAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_un_ast(this);
 }
 
 std::string ExprLiteralAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprLiteralAST\",\n\"type\":null,\n\"value\": null}\n";
+	ss << "{\n\"type\": \"ExprLiteralAST\",\n\"type\":" << this->t.to_json() << ",\n\"value\":" << this->v.v.as_s32 << "\n}\n";
 	return ss.str();
+}
+
+void* ExprLiteralAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_literal_ast(this);
+}
+
+void* ExpressionAST::visit(ASTVisitor* visitor)
+{
+	return nullptr;
 }

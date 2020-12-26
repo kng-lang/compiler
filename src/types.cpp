@@ -1,12 +1,31 @@
 #include "types.h"
 #include "ast.h"
 
-Type u8_type() {
-	return Type(Type::Types::U8);
+const char* Type::debug_types[] = {
+	"UNKNOWN",
+	"U8",
+	"U16",
+	"U32",
+	"U64",
+	"S32",
+	"S64",
+	"F32",
+	"F64",
+	"CHAR",
+	"STRING",
+	"INTERFACE",
+	"SEQ",
+	"ANY"
+};
+
+std::string Type::to_json() {
+	std::stringstream ss;
+	ss << "{\"type\":" << debug_types[this->t] << "\n\"ref\":" << this->ref << "\n}";
+	return ss.str();
 }
 
 Type infer_type(std::shared_ptr<AST> ast){
-	return u8_type();
+	return Type(Type::Types::UNKNOWN);
 }
 
 void SymTable::add_symbol(std::string identifier, SymTableEntry entry) {

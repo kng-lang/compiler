@@ -104,4 +104,5 @@ struct CompilationUnit {
 	u8 compile();
 	TokenList compile_to_tokens();
 	std::shared_ptr<AST> compile_to_ast();
+	void compile_to_bin();
 };

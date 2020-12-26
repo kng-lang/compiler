@@ -183,7 +183,10 @@ void Lexer::do_word(char start){
 	u8 found_keyword = 0;
 
 	switch (start) {
-		case 'a': found_keyword = check_keyword("s", Token::Type::AS); break;
+		case 'a': {
+			found_keyword = check_keyword("s", Token::Type::AS); break;
+			if (!found_keyword) found_keyword = check_keyword("nd", Token::Type::LAND);
+		}
 		case 'b': found_keyword = check_keyword("reak", Token::Type::BREAK); break;
 		case 'c': found_keyword = check_keyword("ontinue", Token::Type::CONTINUE); break;
 		case 'f': found_keyword = check_keyword("or", Token::Type::FOR); break;
@@ -195,7 +198,17 @@ void Lexer::do_word(char start){
 			if (!found_keyword) found_keyword = check_keyword("mport", Token::Type::IMPORT);
 			break;
 		}
-		case 'r': found_keyword = check_keyword("eturn", Token::Type::RETURN); break;
+		case 'o': {
+			found_keyword = check_keyword("r", Token::Type::LOR); break;
+		}
+		case 'r': {
+			found_keyword = check_keyword("eturn", Token::Type::RETURN);
+			if (!found_keyword) found_keyword = check_keyword("un", Token::Type::RUN); 
+			break;
+		}
+		case 'x': {
+			found_keyword = check_keyword("or", Token::Type::LAND); break;
+		}
 	}
 
 	if (!found_keyword) {

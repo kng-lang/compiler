@@ -6,6 +6,8 @@
 #include "lexer.h"
 #include "parser.h"
 #include "types.h"
+#include "generator.h"
+#include "typechecking.h"
 
 CompilationUnit::CompilationUnit(CompileFile compile_file, Compiler* compiler)
 	: compile_file(compile_file), compiler(compiler), importer(&compiler->importer), compile_options(compiler->options){
@@ -42,7 +44,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 }
 
 u8 CompilationUnit::compile() {
-	auto ast = compile_to_ast();
+	compile_to_bin();
 	return 1;
 }
 
@@ -60,9 +62,19 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 	// parsing to an ast
 	Parser p(tokens, this);
 	auto ast = p.parse();
+
+	TypeChecker t(ast, this);
+	ast = t.check();
+
 	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG)
 		log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
 	return ast;
+}
+
+void CompilationUnit::compile_to_bin() {
+	auto ast = compile_to_ast();
+	LLVMGenerator generator(ast, this);
+	generator.generate();
 }
 
 u8 Importer::valid_import_path(std::string& path) {

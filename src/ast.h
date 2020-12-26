@@ -6,6 +6,9 @@
 #include "types.h"
 #include "token.h"
 
+
+struct ASTVisitor;
+
 struct StatementAST;
 struct ExpressionAST;
 struct ErrorAST;
@@ -29,9 +32,10 @@ struct ExprUnAST;
 struct ExprGroupAST;
 struct ExprLiteralAST;
 
+
 struct AST {
 	
-	enum class Type{
+	enum class ASTType{
 		BASE,
 		STMT,
 		EXPR,
@@ -63,50 +67,59 @@ struct AST {
 
 	virtual void debug();
 	virtual std::string to_json();
-	virtual Type type() { return Type::BASE; }
+	virtual ASTType type() { return ASTType::BASE; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 
 struct StatementAST : public AST {
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT; }
-
+	virtual ASTType type() { return ASTType::STMT; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ExpressionAST : public AST {
-	virtual Type type() { return Type::EXPR; }
+	virtual ASTType type() { return ASTType::EXPR; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ErrorAST : public StatementAST {
 	std::string error_msg;
 	virtual std::string to_json();
-	virtual Type type() { return Type::ERR; }
+	virtual ASTType type() { return ASTType::ERR; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ProgramAST : public StatementAST {
 	std::vector<std::shared_ptr<AST>> stmts;
 	virtual std::string to_json();
-	virtual Type type() { return Type::PROG; }
+	virtual ASTType type() { return ASTType::PROG; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtBlockAST : public StatementAST {
 	std::vector<std::shared_ptr<AST>> stmts;
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_BLOCK; }
+	virtual ASTType type() { return ASTType::STMT_BLOCK; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtExpressionAST : public StatementAST {
 	std::shared_ptr<AST> expression;
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_EXPR; }
+	virtual ASTType type() { return ASTType::STMT_EXPR; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtDefineAST : public StatementAST {
 	std::string identifier;
 	Type define_type;
 	std::shared_ptr<AST> value;
+	// if the define was a quick assign
+	u8 requires_type_inference = 0;
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_DEF; }
+	virtual ASTType  type() { return ASTType::STMT_DEF; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtAssignAST : public StatementAST {
@@ -116,7 +129,8 @@ struct StmtAssignAST : public StatementAST {
 	StmtAssignAST(Token variable, std::shared_ptr<AST> value) : variable(variable), value(value){}
 
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_ASSIGN; }
+	virtual ASTType  type() { return ASTType::STMT_ASSIGN; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtInterfaceAssignAST : public StatementAST {
@@ -130,42 +144,50 @@ struct StmtInterfaceAssignAST : public StatementAST {
 		) : variable(variable), member(member), value(value) {}
 
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_INTER_ASSIGN; }
+	virtual ASTType  type() { return ASTType::STMT_INTER_ASSIGN; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtReturnAST : public StatementAST {
 	std::shared_ptr<ExpressionAST> value;
 	StmtReturnAST(){}
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_RET; }
+	virtual ASTType  type() { return ASTType::STMT_RET; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtContinueAST: public StatementAST {
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_CONT; }
+	virtual ASTType  type() { return ASTType::STMT_CONT; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtBreakAST : public StatementAST {
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_BRK; }
+	virtual ASTType  type() { return ASTType::STMT_BRK; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtIfAST : public StatementAST {
 	std::shared_ptr<AST> if_cond;
 	std::shared_ptr<AST> if_stmt;
 	virtual std::string to_json();
-	virtual Type type() { return Type::STMT_IF; }
+	virtual ASTType  type() { return ASTType::STMT_IF; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct StmtLoopAST : public StatementAST {
-	virtual Type type() { return Type::STMT_LOOP; }
+	virtual std::string to_json();
+	virtual ASTType  type() { return ASTType::STMT_LOOP; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ExprVarAST : public ExpressionAST {
 	Token identifier;
 	ExprVarAST(Token identifier) : identifier(identifier){}
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_VAR; }
+	virtual ASTType  type() { return ASTType::EXPR_VAR; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 
@@ -174,14 +196,16 @@ struct ExprPatternAST : public ExpressionAST {
 	ExprPatternAST(){}
 	ExprPatternAST(std::vector<std::shared_ptr<AST>> asts) : asts(asts) {}
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_PATTERN; }
+	virtual ASTType  type() { return ASTType::EXPR_PATTERN; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ExprInterfaceGetAST : public ExpressionAST {
 	std::shared_ptr<AST> value;
 	Token member;
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_INTER_GET; }
+	virtual ASTType  type() { return ASTType::EXPR_INTER_GET; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 
@@ -192,7 +216,8 @@ struct ExprBinAST : public ExpressionAST {
 	ExprBinAST(){}
 	ExprBinAST(std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, Token op) : lhs(lhs), rhs(rhs), op(op){}
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_BIN; }
+	virtual ASTType  type() { return ASTType::EXPR_BIN; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ExprUnAST : public ExpressionAST {
@@ -204,7 +229,8 @@ struct ExprUnAST : public ExpressionAST {
 	ExprUnAST(Token op, std::shared_ptr<AST> ast, u8 side) : op(op), ast(ast), side(side){}
 
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_UN; }
+	virtual ASTType  type() { return ASTType::EXPR_UN; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ExprGroupAST : public ExpressionAST {
@@ -212,34 +238,43 @@ struct ExprGroupAST : public ExpressionAST {
 	ExprGroupAST(){}
 	ExprGroupAST(std::shared_ptr<AST> expression) : expression(expression) {}
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_GROUP; }
+	virtual ASTType  type() { return ASTType::EXPR_GROUP; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 // @TODO technically a function is a literal?
 struct ExprLiteralAST : public ExpressionAST {
-	Type literal_type;
+	Type t;
+	Value v;
 	ExprLiteralAST(){}
+	ExprLiteralAST(Type t, Value v) : t(t), v(v){}
 	virtual std::string to_json();
-	virtual Type type() { return Type::EXPR_LIT; }
+	virtual ASTType  type() { return ASTType::EXPR_LIT; }
+	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ASTVisitor {
-	virtual std::shared_ptr<AST> visit_program(std::shared_ptr<ProgramAST> program_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_block(std::shared_ptr<StmtBlockAST> stmt_block_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_expression(std::shared_ptr<StmtExpressionAST> stmt_expression_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_define(std::shared_ptr<StmtDefineAST> stmt_define_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_interface_define(std::shared_ptr<StmtInterfaceDefineAST> stmt_interface_define_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_assign(std::shared_ptr<StmtAssignAST> stmt_assign_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_interface_assign(std::shared_ptr<StmtInterfaceAssignAST> stmt_interface_assign_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_return(std::shared_ptr<StmtReturnAST> stmt_return_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_continue_ast(std::shared_ptr<StmtContinueAST> stmt_continue_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_break_ast(std::shared_ptr<StmtBreakAST> stmt_break_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_if_ast(std::shared_ptr<StmtIfAST> stmt_if_ast) = 0;
-	virtual std::shared_ptr<AST> visit_stmt_loop_ast(std::shared_ptr<StmtLoopAST> stmt_loop_ast) = 0;
-	virtual std::shared_ptr<AST> visit_expr_var_ast(std::shared_ptr<ExprVarAST> expr_var_ast) = 0;
-	virtual std::shared_ptr<AST> visit_expr_interface_get_ast(std::shared_ptr<ExprInterfaceGetAST> expr_interface_get_ast) = 0;
-	virtual std::shared_ptr<AST> visit_expr_bin_ast(std::shared_ptr<ExprBinAST> expr_bin_ast) = 0;
-	virtual std::shared_ptr<AST> visit_expr_un_ast(std::shared_ptr<ExprUnAST> expr_un_ast) = 0;
-	virtual std::shared_ptr<AST> visit_expr_group_ast(std::shared_ptr<ExprGroupAST> expr_group_ast) = 0;
-	virtual std::shared_ptr<AST> visit_expr_literal_ast(std::shared_ptr<ExprLiteralAST> expr_literal_ast) = 0;
+	std::shared_ptr<AST> ast;
+
+	ASTVisitor(){}
+	ASTVisitor(std::shared_ptr<AST> ast) : ast(ast){}
+
+	virtual void* visit_program(ProgramAST* program_ast) = 0;
+	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast) = 0;
+	virtual void* visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) = 0;
+	virtual void* visit_stmt_define(StmtDefineAST* stmt_define_ast) = 0;
+	virtual void* visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) = 0;
+	virtual void* visit_stmt_assign(StmtAssignAST* stmt_assign_ast) = 0;
+	virtual void* visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_interface_assign_ast) = 0;
+	virtual void* visit_stmt_return(StmtReturnAST* stmt_return_ast) = 0;
+	virtual void* visit_stmt_continue_ast(StmtContinueAST* stmt_continue_ast) = 0;
+	virtual void* visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) = 0;
+	virtual void* visit_stmt_if_ast(StmtIfAST* stmt_if_ast) = 0;
+	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) = 0;
+	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
+	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) = 0;
+	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast) = 0;
+	virtual void* visit_expr_un_ast(ExprUnAST* expr_un_ast) = 0;
+	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast) = 0;
+	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) = 0;
 };

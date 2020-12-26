@@ -25,10 +25,14 @@ struct Error{
 		TYPE_MISMATCH,		  // e.g. x : s32 = "hello world!"
 		UNEXPECTED_CHARACTER, // e.g. x : s32 u32
 		UNEXPECTED_EOF,       // e.g. if x { EOF
+		CYCLIC_DEP,			  // when files include each other
 	};
 
 	Level level;
 	Type type;
+
+	Error(){}
+	Error(Level level, Type type) : level(level), type(type){}
 };
 
 struct ErrorTable {

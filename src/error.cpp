@@ -43,6 +43,7 @@ std::string build_pointer(u32 start, u32 end){
 	return ss.str();
 }
 
+// @TODO support warnings which can be recoverable
 void ErrorHandler::error(
 	const std::string problem, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line
 ) {
@@ -61,4 +62,7 @@ void ErrorHandler::error(
 	warn("{}", build_pointer(p_start_index, p_end_index));
 	warn("");
 	warn("{}", problem);
+	warn("===================================================");
+
+	errors_occured.push(Error(Error::Level::CRITICAL, Error::Type::CYCLIC_DEP));
 }

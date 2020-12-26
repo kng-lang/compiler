@@ -88,6 +88,14 @@ void Parser::do_newline() {
 std::shared_ptr<AST> Parser::parse_directive() {
 	consume(Token::HASH);
 	switch (next().type) {
+		case Token::Type::RUN: {
+				// create a new compilation unit to JIT the next statement
+				auto stmt_to_jit = parse_stmt();
+				log("JITing {}", stmt_to_jit->to_json());
+				// tmp
+				return std::make_shared<ErrorAST>();
+				break;
+		}
 		case Token::Type::INCLUDE: {
 			//// @TODO allow expressions to be the filename so we can support #include (#run win ? "windows.k" : "unix.k")
 			//auto to_include = parse_expression();
@@ -206,11 +214,11 @@ std::shared_ptr<AST> Parser::parse_assign() {
 		auto assign_value = parse_pattern();
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
-			case AST::Type::EXPR_VAR: {
+			case AST::ASTType::EXPR_VAR: {
 				auto variable_token = std::dynamic_pointer_cast<ExprVarAST>(higher_precedence);
 				return std::make_shared<StmtAssignAST>(variable_token->identifier, assign_value);
 			}
-			case AST::Type::EXPR_INTER_GET: {
+			case AST::ASTType::EXPR_INTER_GET: {
 				auto member_get = std::dynamic_pointer_cast<ExprInterfaceGetAST>(higher_precedence);
 				auto interface_value = member_get->value;
 				auto member_token = member_get->member;
@@ -329,20 +337,27 @@ std::shared_ptr<AST> Parser::parse_single(){
 		}
 		case Token::Type::NUMBER: {
 			ExprLiteralAST lit_ast;
-			return std::make_shared<ExprLiteralAST>();
+			lit_ast.t = Type(Type::Types::S32, 0);
+			lit_ast.v.v.as_s32 = stoi(t.value);
+			return std::make_shared<ExprLiteralAST>(lit_ast);
 			break;
 		}
 		case Token::Type::STRING: {
+			// @TODO arrays
 			return std::make_shared<ExprLiteralAST>();
 			break;
 		}
 		case Token::Type::TRU: {
+			ExprLiteralAST lit_ast;
+			lit_ast.t = Type(Type::Types::U8, 0);
+			lit_ast.v.v.as_u8 = 1;
 			return std::make_shared<ExprLiteralAST>();
-			break;
 		}
 		case Token::Type::FLSE: {
+			ExprLiteralAST lit_ast;
+			lit_ast.t = Type(Type::Types::U8, 0);
+			lit_ast.v.v.as_u8 = 0;
 			return std::make_shared<ExprLiteralAST>();
-			break;
 		}
 		case Token::Type::LPAREN: {
 			auto expression = parse_expression();
