@@ -17,6 +17,7 @@ struct Token{
 		UNDERSCORE,
 		NEWLINE,
 		HASH,
+
 		INCLUDE,
 		IMPORT,
 		RUN,
@@ -24,6 +25,7 @@ struct Token{
 		HIDE,
 		GUARD,
 		EXPORT,
+		ASM,
 
 
 		IDENTIFIER,
@@ -32,6 +34,17 @@ struct Token{
 		NUMBER,
 		TRU,
 		FLSE,
+
+		U0,
+		U8,
+		U16,
+		U32,
+		U64,
+		S32,
+		S64,
+		F32,
+		F64,
+		CHAR,
 
 		REFERENCE,
 		DOT,

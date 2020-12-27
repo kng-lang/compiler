@@ -151,10 +151,20 @@ void* StmtLoopAST::visit(ASTVisitor* visitor) {
 
 
 
+std::string ExprFnAST::to_json(){
+	std::stringstream ss;
+	ss << "{\n\"type\":\"ExprFnAST\",\n\"body\":" << this->body->to_json() << "}\n";
+	return ss.str();
+}
+void* ExprFnAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_fn_ast(this);
+}
+
+
 
 std::string ExprVarAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprVarAST\",\n\"variable\":" << identifier.to_json() << "\n}\n";
+	ss << "{\n\"type\":\"ExprVarAST\",\n\"variable\":" << identifier.to_json() << "\n}\n";
 	return ss.str();
 }
 

@@ -169,12 +169,10 @@ u8 Lexer::is_string(char c) {
 u8 Lexer::check_keyword(std::string rest, Token::Type t) {
 	log("checking keyword src len {}", src.length());
 	int i = 0;
-	for (i; i < rest.size() && !end(); i++) {
-		log("checking: {}, current: {}", peek(i), current+i);
+	for (i; i < rest.size() && !end(); i++)
 		if (peek(i) != rest.at(i))
 			return 0;
-	}
-	if (!(current + i > src.length() - 1) && (is_letter(peek(i+1)) || is_digit(peek(i+1)) || peek(i+1) == '_'))
+	if (!(current + i > src.length() - 1) && (is_letter(peek(i)) || is_digit(peek(i)) || peek(i) == '_'))
 		return 0;
 	advance((u32)rest.size());
 	token(t);

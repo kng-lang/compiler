@@ -26,12 +26,14 @@ const char* Token::debug_types[] = {
 		"NEWLINE",
 		"HASH",
 		"INCLUDE",
+
 		"IMPORT",
 		"RUN",
 		"LINK",
 		"HIDE",
 		"GUARD",
 		"EXPORT",
+		"ASM",
 
 		"IDENTIFIER",
 
@@ -39,6 +41,17 @@ const char* Token::debug_types[] = {
 		"NUMBER",
 		"TRUE",
 		"FALSE",
+
+		"U0",
+		"U8",
+		"U16",
+		"U32",
+		"U64",
+		"S32",
+		"S64",
+		"F32",
+		"F64",
+		"CHAR",
 
 		"REFERENCE",
 		"DOT",

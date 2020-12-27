@@ -19,6 +19,7 @@ struct CodeGen : public ASTVisitor {
 	virtual void* visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) = 0;
 	virtual void* visit_stmt_if_ast(StmtIfAST* stmt_if_ast) = 0;
 	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) = 0;
+	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast) = 0;
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
 	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) = 0;
 	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast) = 0;
@@ -40,6 +41,7 @@ struct LLVMCodeGen : public CodeGen {
 	virtual void* visit_stmt_break_ast(StmtBreakAST* stmt_break_ast);
 	virtual void* visit_stmt_if_ast(StmtIfAST* stmt_if_ast);
 	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast);
+	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast);
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast);
 	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast);
 	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast);

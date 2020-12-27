@@ -21,6 +21,7 @@ std::shared_ptr<AST> Parser::parse() {
 }
 
 std::shared_ptr<AST> Parser::parse_stmt(){
+	log("parsing stmt!");
 
 	// consume empty newlines
 	do_newline();
@@ -176,6 +177,34 @@ u8 Parser::end_of_block() {
 	return end() || (peek().type == Token::RCURLY || peek().type == Token::END);
 }
 
+u8 Parser::expecting_type() {
+	return 
+		expect(Token::Type::U0)
+		|| expect(Token::Type::U8)
+		|| expect(Token::Type::U16)
+		|| expect(Token::Type::U32)
+		|| expect(Token::Type::S32)
+		|| expect(Token::Type::S64)
+		|| expect(Token::Type::F32)
+		|| expect(Token::Type::F64)
+		|| expect(Token::Type::CHAR)
+		|| expect(Token::Type::IDENTIFIER);
+}
+
+Type Parser::parse_type(){
+	switch (peek().type) {
+		case Token::Type::U0: return Type(Type::Types::U0);
+		case Token::Type::U8: return Type(Type::Types::U8);
+		case Token::Type::U16: return Type(Type::Types::U16);
+		case Token::Type::U32: return Type(Type::Types::U32);
+		case Token::Type::S32: return Type(Type::Types::S32);
+		case Token::Type::S64: return Type(Type::Types::S64);
+		case Token::Type::F32: return Type(Type::Types::F32);
+		case Token::Type::F64: return Type(Type::Types::F64);
+		case Token::Type::CHAR: return Type(Type::Types::CHAR);
+		case Token::Type::IDENTIFIER: return Type(Type::Types::INTERFACE);
+	}
+}
 
 std::shared_ptr<AST> Parser::parse_define() {
 	log("parsing define");
@@ -360,14 +389,28 @@ std::shared_ptr<AST> Parser::parse_single(){
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::LPAREN: {
-			auto expression = parse_expression();
-			if (!consume(Token::Type::RPAREN)) {
-				unit->error_handler.error("expected ) as statement delimiter",
-					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
-				return std::make_shared<ErrorAST>();
+			log("found lparen...");
+			// parsing fn
+			if (consume(Token::Type::RPAREN)) {
+				ExprFnAST fn_ast;
+				if (expecting_type())
+					fn_ast.ret_type = parse_type();
+				else
+					fn_ast.ret_type = Type(Type::Types::U0);
+				fn_ast.body = parse_stmt();
+				return std::make_shared<ExprFnAST>(fn_ast);
 			}
-			auto group = ExprGroupAST(expression);
-			return std::make_shared<ExprGroupAST>(group);
+			else {
+				// either parsing a group or a function
+				auto expression = parse_expression();
+				if (!consume(Token::Type::RPAREN)) {
+					unit->error_handler.error("expected ) as statement delimiter",
+						prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+					return std::make_shared<ErrorAST>();
+				}
+				auto group = ExprGroupAST(expression);
+				return std::make_shared<ExprGroupAST>(group);
+			}
 		}
 	}
 	// @TODO error here

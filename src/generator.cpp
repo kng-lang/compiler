@@ -57,6 +57,9 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 	return NULL;
 }
+void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
+	return NULL;
+}
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	return NULL;
 }
