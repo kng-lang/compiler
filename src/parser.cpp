@@ -21,11 +21,8 @@ std::shared_ptr<AST> Parser::parse() {
 }
 
 std::shared_ptr<AST> Parser::parse_stmt(){
-	log("parsing stmt!");
-
 	// consume empty newlines
 	do_newline();
-
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
 	switch (peek().type) {
 		case Token::Type::HASH: {
@@ -62,7 +59,8 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 		case Token::Type::IDENTIFIER: {
 			// if we are dealing with an identifier, we could be doing various operations
 			switch (peek(1).type) {
-				case Token::Type::COLON: stmt = parse_define(); break;
+				case Token::Type::COLON:
+				case Token::Type::QUICK_ASSIGN: stmt = parse_define(); break;
 				default: stmt = parse_expression(); break;
 			}
 			break;
@@ -192,7 +190,7 @@ u8 Parser::expecting_type() {
 }
 
 Type Parser::parse_type(){
-	switch (peek().type) {
+	switch (next().type) {
 		case Token::Type::U0: return Type(Type::Types::U0);
 		case Token::Type::U8: return Type(Type::Types::U8);
 		case Token::Type::U16: return Type(Type::Types::U16);
@@ -207,16 +205,25 @@ Type Parser::parse_type(){
 }
 
 std::shared_ptr<AST> Parser::parse_define() {
-	log("parsing define");
-	auto identifier = next().value;
-	consume(Token::COLON, ": expected after identifier for definition");
-	// @TODO get the type
-	switch (peek().type) {
-		case Token::Type::INTERFACE: break;
-		case Token::Type::IDENTIFIER: break; // @TODO on pass 2 we need to check this type is actually valid and has been defined
-		default: break; // @TODO this is invalid return an error
+	StmtDefineAST define_ast;
+	define_ast.identifier = next();
+	if(consume(Token::Type::QUICK_ASSIGN)){
+		define_ast.requires_type_inference = 1;
+		// @TODO check an expression exists???
+		define_ast.value = parse_expression();
 	}
-	return std::make_shared<AST>();
+	else if(consume(Token::Type::COLON)){
+		if (!expecting_type()) {
+			unit->error_handler.error("expected type after :",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return std::make_shared<ErrorAST>();
+		}
+		define_ast.value = NULL;
+		define_ast.define_type = parse_type();
+		if (consume(Token::Type::ASSIGN))
+			define_ast.value = parse_expression();
+	}
+	return std::make_shared<StmtDefineAST>(define_ast);
 }
 
 std::shared_ptr<AST> Parser::parse_quick_define() {
@@ -389,7 +396,6 @@ std::shared_ptr<AST> Parser::parse_single(){
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::LPAREN: {
-			log("found lparen...");
 			// parsing fn
 			if (consume(Token::Type::RPAREN)) {
 				ExprFnAST fn_ast;

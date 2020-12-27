@@ -2,10 +2,13 @@
 #include "compiler.h"
 
 std::shared_ptr<AST> TypeChecker::check() {
+	ast->visit(this);
 	return ast;
 }
 
 void* TypeChecker::visit_program(ProgramAST* program_ast) { 
+	for (const auto& ast : program_ast->stmts)
+		ast->visit(this);
 	return NULL; 
 }
 void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) { 
@@ -14,6 +17,7 @@ void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
 void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) { return NULL; }
 
 void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) { 
+	log("typechecking define!");
 	// if we need to infer the type then do it here
 	if(stmt_define_ast->requires_type_inference){
 		auto inferred = stmt_define_ast->value->visit(this);
@@ -26,7 +30,10 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 		if (!t.matches_basic(stmt_define_ast->define_type))
 			unit->error_handler.error("types do not match",
-				0,0,0,0);
+				stmt_define_ast->identifier.index,
+				stmt_define_ast->identifier.line,
+				stmt_define_ast->identifier.index+stmt_define_ast->identifier.length,
+				stmt_define_ast->identifier.line);
 	}
 
 
@@ -66,5 +73,6 @@ void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
+	log("type checking literal!");
 	return (void*)&expr_literal_ast->t;
 }

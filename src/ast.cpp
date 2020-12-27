@@ -66,7 +66,9 @@ void* StmtExpressionAST::visit(ASTVisitor* visitor) {
 }
 
 std::string StmtDefineAST::to_json(){
-	return "{StmtDefineAST}";
+	std::stringstream ss;
+	ss << "{\n\"type\": \"StmtDefineAST\",\n\"variable\":" << identifier.to_json() << ",\n\"type\":" << define_type.to_json() << ",\n\"value\":" << ((value!=NULL) ? value->to_json() : "\"null\"") << "}\n";
+	return ss.str();
 }
 
 void* StmtDefineAST::visit(ASTVisitor* visitor) {

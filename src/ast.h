@@ -113,7 +113,7 @@ struct StmtExpressionAST : public StatementAST {
 };
 
 struct StmtDefineAST : public StatementAST {
-	std::string identifier;
+	Token identifier;
 	Type define_type;
 	std::shared_ptr<AST> value;
 	// if the define was a quick assign

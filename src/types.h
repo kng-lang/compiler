@@ -41,7 +41,7 @@ struct Type {
 		INTERFACE,
 		PATTERN,		// sequence of types
 	};
-	Types t;
+	Types t = UNKNOWN;
 	// e.g. ^u8
 	u8 ref = 0;
 	// e.g. u8[5]
