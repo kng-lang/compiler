@@ -258,6 +258,20 @@ void Lexer::do_string(char start) {
 }
 
 void Lexer::do_comment(){
+	if (consume('/')) {
+		kng_log("doing comment");
+		while (peek() != '\n' && peek() != '\r')
+			next();
+	}
+	else if (consume('*')) {
+		kng_log("mme");
+		start:
+		while (!consume('*')) next();
+		if (!consume('/')) {
+			next();
+			goto start;
+		}
+	}
 }
 
 void Lexer::do_documentation(){

@@ -6,7 +6,10 @@
 #include "ast.h"
 
 struct CompilationUnit;
+
 struct CodeGen : public ASTVisitor {
+
+	virtual void generate() = 0;
 	virtual void* visit_program(ProgramAST* program_ast) = 0;
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast) = 0;
 	virtual void* visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) = 0;
@@ -28,7 +31,28 @@ struct CodeGen : public ASTVisitor {
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) = 0;
 };
 
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Utils.h>
+
 struct LLVMCodeGen : public CodeGen {
+	std::shared_ptr<AST> ast;
+	CompilationUnit* unit;
+	std::unique_ptr<llvm::LLVMContext> llvm_context;
+	std::unique_ptr<llvm::IRBuilder<>> llvm_builder;
+	std::shared_ptr<llvm::Module> llvm_module;
+	LLVMCodeGen(){}
+	LLVMCodeGen(std::shared_ptr<AST> ast, CompilationUnit* unit) : ast(ast), unit(unit) {}
+	virtual void generate();
+	void make_runtime();
+	void optimise();
+	llvm::Type* convert_type(Type type);
 	virtual void* visit_program(ProgramAST* program_ast);
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast);
 	virtual void* visit_stmt_expression(StmtExpressionAST* stmt_expression_ast);
@@ -41,6 +65,7 @@ struct LLVMCodeGen : public CodeGen {
 	virtual void* visit_stmt_break_ast(StmtBreakAST* stmt_break_ast);
 	virtual void* visit_stmt_if_ast(StmtIfAST* stmt_if_ast);
 	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast);
+	virtual void* visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast);
 	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast);
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast);
 	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast);
@@ -50,6 +75,7 @@ struct LLVMCodeGen : public CodeGen {
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast);
 };
 
+/*
 struct CLRCodeGen;
 
 struct Generator {
@@ -64,9 +90,11 @@ struct Generator {
 
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/IRBuilder.h>
 struct LLVMGenerator : public Generator {
+	std::unique_ptr<llvm::LLVMContext> llvm_context;
+	std::unique_ptr<llvm::IRBuilder<>> llvm_builder;
 	std::shared_ptr<llvm::Module> llvm_module;
-	llvm::LLVMContext llvm_context;
 	LLVMGenerator(std::shared_ptr<AST> ast, CompilationUnit* unit) : Generator(ast, unit) {}
 	virtual std::shared_ptr<CodeGen> generate();
 };
@@ -75,3 +103,4 @@ struct CLRGenerator : public Generator {
 	CLRGenerator(std::shared_ptr<AST> ast, CompilationUnit* unit) : Generator(ast, unit) {}
 	virtual std::shared_ptr<CodeGen> generate();
 };
+*/

@@ -90,7 +90,7 @@ std::shared_ptr<AST> Parser::parse_directive() {
 		case Token::Type::RUN: {
 				// create a new compilation unit to JIT the next statement
 				auto stmt_to_jit = parse_stmt();
-				log("JITing {}", stmt_to_jit->to_json());
+				kng_log("JITing {}", stmt_to_jit->to_json());
 				// tmp
 				return std::make_shared<ErrorAST>();
 				break;
@@ -151,7 +151,7 @@ std::shared_ptr<AST> Parser::parse_for(){
 // a stmt block is simply a list of statements.
 // enter with { and exit with }
 std::shared_ptr<AST> Parser::parse_stmt_block() {
-	log("parsing statement block");
+	kng_log("parsing statement block");
 
 	auto stmt_block = StmtBlockAST();
 
@@ -227,7 +227,7 @@ std::shared_ptr<AST> Parser::parse_define() {
 }
 
 std::shared_ptr<AST> Parser::parse_quick_define() {
-	log("parsing define");
+	kng_log("parsing define");
 	auto identifier = next().value;
 	consume(Token::QUICK_ASSIGN, ":= expected after identifier for quick define");
 	// @TODO infer the type
@@ -418,9 +418,32 @@ std::shared_ptr<AST> Parser::parse_single(){
 				return std::make_shared<ExprGroupAST>(group);
 			}
 		}
+		case Token::Type::LBRACKET: return parse_interface();
 	}
 	// @TODO error here
 	unit->error_handler.error("unexpected code?",
 		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 	return std::make_shared<ErrorAST>(); 
 }
+
+
+std::shared_ptr<AST> Parser::parse_fn(){
+	return NULL;
+}
+
+std::shared_ptr<AST> Parser::parse_interface() {
+
+
+	ExprInterfaceAST expr_interface;
+
+	expr_interface.anonymous_name = "tmp_anon_interface_name";
+
+	consume(Token::LBRACKET);
+
+	// a list of definition
+	while (!consume(Token::RBRACKET)) {
+		parse_stmt();
+	}
+	return std::make_shared<ExprInterfaceAST>(expr_interface);
+}
+

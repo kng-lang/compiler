@@ -2,7 +2,7 @@
 
 
 void AST::debug() {
-	log("ast");
+	kng_log("ast");
 }
 
 std::string AST::to_json() {
@@ -152,6 +152,14 @@ void* StmtLoopAST::visit(ASTVisitor* visitor) {
 
 
 
+std::string ExprInterfaceAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\":\"ExprInterfaceAST\",\n\"anonymous_name\":" << this->anonymous_name << "}\n";
+	return ss.str();
+}
+void* ExprInterfaceAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_inter_ast(this);
+}
 
 std::string ExprFnAST::to_json(){
 	std::stringstream ss;

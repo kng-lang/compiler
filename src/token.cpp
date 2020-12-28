@@ -115,7 +115,7 @@ u8 TokenConsumer::end() {
 Token TokenConsumer::consume(Token::Type type, const std::string err_msg) {
 	if (peek().type != type)
 		// we need to insert an error AST here
-		log(err_msg);
+		kng_log(err_msg);
 	return next();
 }
 

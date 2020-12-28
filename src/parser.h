@@ -49,4 +49,6 @@ struct Parser : public TokenConsumer{
 	std::shared_ptr<AST> parse_cast();
 	std::shared_ptr<AST> parse_call();
 	std::shared_ptr<AST> parse_single();
+	std::shared_ptr<AST> parse_fn();
+	std::shared_ptr<AST> parse_interface();
 };

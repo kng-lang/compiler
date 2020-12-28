@@ -51,6 +51,7 @@ struct AST {
 		STMT_BRK,
 		STMT_IF,
 		STMT_LOOP,
+		EXPR_INTER,
 		EXPR_FN,
 		EXPR_VAR,
 		EXPR_PATTERN,
@@ -113,6 +114,7 @@ struct StmtExpressionAST : public StatementAST {
 };
 
 struct StmtDefineAST : public StatementAST {
+	u8 is_global = 1;
 	Token identifier;
 	Type define_type;
 	std::shared_ptr<AST> value;
@@ -183,8 +185,21 @@ struct StmtLoopAST : public StatementAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+// e.g. x : interface = { y : s32 }
+struct ExprInterfaceAST : public ExpressionAST {
+	// even though they are first class, they still need a name
+	std::string anonymous_name;
+	ExprInterfaceAST(){}
+	ExprInterfaceAST(std::string anonymous_name) : anonymous_name(anonymous_name) {}
+	virtual std::string to_json();
+	virtual ASTType type() { return ASTType::EXPR_INTER; }
+	virtual void* visit(ASTVisitor* visitor);
+};
+
 // this is a lambda e.g. () io.println "hello world!", it can be assigned to variables e.g. x := () io.println "hello world!"
 struct ExprFnAST : public ExpressionAST {
+	// even though we can have lambdas e.g. () 1, they need a name
+	std::string anonymous_name;
 	std::shared_ptr<AST> body;
 	Type ret_type;
 	ExprFnAST() {}
@@ -283,6 +298,7 @@ struct ASTVisitor {
 	virtual void* visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) = 0;
 	virtual void* visit_stmt_if_ast(StmtIfAST* stmt_if_ast) = 0;
 	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) = 0;
+	virtual void* visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) = 0;
 	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast) = 0;
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
 	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) = 0;

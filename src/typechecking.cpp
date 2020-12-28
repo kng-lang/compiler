@@ -17,7 +17,6 @@ void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
 void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) { return NULL; }
 
 void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) { 
-	log("typechecking define!");
 	// if we need to infer the type then do it here
 	if(stmt_define_ast->requires_type_inference){
 		auto inferred = stmt_define_ast->value->visit(this);
@@ -43,7 +42,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) { return NULL; }
 
-void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) { return NULL; }
+void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) { 
+	return NULL; 
+}
 
 void* TypeChecker::visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_interface_assign_ast) { return NULL; }
 
@@ -57,6 +58,8 @@ void* TypeChecker::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) { return NULL; }
 
 void* TypeChecker::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) { return NULL; }
 
+
+void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { return NULL; }
 
 void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) { return NULL;  }
 
@@ -73,6 +76,6 @@ void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
-	log("type checking literal!");
+	kng_log("type checking literal!");
 	return (void*)&expr_literal_ast->t;
 }

@@ -3,9 +3,9 @@
 
 #include <spdlog/spdlog.h>
 
-#define log(...) {spdlog::info(__VA_ARGS__);}
-#define warn(...) {spdlog::warn(__VA_ARGS__);}
-#define errr(...) {spdlog::error(__VA_ARGS__);}
+#define kng_log(...) {spdlog::info(__VA_ARGS__);}
+#define kng_warn(...) {spdlog::warn(__VA_ARGS__);}
+#define kng_errr(...) {spdlog::error(__VA_ARGS__);}
 
 #define assert_crash(condition, ...){    \
 		if (!condition) {					  \

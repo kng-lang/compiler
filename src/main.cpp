@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     }
     bool debug = result["debug"].as<bool>();
     if (debug)
-        log("kng compiler debug enabled!");
+        kng_log("kng compiler debug enabled!");
 
     std::string file;
     if (result.count("file")) {

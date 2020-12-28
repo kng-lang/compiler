@@ -28,10 +28,10 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	this->options = options;
 
-	log("kng compiler v0_1");
+	kng_log("kng compiler v0_1");
 
 	auto t1 = std::chrono::high_resolution_clock::now();
-	log("compilation started");
+	kng_log("compilation started");
 
 	importer = Importer(this);
 
@@ -40,7 +40,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	log("compiled {} files and {} lines in {} ms.", importer.n_units, importer.n_lines, time);
+	kng_log("compiled {} files and {} lines in {} ms.", importer.n_units, importer.n_lines, time);
 }
 
 u8 CompilationUnit::compile() {
@@ -53,7 +53,7 @@ TokenList CompilationUnit::compile_to_tokens() {
 	Lexer l(compile_file.file_contents, this);
 	auto tokens = l.scan();
 	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG)
-		log("lexer debug {}:\n{}", compile_file.file_path, tokens.to_json());
+		kng_log("lexer debug {}:\n{}", compile_file.file_path, tokens.to_json());
 	return tokens;
 }
 
@@ -67,13 +67,13 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 	ast = t.check();
 
 	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG)
-		log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
+		kng_log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
 	return ast;
 }
 
 void CompilationUnit::compile_to_bin() {
 	auto ast = compile_to_ast();
-	LLVMGenerator generator(ast, this);
+	LLVMCodeGen generator(ast, this);
 	generator.generate();
 }
 

@@ -113,7 +113,7 @@ struct Token{
 	std::string to_json();
 
 	void debug() {
-		log("token: {}", debug_types[type]);
+		kng_log("token: {}", debug_types[type]);
 	}
 };
 
