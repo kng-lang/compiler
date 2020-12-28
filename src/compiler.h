@@ -54,7 +54,6 @@ struct CompileFile {
 };
 
 struct CompilationUnit;
-struct SymTable;
 
 struct Importer {
 
@@ -77,7 +76,7 @@ struct Importer {
 	u8 already_included(std::string& current_path, std::string& path);
 	std::shared_ptr<CompilationUnit> new_unit(std::string& path, Compiler* compiler);
 	std::shared_ptr<CompilationUnit> import(std::string& path);
-	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path, std::shared_ptr<SymTable> sym_table);
+	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path);
 };
 
 struct Compiler {

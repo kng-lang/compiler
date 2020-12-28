@@ -47,7 +47,7 @@ std::string build_pointer(u32 start, u32 end){
 void ErrorHandler::error(
 	const std::string problem, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line
 ) {
-
+	how_many++;
 
 	auto problem_string = select_problem_area(
 		unit->compile_file.file_contents, p_start_index, p_start_line, p_end_index, p_end_line

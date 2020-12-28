@@ -6,7 +6,7 @@ Parser::Parser(){}
 Parser::Parser(TokenList& tokens, CompilationUnit* unit){
 	this->tokens = tokens.tokens;
 	this->unit = unit;
-	this->sym_table = std::make_shared<SymTable>();
+	this->sym_table = std::make_shared<SymTable<Type>>();
 }
 
 
@@ -123,7 +123,7 @@ std::shared_ptr<AST> Parser::parse_directive() {
 			// finally if we have't already included this file then include it!
 			if (!unit->importer->already_included(unit->compile_file.file_path, path.value)) {
 				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
-				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value, sym_table);
+				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value);
 				auto ast = compilation_unit->compile_to_ast();
 			}
 			break;
@@ -157,13 +157,13 @@ std::shared_ptr<AST> Parser::parse_stmt_block() {
 
 	consume(Token::Type::LCURLY, "'{' expected");
 
-	sym_table = sym_table->enter_scope(sym_table);
+	sym_table->enter_scope();
 	
 	while (!end_of_block()) {
 		stmt_block.stmts.push_back(parse_stmt());
 	}
 	
-	sym_table = sym_table->pop_scope();
+	sym_table->pop_scope();
 
 	consume(Token::Type::RCURLY, "'}' expected");
 
@@ -211,6 +211,7 @@ std::shared_ptr<AST> Parser::parse_define() {
 		define_ast.requires_type_inference = 1;
 		// @TODO check an expression exists???
 		define_ast.value = parse_expression();
+		define_ast.is_initialised = 1;
 	}
 	else if(consume(Token::Type::COLON)){
 		if (!expecting_type()) {
@@ -220,8 +221,10 @@ std::shared_ptr<AST> Parser::parse_define() {
 		}
 		define_ast.value = NULL;
 		define_ast.define_type = parse_type();
-		if (consume(Token::Type::ASSIGN))
+		if (consume(Token::Type::ASSIGN)){
 			define_ast.value = parse_expression();
+			define_ast.is_initialised = 1;
+		}
 	}
 	return std::make_shared<StmtDefineAST>(define_ast);
 }
@@ -398,11 +401,15 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::LPAREN: {
 			// parsing fn
 			if (consume(Token::Type::RPAREN)) {
+				kng_log("parsing fn!");
 				ExprFnAST fn_ast;
+				FnSignature fn_sig;
+				fn_sig.anonymous_identifier = "test_anon_fn";
 				if (expecting_type())
-					fn_ast.ret_type = parse_type();
+					fn_sig.operation_types.push_back(parse_type());
 				else
-					fn_ast.ret_type = Type(Type::Types::U0);
+					fn_sig.operation_types.push_back(Type(Type::Types::U0));
+				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
 				fn_ast.body = parse_stmt();
 				return std::make_shared<ExprFnAST>(fn_ast);
 			}

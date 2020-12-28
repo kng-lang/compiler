@@ -5,6 +5,7 @@
 
 
 void LLVMCodeGen::generate() {
+	kng_log("generating...");
 	llvm::InitializeNativeTarget();
 	llvm::InitializeNativeTargetAsmPrinter();
 
@@ -16,7 +17,6 @@ void LLVMCodeGen::generate() {
 
 	make_runtime();
 	optimise();
-
 	llvm_module->print(llvm::outs(), nullptr);
 }
 
@@ -44,6 +44,7 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 		case Type::Types::F32:    return llvm::Type::getFloatTy(*llvm_context);
 		case Type::Types::F64:    return llvm::Type::getDoubleTy(*llvm_context);
 		case Type::Types::CHAR:   return llvm::Type::getInt8Ty(*llvm_context); // ASCII FOR NOW?
+		case Type::Types::FN:     return sym_table.get_symbol(type.fn_signature.anonymous_identifier); // @TODO return the reference to the fn in the symbol table
 		case Type::Types::STRING: return NULL; // @TODO return a reference to the string interface using the symbol table
 
 	}
@@ -55,17 +56,30 @@ void* LLVMCodeGen::visit_program(ProgramAST* program_ast){
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
+	sym_table.enter_scope();
+	for (const auto& stmt : stmt_block_ast->stmts)
+		stmt->visit(this);
+	sym_table.pop_scope();
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
-	if (!stmt_define_ast->is_global)
-		llvm_builder->CreateRet(llvm::ConstantInt::get(*(llvm_context), llvm::APInt(32, (uint32_t)0, true)));
-	else {
-		auto g = llvm_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.value), convert_type(stmt_define_ast->define_type));
+
+	if (!stmt_define_ast->is_global){
+		// do alloca
+		if (stmt_define_ast->define_type.t != Type::Types::FN)
+			llvm_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.value);
 	}
+	else {
+		if(stmt_define_ast->define_type.t!=Type::Types::FN)
+			auto g = llvm_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.value), convert_type(stmt_define_ast->define_type));
+		else {
+		}
+	}
+	if (stmt_define_ast->is_initialised)
+		stmt_define_ast->value->visit(this);
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) {
@@ -103,8 +117,11 @@ void* LLVMCodeGen::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 }
 
 void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
-	llvm::FunctionType* ft = llvm::FunctionType::get(convert_type(expr_fn_ast->ret_type), { llvm::Type::getInt32Ty(*llvm_context), llvm::Type::getInt32PtrTy(*llvm_context) }, false);
-	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "test_fn", *llvm_module);
+	std::vector<llvm::Type*> operation_types;
+	for (const auto& t : expr_fn_ast->full_type.fn_signature.operation_types)
+		operation_types.push_back(convert_type(t));
+	llvm::FunctionType* ft = llvm::FunctionType::get(operation_types.at(0), {}, false);
+	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.fn_signature.anonymous_identifier, *llvm_module);
 	llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "entry_block", f);
 	llvm_builder->SetInsertPoint(bb);
 
@@ -113,6 +130,10 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	
 	llvm_builder->ClearInsertionPoint();
 	llvm::verifyFunction(*f);
+
+
+	// add the fn type to the symbol table
+	sym_table.add_symbol(expr_fn_ast->full_type.fn_signature.anonymous_identifier, ft);
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {

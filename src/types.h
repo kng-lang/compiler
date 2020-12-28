@@ -13,7 +13,7 @@ struct InterfaceSignature{
 };
 
 struct FnSignature {
-	// operation types are the types of the params and the return value
+	std::string anonymous_identifier;
 	std::vector<Type> operation_types;
 };
 
@@ -38,6 +38,7 @@ struct Type {
 		F64,
 		CHAR,
 		STRING,
+		FN,
 		INTERFACE,
 		PATTERN,		// sequence of types
 	};
@@ -57,6 +58,7 @@ struct Type {
 	Type(Types t, u8 ref) : t(t), ref(ref){}
 	Type(Types t, u8 arr, u32 arr_length) : t(t), arr(arr), arr_length(arr_length) {}
 	Type(Types t, u8 pattern, std::vector<Type> types) : t(t), pattern(pattern), patterns(patterns) {}
+	Type(Types t, FnSignature fn_sig) : t(t), fn_signature(fn_sig) {}
 
 	std::string to_json();
 
@@ -79,37 +81,26 @@ struct Value {
 	} v;
 };
 
-struct SymTable;
-
-struct SymTableEntry {
-
-	enum EntryType {
-		TYPE,
-		SYM_TABLE,
-	};
-
-	SymTableEntry(){}
-	SymTableEntry(Type t) : entry_type(TYPE), type(t) {}
-	SymTableEntry(std::shared_ptr<SymTable> sym_table) 
-		: entry_type(SYM_TABLE), sym_table(sym_table) {}
-
-	u8 entry_type;
-	// @TODO these 2 should be in a union
-	Type type;
-	std::shared_ptr<SymTable> sym_table;
-};
-
+template<typename T>
 struct SymTable {
-	std::unordered_map<std::string, SymTableEntry> entries;
-	std::shared_ptr<SymTable> parent_sym_table;
+	std::map<u32, std::unordered_map<std::string, T>> entries;
+	u32 level = 0;
 
 	SymTable(){}
-	SymTable(std::shared_ptr<SymTable> parent_sym_table) : parent_sym_table(parent_sym_table){}
 
-	void add_symbol(std::string identifier, SymTableEntry entry);
-	std::shared_ptr<SymTable> enter_scope(std::shared_ptr<SymTable> parent_sym_table);
-	std::shared_ptr<SymTable> enter_scope(std::string identifier, std::shared_ptr<SymTable> parent_sym_table);
-	std::shared_ptr<SymTable> pop_scope();
+	void add_symbol(std::string identifier, T entry) {
+		entries[level][identifier] = entry;
+	}
+	T get_symbol(std::string identifier) {
+		// @TODO all levels
+		for (u32 i = level; i >= 0; i--) {
+			if (this->entries[i].count(identifier) != 0)
+				return entries[i][identifier];
+		}
+		return NULL;
+	}
+	void enter_scope() { level++; };
+	void pop_scope() { level--; }
 };
 
 extern Type infer_type(std::shared_ptr<AST> ast);

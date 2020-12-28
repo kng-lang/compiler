@@ -47,6 +47,7 @@ struct LLVMCodeGen : public CodeGen {
 	std::unique_ptr<llvm::LLVMContext> llvm_context;
 	std::unique_ptr<llvm::IRBuilder<>> llvm_builder;
 	std::shared_ptr<llvm::Module> llvm_module;
+	SymTable<llvm::Type*> sym_table;
 	LLVMCodeGen(){}
 	LLVMCodeGen(std::shared_ptr<AST> ast, CompilationUnit* unit) : ast(ast), unit(unit) {}
 	virtual void generate();

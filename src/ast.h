@@ -114,7 +114,8 @@ struct StmtExpressionAST : public StatementAST {
 };
 
 struct StmtDefineAST : public StatementAST {
-	u8 is_global = 1;
+	u8 is_global = 0;
+	u8 is_initialised = 0;
 	Token identifier;
 	Type define_type;
 	std::shared_ptr<AST> value;
@@ -201,9 +202,10 @@ struct ExprFnAST : public ExpressionAST {
 	// even though we can have lambdas e.g. () 1, they need a name
 	std::string anonymous_name;
 	std::shared_ptr<AST> body;
-	Type ret_type;
+	// the full type signature
+	Type full_type;
 	ExprFnAST() {}
-	ExprFnAST(std::shared_ptr<AST> body, Type ret_type) : body(body), ret_type(ret_type) {}
+	ExprFnAST(std::shared_ptr<AST> body, Type full_type) : body(body), full_type(full_type) {}
 	virtual std::string to_json();
 	virtual ASTType type() { return ASTType::EXPR_FN; }
 	virtual void* visit(ASTVisitor* visitor);

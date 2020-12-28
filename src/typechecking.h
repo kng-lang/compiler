@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "types.h"
 #include "common.h"
 #include "ast.h"
 
@@ -9,6 +10,9 @@ struct CompilationUnit;
 
 struct TypeChecker : public ASTVisitor {
 	CompilationUnit* unit;
+	SymTable<Type> sym_table;
+
+
 	TypeChecker() {}
 	TypeChecker(std::shared_ptr<AST> ast, CompilationUnit* unit) : ASTVisitor(ast), unit(unit) {}
 

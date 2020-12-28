@@ -11,21 +11,45 @@ void* TypeChecker::visit_program(ProgramAST* program_ast) {
 		ast->visit(this);
 	return NULL; 
 }
-void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) { 
+void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
+	sym_table.enter_scope();
+	for (const auto& ast : stmt_block_ast->stmts)
+		ast->visit(this);
+	sym_table.pop_scope();
 	return NULL; 
 }
-void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) { return NULL; }
+void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) { 
+	stmt_expression_ast->expression->visit(this);
+	return NULL; 
+}
 
-void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) { 
+void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
+
+
+	// first check that in this scope the variable isn't already defined
+	if (sym_table.entries.size()>0 
+		&& sym_table.entries[sym_table.level].count(stmt_define_ast->identifier.value)>0) {
+		unit->error_handler.error("symbol already defined!",
+			stmt_define_ast->identifier.index,
+			stmt_define_ast->identifier.line,
+			stmt_define_ast->identifier.index+stmt_define_ast->identifier.length,
+			stmt_define_ast->identifier.line
+			);
+		return NULL;
+	}
+
+
+	Type t;
 	// if we need to infer the type then do it here
 	if(stmt_define_ast->requires_type_inference){
 		auto inferred = stmt_define_ast->value->visit(this);
-		stmt_define_ast->define_type = *((Type*)inferred);
+		t = *((Type*)inferred);
+		stmt_define_ast->define_type = t;
 	}
 	else if (stmt_define_ast->value != NULL) {
 		// else check the assignment value is valid
 		auto inferred = stmt_define_ast->value->visit(this);
-		Type t = *((Type*)inferred);
+		t = *((Type*)inferred);
 
 		if (!t.matches_basic(stmt_define_ast->define_type))
 			unit->error_handler.error("types do not match",
@@ -34,8 +58,10 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				stmt_define_ast->identifier.index+stmt_define_ast->identifier.length,
 				stmt_define_ast->identifier.line);
 	}
-
-
+	// if we are at the first scope then this is a global variable
+	if (sym_table.level == 0)
+		stmt_define_ast->is_global = 1;
+	sym_table.add_symbol(stmt_define_ast->identifier.value, t);
 	
 	return NULL; 
 }
@@ -61,7 +87,14 @@ void* TypeChecker::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) { return NULL
 
 void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { return NULL; }
 
-void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) { return NULL;  }
+void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
+
+	sym_table.enter_scope();
+	expr_fn_ast->body->visit(this);
+	sym_table.pop_scope();
+
+	return (void*)&expr_fn_ast->full_type;
+}
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) { return NULL; }
 

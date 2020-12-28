@@ -14,6 +14,7 @@ const char* Type::debug_types[] = {
 	"F64",
 	"CHAR",
 	"STRING",
+	"FN",
 	"INTERFACE",
 	"PATTERN"
 };
@@ -32,24 +33,31 @@ Type infer_type(std::shared_ptr<AST> ast){
 	}
 }
 
-void SymTable::add_symbol(std::string identifier, SymTableEntry entry) {
-	entries[identifier] = entry;
+/*template <typename T>
+void SymTable<T>::add_symbol(std::string identifier, T entry) {
+	entries[level][identifier] = entry;
 }
 
-std::shared_ptr<SymTable> SymTable::enter_scope(std::shared_ptr<SymTable> parent_sym_table){
-	return enter_scope("block", parent_sym_table);
+template <typename T>
+T SymTable<T>::get_symbol(std::string identifier) {
+	// @TODO all levels
+	for (u32 i = level; i >= 0; i--) {
+		if (this->entries[i].count(identifier) != 0)
+			return entries[i][identifier];
+	}
+	return NULL;
 }
 
-std::shared_ptr<SymTable> SymTable::enter_scope(std::string identifier, std::shared_ptr<SymTable> parent_sym_table){
-	auto new_table = std::make_shared<SymTable>();
-	SymTableEntry entry(std::make_shared<SymTable>(parent_sym_table));
-	add_symbol(identifier, entry);
-	return new_table;
+template <typename T>
+void SymTable<T>::enter_scope(){
+	level++;
 }
 
-std::shared_ptr<SymTable> SymTable::pop_scope() {
-	return parent_sym_table;
-}
+template <typename T>
+void SymTable<T>::pop_scope() {
+	level--;
+}*/
+
 
 u8 Type::matches_basic(Type other){
 	return this->t == other.t

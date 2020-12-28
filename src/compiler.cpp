@@ -35,7 +35,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	importer = Importer(this);
 
-	auto unit = importer.include(path, path, std::make_shared<SymTable>());
+	auto unit = importer.include(path, path);
 	unit->compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
@@ -73,6 +73,8 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 
 void CompilationUnit::compile_to_bin() {
 	auto ast = compile_to_ast();
+	if (error_handler.how_many>0)
+		return;
 	LLVMCodeGen generator(ast, this);
 	generator.generate();
 }
@@ -121,7 +123,7 @@ std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
 	return unit;
 }
 
-std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path, std::shared_ptr<SymTable> sym_table) {
+std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path) {
 	CompileFile f(path);
 	auto unit = std::make_shared<CompilationUnit>(f, compiler);
 	n_units++;
