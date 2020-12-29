@@ -72,7 +72,7 @@ struct Type {
 struct Value {
 	union v {
 		u8  as_u8;
-		u16 as_16;
+		u16 as_u16;
 		u32 as_u32;
 		s32 as_s32;
 		s64 as_s64;

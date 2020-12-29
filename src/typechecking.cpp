@@ -61,7 +61,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// if we are at the first scope then this is a global variable
 	if (sym_table.level == 0)
 		stmt_define_ast->is_global = 1;
-	sym_table.add_symbol(stmt_define_ast->identifier.value, t);
+	sym_table.add_symbol(stmt_define_ast->identifier.value, std::make_shared<Type>(t));
 	
 	return NULL; 
 }
@@ -96,7 +96,9 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	return (void*)&expr_fn_ast->full_type;
 }
 
-void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) { return NULL; }
+void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
+	return NULL;
+}
 
 void* TypeChecker::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) { return NULL; }
 

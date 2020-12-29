@@ -10,7 +10,7 @@ struct CompilationUnit;
 
 struct TypeChecker : public ASTVisitor {
 	CompilationUnit* unit;
-	SymTable<Type> sym_table;
+	SymTable<std::shared_ptr<Type>> sym_table;
 
 
 	TypeChecker() {}
