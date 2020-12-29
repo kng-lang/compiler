@@ -47,7 +47,7 @@ struct ErrorHandler {
 	CompilationUnit* unit = NULL;
 
 	std::stack<Error> errors_occured;
-	u32 how_many;
+	u32 how_many = 0;
 
 	ErrorHandler(){}
 	ErrorHandler(CompilationUnit* unit) : unit(unit) {}

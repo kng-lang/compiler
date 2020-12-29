@@ -67,7 +67,6 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 		}; // @TODO how do we know we are doing an assignment or expression?
 		default: stmt = parse_expression(); break;
 	}
-	
 	// @TODO it doesnt work if we dont have a newline at the end
 	// we use ; when we want multiple statements on one line
 	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
@@ -80,8 +79,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 }
 
 void Parser::do_newline() {
-	while (expect(Token::Type::NEWLINE))
-		next();
+	while (expect(Token::NEWLINE)) next();
 }
 
 std::shared_ptr<AST> Parser::parse_directive() {
@@ -164,7 +162,6 @@ std::shared_ptr<AST> Parser::parse_stmt_block() {
 	}
 	
 	sym_table->pop_scope();
-
 	consume(Token::Type::RCURLY, "'}' expected");
 
 	return std::make_shared<StmtBlockAST>(stmt_block);
