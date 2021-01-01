@@ -40,6 +40,7 @@ struct CodeGen : public ASTVisitor {
 #include <llvm/IR/Verifier.h>
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Utils.h>
+#include <llvm/IR/BasicBlock.h>
 
 struct LLVMCodeGen : public CodeGen {
 	std::shared_ptr<AST> ast;

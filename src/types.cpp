@@ -33,6 +33,14 @@ Type infer_type(std::shared_ptr<AST> ast){
 	}
 }
 
+u8 Type::is_integer_type() {
+	return t == U8 || t == U16 || t == U32 || t == S32 || t == S64;
+}
+
+u8 Type::is_float_type() {
+	return t == F32 || t == F64;
+}
+
 /*template <typename T>
 void SymTable<T>::add_symbol(std::string identifier, T entry) {
 	entries[level][identifier] = entry;

@@ -67,6 +67,9 @@ struct Type {
 
 	// matches deep determines whether a type's full type signature matches (e.g. do the members match etc)
 	u8 matches_deep(Type other);
+
+	u8 is_integer_type();
+	u8 is_float_type();
 };
 
 struct Value {

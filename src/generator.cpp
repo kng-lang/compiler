@@ -111,6 +111,42 @@ void* LLVMCodeGen::visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
+	auto infered_type = infer_type(stmt_if_ast->if_cond);
+	// different compares for integer/float
+	if (infered_type.is_integer_type()) {
+		// convert the condition to a bool
+
+
+		auto cmp = llvm_builder->CreateICmpEQ(
+			(llvm::Value*)stmt_if_ast->if_cond->visit(this),
+			llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), 123),
+			"test_if_block"
+		);
+
+		llvm::BasicBlock* then_block = llvm::BasicBlock::Create(*llvm_context, "then");
+		llvm::BasicBlock* else_block = llvm::BasicBlock::Create(*llvm_context, "else");
+		llvm::BasicBlock* merge_block = llvm::BasicBlock::Create(*llvm_context, "ifcont");
+
+		llvm_builder->CreateCondBr(cmp, then_block, else_block);
+
+		auto prev_block = llvm_builder->GetInsertPoint();
+		// add the blocks to the fn 
+		llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(then_block);
+		llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(else_block);
+		llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(merge_block);
+
+		llvm_builder->SetInsertPoint(then_block);
+		stmt_if_ast->if_stmt->visit(this);
+		llvm_builder->CreateBr(merge_block);
+
+		llvm_builder->SetInsertPoint(merge_block);
+	}
+	else if (infered_type.is_float_type()) {
+		// convert the condition to a bool
+		llvm::Value* cond_value = (llvm::Value*)stmt_if_ast->if_cond->visit(this);
+		auto bool_condition = llvm_builder->CreateFCmpONE(
+			cond_value, llvm::ConstantFP::get(*llvm_context, llvm::APFloat(0.0)), "ifcond");
+	}
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
