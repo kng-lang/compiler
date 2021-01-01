@@ -80,7 +80,11 @@ void* TypeChecker::visit_stmt_continue_ast(StmtContinueAST* stmt_continue_ast) {
 
 void* TypeChecker::visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) { return NULL; }
 
-void* TypeChecker::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) { return NULL; }
+void* TypeChecker::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) { 
+	stmt_if_ast->if_cond->visit(this);
+	stmt_if_ast->if_stmt->visit(this);
+	return NULL; 
+}
 
 void* TypeChecker::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) { return NULL; }
 

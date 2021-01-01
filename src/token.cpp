@@ -129,7 +129,7 @@ u8 TokenConsumer::consume(Token::Type type) {
 }
 
 u8 TokenConsumer::expect(Token::Type type) {
-	return peek().type == type;
+	return !end() && peek().type == type;
 }
 
 Token TokenConsumer::prev() {

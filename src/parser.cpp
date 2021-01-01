@@ -22,24 +22,29 @@ std::shared_ptr<AST> Parser::parse() {
 
 std::shared_ptr<AST> Parser::parse_stmt(){
 	// consume empty newlines
+	u8 requires_delim = 0; // e.g. if 1 {} doesn't require a delimiter
 	do_newline();
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
 	switch (peek().type) {
 		case Token::Type::HASH: {
+			requires_delim = 0;
 			stmt = parse_directive();
 			break;
 		}
 		case Token::Type::RETURN:{
+			requires_delim = 1;
 			next();
 			stmt = std::make_shared<StmtReturnAST>();
 			break;
 		}
 		case Token::Type::CONTINUE: {
+			requires_delim = 1;
 			next();
 			stmt = std::make_shared<StmtContinueAST>();
 			break;
 		}
 		case Token::Type::BREAK: {
+			requires_delim = 1;
 			next();
 			stmt = std::make_shared<StmtBreakAST>();
 			break;
@@ -49,7 +54,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::FOR: {
-			stmt = parse_if();
+			stmt = parse_for();
 			break;
 		}
 		case Token::Type::LCURLY: {
@@ -57,6 +62,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::IDENTIFIER: {
+			requires_delim = 1;
 			// if we are dealing with an identifier, we could be doing various operations
 			switch (peek(1).type) {
 				case Token::Type::COLON:
@@ -65,16 +71,21 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			}
 			break;
 		}; // @TODO how do we know we are doing an assignment or expression?
-		default: stmt = parse_expression(); break;
+		default: {
+			requires_delim = 1;
+			stmt = parse_expression();
+			break;
+		}
 	}
 	// @TODO it doesnt work if we dont have a newline at the end
 	// we use ; when we want multiple statements on one line
-	if (!(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
+	if (requires_delim && !(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
 		// @TODO this prev() stuff should probably be done with a function
 		unit->error_handler.error("expected ; or newline as statement delimiter",
 			prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 		return std::make_shared<ErrorAST>();
 	}
+	do_newline();
 	return stmt;
 }
 
@@ -135,6 +146,8 @@ std::shared_ptr<AST> Parser::parse_if(){
 	consume(Token::Type::IF);
 	auto if_cond = parse_expression();
 	auto if_stmt = parse_stmt();
+
+	kng_log("parsed if stmt, peeking {}", peek().to_json());
 	if_ast.if_cond = if_cond;
 	if_ast.if_stmt = if_stmt;
 	return std::make_shared<StmtIfAST>(if_ast);
@@ -149,18 +162,17 @@ std::shared_ptr<AST> Parser::parse_for(){
 // a stmt block is simply a list of statements.
 // enter with { and exit with }
 std::shared_ptr<AST> Parser::parse_stmt_block() {
-	kng_log("parsing statement block");
+
 
 	auto stmt_block = StmtBlockAST();
 
 	consume(Token::Type::LCURLY, "'{' expected");
-
+	do_newline();
 	sym_table->enter_scope();
-	
 	while (!end_of_block()) {
 		stmt_block.stmts.push_back(parse_stmt());
 	}
-	
+	do_newline();
 	sym_table->pop_scope();
 	consume(Token::Type::RCURLY, "'}' expected");
 
@@ -225,18 +237,6 @@ std::shared_ptr<AST> Parser::parse_define() {
 	}
 	return std::make_shared<StmtDefineAST>(define_ast);
 }
-
-std::shared_ptr<AST> Parser::parse_quick_define() {
-	kng_log("parsing define");
-	auto identifier = next().value;
-	consume(Token::QUICK_ASSIGN, ":= expected after identifier for quick define");
-	// @TODO infer the type
-	auto assignment_expression = parse_expression();
-	auto type = infer_type(assignment_expression);
-	return std::make_shared<AST>();
-}
-
-
 
 
 std::shared_ptr<AST> Parser::parse_expression() { 
@@ -407,7 +407,11 @@ std::shared_ptr<AST> Parser::parse_single(){
 				else
 					fn_sig.operation_types.push_back(Type(Type::Types::U0));
 				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
-				fn_ast.body = parse_stmt();
+				// we need to check if the fn has a body
+				if (!consume(Token::Type::SEMI_COLON)) {
+					fn_ast.has_body = 1;
+					fn_ast.body = parse_stmt();
+				}
 				return std::make_shared<ExprFnAST>(fn_ast);
 			}
 			else {
