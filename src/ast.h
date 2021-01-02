@@ -115,12 +115,12 @@ struct StmtExpressionAST : public StatementAST {
 
 struct StmtDefineAST : public StatementAST {
 	u8 is_global = 0;
+	u8 is_constant = 0;
 	u8 is_initialised = 0;
+	u8 requires_type_inference = 0;
 	Token identifier;
 	Type define_type;
 	std::shared_ptr<AST> value;
-	// if the define was a quick assign
-	u8 requires_type_inference = 0;
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_DEF; }
 	virtual void* visit(ASTVisitor* visitor);

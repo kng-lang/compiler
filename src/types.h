@@ -43,6 +43,7 @@ struct Type {
 		PATTERN,		// sequence of types
 	};
 	Types t = UNKNOWN;
+	u8 constant = 0;
 	// e.g. ^u8
 	u8 ref = 0;
 	// e.g. u8[5]

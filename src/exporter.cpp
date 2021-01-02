@@ -5,17 +5,15 @@
 
 u8 Exporter::export_globals(SymTable<Type> sym_table) {
 	// exporting globals requries first serialising level 0 of the symbol table to a file 
-
-	kng_log("exporting globals");
-
-	write_file(
-		std::filesystem::current_path()
-			.string()
-			.append("/")
-			.append(EXPORT_DUMP_DIR)
-			.append(get_dump_name("/test/file.k")).c_str(),
-		"test data"
-		);
+	
+	//write_file(
+	//	std::filesystem::current_path()
+	//		.string()
+	//		.append("/")
+	//		.append(EXPORT_DUMP_DIR)
+	//		.append(get_dump_name("/test/file.k")).c_str(),
+	//	"test data"
+	//	);
 
 	return 1;
 }

@@ -260,7 +260,6 @@ void Lexer::do_string(char start) {
 
 void Lexer::do_comment(){
 	if (consume('/')) {
-		kng_log("doing comment");
 		while (peek() != '\n' && peek() != '\r')
 			next();
 	}

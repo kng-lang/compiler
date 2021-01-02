@@ -42,6 +42,14 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 
 	Type t;
+
+	if (stmt_define_ast->is_constant && !stmt_define_ast->is_initialised)
+		unit->error_handler.error("constant variable requires initialisation",
+		stmt_define_ast->identifier.index,
+		stmt_define_ast->identifier.line,
+		stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
+		stmt_define_ast->identifier.line);
+
 	// if we need to infer the type then do it here
 	if(stmt_define_ast->requires_type_inference){
 		auto inferred = stmt_define_ast->value->visit(this);
@@ -72,6 +80,14 @@ void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 
 void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
+	if (l_type->constant) {
+		unit->error_handler.error("cannot assign to constant value",
+			stmt_assign_ast->variable.index,
+			stmt_assign_ast->variable.line,
+			stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
+			stmt_assign_ast->variable.line);
+		return NULL;
+	}
 	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
 	if (!l_type->matches_basic(*r_type))
 		kng_errr("um... assignment value doesn't match?");
@@ -123,6 +139,5 @@ void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
-	kng_log("type checking literal!");
 	return (void*)&expr_literal_ast->t;
 }

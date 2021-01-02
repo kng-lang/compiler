@@ -40,9 +40,6 @@
 #include <llvm/Transforms/Utils/Cloning.h>
 
 void LLVMCodeGen::generate() {
-
-	kng_log("generating...");
-
 	this->llvm_context = std::make_unique<llvm::LLVMContext>();
 	this->llvm_builder = std::unique_ptr<llvm::IRBuilder<>>(new llvm::IRBuilder<>(*llvm_context));
 	this->llvm_module = std::make_unique<llvm::Module>(unit->compile_file.file_path, *llvm_context);

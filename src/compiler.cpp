@@ -31,7 +31,6 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 	kng_log("kng compiler v0_1");
 
 	auto t1 = std::chrono::high_resolution_clock::now();
-	kng_log("compilation started");
 
 	importer = Importer(this);
 
@@ -40,7 +39,9 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("compiled {} files and {} lines in {} ms.", importer.n_units, importer.n_lines, time);
+	kng_log("=============== SUCCESS :) =================");
+	kng_log("compiled {} file(s) and {} line(s) in {} ms.", importer.n_units, importer.n_lines, time);
+	kng_log("============================================");
 }
 
 u8 CompilationUnit::compile() {

@@ -219,22 +219,44 @@ std::shared_ptr<AST> Parser::parse_define() {
 	StmtDefineAST define_ast;
 	define_ast.identifier = next();
 	if(consume(Token::Type::QUICK_ASSIGN)){
+
+		// at this point, we are expecting to parse an expression as without an expression the syntax is invalid
+
 		define_ast.requires_type_inference = 1;
 		// @TODO check an expression exists???
 		define_ast.value = parse_expression();
 		define_ast.is_initialised = 1;
 	}
 	else if(consume(Token::Type::COLON)){
-		if (!expecting_type()) {
-			unit->error_handler.error("expected type after :",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
-			return std::make_shared<ErrorAST>();
-		}
-		define_ast.value = NULL;
-		define_ast.define_type = parse_type();
-		if (consume(Token::Type::ASSIGN)){
-			define_ast.value = parse_expression();
-			define_ast.is_initialised = 1;
+
+		// at this point, we can expect 2 things: either a definition without an initialiser, or a
+		// constant e.g. x : 123 which we need to infer the type of
+
+		// @TODO implement constants here
+
+
+		if (expecting_type()) {
+			// if we have reached here, we are either dealing with x : u8, x : u8 = 1, x : u8 1
+			// variable decleration, variable decleration & assignment or constant decleration
+			define_ast.define_type = parse_type();
+			define_ast.value = NULL;
+
+			u8 expecting_expression = 0;
+			define_ast.is_constant = expecting_expression;
+
+			if (expecting_expression || consume(Token::Type::ASSIGN)) {
+				define_ast.is_initialised = 1;
+				define_ast.value = parse_expression();
+			}
+		} else {
+			// if we are not expecting an expression then panic!
+			// if we are expecting an expression then we are 
+			u8 expecting_expr = 0;
+			if (!expecting_expr) {
+				unit->error_handler.error("expected type after :",
+					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				return std::make_shared<ErrorAST>();
+			}
 		}
 	}
 	return std::make_shared<StmtDefineAST>(define_ast);
@@ -400,7 +422,6 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::LPAREN: {
 			// parsing fn
 			if (consume(Token::Type::RPAREN)) {
-				kng_log("parsing fn!");
 				ExprFnAST fn_ast;
 				FnSignature fn_sig;
 				fn_sig.anonymous_identifier = "test_anon_fn";
