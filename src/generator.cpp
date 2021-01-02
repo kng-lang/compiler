@@ -1,13 +1,47 @@
 #include "generator.h"
-
 #include "compiler.h"
 #include <iostream>
-
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/Triple.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/CodeGen/LinkAllAsmWriterComponents.h>
+#include <llvm/CodeGen/LinkAllCodegenComponents.h>
+#include <llvm/CodeGen/MIRParser/MIRParser.h>
+#include <llvm/CodeGen/MachineFunctionPass.h>
+#include <llvm/CodeGen/MachineModuleInfo.h>
+#include <llvm/CodeGen/TargetPassConfig.h>
+#include <llvm/CodeGen/TargetSubtargetInfo.h>
+#include <llvm/IR/AutoUpgrade.h>
+#include <llvm/IR/DataLayout.h>
+#include <llvm/IR/DiagnosticInfo.h>
+#include <llvm/IR/DiagnosticPrinter.h>
+#include <llvm/IR/IRPrintingPasses.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/IRReader/IRReader.h>
+#include <llvm/MC/SubtargetFeature.h>
+#include <llvm/Pass.h>
+#include <llvm/Support/CommandLine.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/FormattedStream.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/ManagedStatic.h>
+#include <llvm/Support/PluginLoader.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/WithColor.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Transforms/Utils/Cloning.h>
 
 void LLVMCodeGen::generate() {
+
 	kng_log("generating...");
-	llvm::InitializeNativeTarget();
-	llvm::InitializeNativeTargetAsmPrinter();
 
 	this->llvm_context = std::make_unique<llvm::LLVMContext>();
 	this->llvm_builder = std::unique_ptr<llvm::IRBuilder<>>(new llvm::IRBuilder<>(*llvm_context));
@@ -17,7 +51,55 @@ void LLVMCodeGen::generate() {
 
 	make_runtime();
 	optimise();
-	llvm_module->print(llvm::outs(), nullptr);
+
+	using namespace llvm;
+
+	InitializeAllTargets();
+	InitializeAllTargetMCs();
+	InitializeAllAsmPrinters();
+	InitializeAllAsmParsers();
+
+	auto target_triple = sys::getDefaultTargetTriple();
+
+	std::string error;
+	auto target = TargetRegistry::lookupTarget(target_triple, error);
+
+	// Print an error and exit if we couldn't find the requested target.
+	// This generally occurs if we've forgotten to initialise the
+	// TargetRegistry or we have a bogus target triple.
+	if (!target) {
+		kng_errr("{}", error);
+		return;
+	}
+
+	auto CPU = "generic";
+	auto Features = "";
+
+	TargetOptions opt;
+	auto RM = Optional<Reloc::Model>();
+	auto target_machine = target->createTargetMachine(target_triple, CPU, Features, opt, RM);
+
+	llvm_module->setDataLayout(target_machine->createDataLayout());
+	llvm_module->setTargetTriple(target_triple);
+
+	auto filename = "C:/kng/compiler/tests/output.s";
+	std::error_code ec;
+	raw_fd_ostream dest(filename, ec, sys::fs::OF_None);
+
+	if (ec) {
+		kng_errr("Could not open file: {}", ec.message());
+		return;
+	}
+
+	legacy::PassManager pass;
+	auto filetype = CGFT_AssemblyFile; // CGFT_ObjectFile;
+
+	if (target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype)) {
+		kng_errr("TargetMachine can't emit a file of this type");
+		return;
+	}
+	pass.run(*llvm_module);
+	dest.flush();
 }
 
 void LLVMCodeGen::make_runtime() {
@@ -26,6 +108,7 @@ void LLVMCodeGen::make_runtime() {
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "main", *llvm_module);
 	llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "main_block", f);
 	llvm_builder->SetInsertPoint(bb);
+	llvm_builder->CreateRet(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 0));
 	llvm_builder->ClearInsertionPoint();
 	llvm::verifyFunction(*f);
 }
@@ -119,7 +202,7 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 
 		auto cmp = llvm_builder->CreateICmpEQ(
 			(llvm::Value*)stmt_if_ast->if_cond->visit(this),
-			llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), 123),
+			llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), 1),
 			"test_if_block"
 		);
 
@@ -138,6 +221,17 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 		llvm_builder->SetInsertPoint(then_block);
 		stmt_if_ast->if_stmt->visit(this);
 		llvm_builder->CreateBr(merge_block);
+
+		if (stmt_if_ast->has_else) {
+			llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(else_block);
+			llvm_builder->SetInsertPoint(else_block);
+			stmt_if_ast->else_stmt->visit(this);
+			llvm_builder->CreateBr(merge_block);
+		}
+		else {
+			llvm_builder->SetInsertPoint(else_block);
+			llvm_builder->CreateBr(merge_block);
+		}
 
 		llvm_builder->SetInsertPoint(merge_block);
 	}
@@ -174,6 +268,8 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	// code gen the fn body
 	expr_fn_ast->body->visit(this);
 	
+	llvm_builder->CreateRetVoid();
+
 	llvm_builder->ClearInsertionPoint();
 	llvm::verifyFunction(*f);
 

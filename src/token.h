@@ -92,6 +92,7 @@ struct Token{
 		AS,
 		INTERFACE,
 		IF,
+		ELSE,
 		INN,
 		FOR,
 		RETURN,

@@ -175,6 +175,8 @@ struct StmtBreakAST : public StatementAST {
 struct StmtIfAST : public StatementAST {
 	std::shared_ptr<AST> if_cond;
 	std::shared_ptr<AST> if_stmt;
+	std::shared_ptr<AST> else_stmt;
+	u8 has_else = 0;
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_IF; }
 	virtual void* visit(ASTVisitor* visitor);

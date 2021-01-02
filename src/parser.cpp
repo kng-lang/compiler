@@ -146,8 +146,10 @@ std::shared_ptr<AST> Parser::parse_if(){
 	consume(Token::Type::IF);
 	auto if_cond = parse_expression();
 	auto if_stmt = parse_stmt();
-
-	kng_log("parsed if stmt, peeking {}", peek().to_json());
+	if(consume(Token::Type::ELSE)){
+		if_ast.has_else = 1;
+		if_ast.else_stmt = parse_stmt();
+	}
 	if_ast.if_cond = if_cond;
 	if_ast.if_stmt = if_stmt;
 	return std::make_shared<StmtIfAST>(if_ast);

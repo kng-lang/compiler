@@ -98,6 +98,7 @@ const char* Token::debug_types[] = {
 		"AS",
 		"INTERFACE",
 		"IF",
+		"ELSE",
 		"IN",
 		"FOR",
 		"RETURN",

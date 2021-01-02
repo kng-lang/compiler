@@ -11,6 +11,7 @@ void* TypeChecker::visit_program(ProgramAST* program_ast) {
 		ast->visit(this);
 	return NULL; 
 }
+
 void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
 	sym_table.enter_scope();
 	for (const auto& ast : stmt_block_ast->stmts)
@@ -18,6 +19,7 @@ void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
 	sym_table.pop_scope();
 	return NULL; 
 }
+
 void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) { 
 	stmt_expression_ast->expression->visit(this);
 	return NULL; 
@@ -68,7 +70,11 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) { return NULL; }
 
-void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) { 
+void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
+	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
+	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
+	if (!l_type->matches_basic(*r_type))
+		kng_errr("um... assignment value doesn't match?");
 	return NULL; 
 }
 
@@ -83,6 +89,8 @@ void* TypeChecker::visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) { return N
 void* TypeChecker::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) { 
 	stmt_if_ast->if_cond->visit(this);
 	stmt_if_ast->if_stmt->visit(this);
+	if (stmt_if_ast->has_else)
+		stmt_if_ast->else_stmt->visit(this);
 	return NULL; 
 }
 
