@@ -46,6 +46,11 @@ void LLVMCodeGen::generate() {
 
 	this->ast->visit(this);
 
+
+#ifdef DEBUG
+	this->llvm_module->dump();
+#endif
+
 	make_runtime();
 	optimise();
 
@@ -147,33 +152,46 @@ void* LLVMCodeGen::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast)
 }
 void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
+	void* creation_instr = NULL; // either AllocaInst or Constant*
+	//llvm::AllocaInst* alloca_instr = NULL;
 	if (!stmt_define_ast->is_global){
 		// do alloca
 		if (stmt_define_ast->define_type.t != Type::Types::FN) {
-			auto alloca_instr = llvm_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.value);
-			sym_table.add_symbol(stmt_define_ast->identifier.value, alloca_instr);
+			creation_instr = llvm_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.value);
+			sym_table.add_symbol(stmt_define_ast->identifier.value, creation_instr);
 		}
 	}
 	else {
-		if(stmt_define_ast->define_type.t!=Type::Types::FN)
-			auto g = llvm_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.value), convert_type(stmt_define_ast->define_type));
-		else {
+		if(stmt_define_ast->define_type.t!=Type::Types::FN){
+			creation_instr = llvm_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.value), convert_type(stmt_define_ast->define_type));
+			sym_table.add_symbol(stmt_define_ast->identifier.value, creation_instr);
+		}else {
+
 		}
 	}
-	if (stmt_define_ast->is_initialised)
+	
+	// @TODO this works if it isn't a function...
+	if (stmt_define_ast->is_initialised
+		&& stmt_define_ast->define_type.t != Type::Types::FN) {
+		auto val = stmt_define_ast->value->visit(this);
+		auto is_volative = false;
+		assert_crash(creation_instr != NULL, "creaton_instr was null");
+		llvm_builder->CreateStore((llvm::Value*)val, (llvm::Value*) creation_instr, is_volative);
+	}
+
+	// @TODO jesus fix this pls
+	if (stmt_define_ast->define_type.t == Type::Types::FN) {
 		stmt_define_ast->value->visit(this);
+	}
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
-	auto t = sym_table.get_symbol(stmt_assign_ast->variable.value);
+	// @TODO this assumes the variable decleration e.g. x : s32 was an alloca and not a global or a malloc etc
 	auto val = (llvm::Value*)stmt_assign_ast->value->visit(this);
-	// this assumes it was an alloca
-	kng_log("getting ptr to x...");
 	auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value);
-	kng_log("got ptr to x... {}", ptr->getName().str());
 	auto is_volative = false;
 	llvm_builder->CreateStore(val, ptr, is_volative);
 	return NULL;

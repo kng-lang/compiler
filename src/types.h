@@ -87,19 +87,31 @@ struct Value {
 
 template<typename T>
 struct SymTable {
-	std::map<u32, std::unordered_map<std::string, T>> entries;
-	u32 level = 0;
+	std::map<s32, std::map<std::string, T>> entries;
+	s32 level = 0;
 
 	SymTable(){}
+
+
+	void dump() {
+		kng_warn("dumping symtable at level {}", level);
+		for (s32 i = level; i >= 0; i--) {
+			kng_warn("level {}", i);
+			for (auto const& [key, value] : entries[i]) {
+				kng_warn("level: {}, k: {}", i, key);
+			}
+		}
+	}
 
 	void add_symbol(std::string identifier, T entry) {
 		entries[level][identifier] = entry;
 	}
 	T get_symbol(std::string identifier) {
 		// @TODO all levels
-		for (u32 i = level; i >= 0; i--) {
-			if (this->entries[i].count(identifier) != 0)
+		for (s32 i = level; i >= 0; i--) {
+			if (this->entries[i].count(identifier) > 0) {
 				return entries[i][identifier];
+			}
 		}
 		return NULL;
 	}

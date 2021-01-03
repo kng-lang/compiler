@@ -27,7 +27,6 @@ void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast)
 
 void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
-
 	// first check that in this scope the variable isn't already defined
 	if (sym_table.entries.size()>0 
 		&& sym_table.entries[sym_table.level].count(stmt_define_ast->identifier.value)>0) {
@@ -41,7 +40,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 
-	Type t;
+	Type t = stmt_define_ast->define_type;
 
 	if (stmt_define_ast->is_constant && !stmt_define_ast->is_initialised)
 		unit->error_handler.error("constant variable requires initialisation",
@@ -69,25 +68,21 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				stmt_define_ast->identifier.line);
 	}
 	// if we are at the first scope then this is a global variable
-	if (sym_table.level == 0)
+	if (sym_table.level == 0) {
 		stmt_define_ast->is_global = 1;
+	}
+
+
 	sym_table.add_symbol(stmt_define_ast->identifier.value, std::make_shared<Type>(t));
-	
 	return NULL; 
 }
 
 void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) { return NULL; }
 
 void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
+	// @TODO support error when assigning to constant
 	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
-	if (l_type->constant) {
-		unit->error_handler.error("cannot assign to constant value",
-			stmt_assign_ast->variable.index,
-			stmt_assign_ast->variable.line,
-			stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
-			stmt_assign_ast->variable.line);
-		return NULL;
-	}
+	assert_crash(l_type != NULL, "lhs was null when type checking assignment");
 	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
 	if (!l_type->matches_basic(*r_type))
 		kng_errr("um... assignment value doesn't match?");
@@ -117,9 +112,9 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { 
 
 void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
-	sym_table.enter_scope();
+	//sym_table.enter_scope();
 	expr_fn_ast->body->visit(this);
-	sym_table.pop_scope();
+	//sym_table.pop_scope();
 
 	return (void*)&expr_fn_ast->full_type;
 }

@@ -14,7 +14,6 @@ int main(int argc, char** argv) {
     Exporter e;
     SymTable<Type> s;
     e.export_globals(s);
-    kng_log("{}", e.get_dump_name("c:/src/tests/file.k"));
 
     cxxopts::Options options("kng compiler", "The kng compiler");
 

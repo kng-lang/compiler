@@ -200,6 +200,19 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::IDENTIFIER);
 }
 
+u8 Parser::expecting_expr(){
+	// an expression can be the following (same as parsing a single!)
+	// string, number, identifier, group, true, false, {
+	return
+		expect(Token::Type::STRING)
+		|| expect(Token::Type::NUMBER)
+		|| expect(Token::Type::IDENTIFIER)
+		|| expect(Token::Type::LPAREN)
+		|| expect(Token::Type::TRU)
+		|| expect(Token::Type::FLSE)
+		|| expect(Token::Type::LBRACKET);
+}
+
 Type Parser::parse_type(){
 	switch (next().type) {
 		case Token::Type::U0: return Type(Type::Types::U0);
@@ -229,30 +242,23 @@ std::shared_ptr<AST> Parser::parse_define() {
 	}
 	else if(consume(Token::Type::COLON)){
 
-		// at this point, we can expect 2 things: either a definition without an initialiser, or a
-		// constant e.g. x : 123 which we need to infer the type of
-
-		// @TODO implement constants here
-
-
 		if (expecting_type()) {
 			// if we have reached here, we are either dealing with x : u8, x : u8 = 1, x : u8 1
 			// variable decleration, variable decleration & assignment or constant decleration
 			define_ast.define_type = parse_type();
 			define_ast.value = NULL;
 
-			u8 expecting_expression = 0;
+			u8 expecting_expression = expecting_expr();
 			define_ast.is_constant = expecting_expression;
 
 			if (expecting_expression || consume(Token::Type::ASSIGN)) {
 				define_ast.is_initialised = 1;
 				define_ast.value = parse_expression();
 			}
-		} else {
-			// if we are not expecting an expression then panic!
-			// if we are expecting an expression then we are 
-			u8 expecting_expr = 0;
-			if (!expecting_expr) {
+		}
+		else {
+			// if we reached here we MUST expect an inferred constant e.g. x : 1
+			if (!expecting_expr()) {
 				unit->error_handler.error("expected type after :",
 					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 				return std::make_shared<ErrorAST>();
@@ -451,7 +457,6 @@ std::shared_ptr<AST> Parser::parse_single(){
 		}
 		case Token::Type::LBRACKET: return parse_interface();
 	}
-	// @TODO error here
 	unit->error_handler.error("unexpected code?",
 		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 	return std::make_shared<ErrorAST>(); 

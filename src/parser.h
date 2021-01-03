@@ -25,6 +25,7 @@ struct Parser : public TokenConsumer{
 	std::shared_ptr<AST> parse_stmt_block();
 	u8 end_of_block();
 	u8 expecting_type();
+	u8 expecting_expr();
 	Type parse_type();
 	std::shared_ptr<AST> parse_stmt();
 	void do_newline();
