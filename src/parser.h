@@ -17,6 +17,8 @@ struct Parser : public TokenConsumer{
 	ErrorHandler* err_handler;
 	std::shared_ptr<AST> root_ast;
 	std::shared_ptr<SymTable<Type>> sym_table;
+	u8 parsing_constant_assignment = 0;
+	u8 parsing_variable_assignment = 0;
 
 	Parser();
 	Parser(TokenList& tokens, CompilationUnit* unit);

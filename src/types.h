@@ -98,6 +98,8 @@ struct SymTableEntry {
 
 template<typename T>
 struct SymTable {
+	// keep track of the latest entry
+	std::pair<std::string, SymTableEntry<T>> latest_entry;
 	std::map<s32, std::map<std::string, SymTableEntry<T>>> entries;
 	s32 level = 0;
 
@@ -115,6 +117,7 @@ struct SymTable {
 	}
 
 	void add_symbol(std::string entry_id, SymTableEntry<T> entry) {
+		latest_entry = std::pair<std::string, SymTableEntry<T>>(entry_id, entry);
 		entries[level][entry_id] = entry;
 	}
 

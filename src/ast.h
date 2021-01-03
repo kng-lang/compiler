@@ -201,10 +201,9 @@ struct ExprInterfaceAST : public ExpressionAST {
 
 // this is a lambda e.g. () io.println "hello world!", it can be assigned to variables e.g. x := () io.println "hello world!"
 struct ExprFnAST : public ExpressionAST {
-	// even though we can have lambdas e.g. () 1, they need a name
-	std::string anonymous_name;
 	std::shared_ptr<AST> body;
 	u8 has_body = 0; // e.g. if we are declaring an external fn
+	u8 is_lambda = 0; // this is used for name resolution
 	// the full type signature
 	Type full_type;
 	ExprFnAST() {}

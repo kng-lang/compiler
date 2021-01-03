@@ -232,13 +232,14 @@ std::shared_ptr<AST> Parser::parse_define() {
 	StmtDefineAST define_ast;
 	define_ast.identifier = next();
 	if(consume(Token::Type::QUICK_ASSIGN)){
-
+		parsing_variable_assignment = 1;
 		// at this point, we are expecting to parse an expression as without an expression the syntax is invalid
 
 		define_ast.requires_type_inference = 1;
 		// @TODO check an expression exists???
 		define_ast.value = parse_expression();
 		define_ast.is_initialised = 1;
+		parsing_variable_assignment = 0;
 	}
 	else if(consume(Token::Type::COLON)){
 
@@ -249,12 +250,16 @@ std::shared_ptr<AST> Parser::parse_define() {
 			define_ast.value = NULL;
 
 			u8 expecting_expression = expecting_expr();
-			define_ast.is_constant = expecting_expression;
-
+			u8 parsing_constant = expecting_expression;
+			define_ast.is_constant = parsing_constant;
+			parsing_constant_assignment = parsing_constant;
 			if (expecting_expression || consume(Token::Type::ASSIGN)) {
+				parsing_variable_assignment = 1;
 				define_ast.is_initialised = 1;
 				define_ast.value = parse_expression();
+				parsing_variable_assignment = 0;
 			}
+			if (parsing_constant_assignment) parsing_constant_assignment = 0;
 		}
 		else {
 			// if we reached here we MUST expect an inferred constant e.g. x : 1
@@ -263,6 +268,12 @@ std::shared_ptr<AST> Parser::parse_define() {
 					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 				return std::make_shared<ErrorAST>();
 			}
+			parsing_constant_assignment = 1;
+			define_ast.requires_type_inference = 1;
+			define_ast.value = parse_expression();
+			define_ast.is_initialised = 1;
+			define_ast.is_constant = 1;
+			parsing_constant_assignment = 0;
 		}
 	}
 	return std::make_shared<StmtDefineAST>(define_ast);
@@ -430,7 +441,11 @@ std::shared_ptr<AST> Parser::parse_single(){
 			if (consume(Token::Type::RPAREN)) {
 				ExprFnAST fn_ast;
 				FnSignature fn_sig;
-				fn_sig.anonymous_identifier = "test_anon_fn";
+				fn_ast.is_lambda = 1;
+				// the fn can only be a lambda if it isn't being assigned to a constant
+				// e.g. x : (){} is the only way a fn can be a lambda
+				fn_ast.is_lambda = !parsing_constant_assignment;
+				fn_sig.anonymous_identifier = "lambda";
 				if (expecting_type())
 					fn_sig.operation_types.push_back(parse_type());
 				else

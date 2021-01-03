@@ -29,6 +29,7 @@ Type infer_type(std::shared_ptr<AST> ast){
 	switch (ast->type()) {
 		case AST::ASTType::EXPR_LIT: return std::static_pointer_cast<ExprLiteralAST>(ast)->t;
 		case AST::ASTType::EXPR_GROUP: return infer_type(std::static_pointer_cast<ExprGroupAST>(ast));
+		case AST::ASTType::EXPR_FN: return Type(Type::Types::FN);
 		default: return Type(Type::Types::UNKNOWN);
 	}
 }

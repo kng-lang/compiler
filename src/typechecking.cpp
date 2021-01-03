@@ -41,42 +41,50 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 
 	Type t = stmt_define_ast->define_type;
-
-	if (stmt_define_ast->is_constant && !stmt_define_ast->is_initialised)
-		unit->error_handler.error("constant variable requires initialisation",
-		stmt_define_ast->identifier.index,
-		stmt_define_ast->identifier.line,
-		stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
-		stmt_define_ast->identifier.line);
-
-	// if we need to infer the type then do it here
-	if(stmt_define_ast->requires_type_inference){
-		auto inferred = stmt_define_ast->value->visit(this);
-		t = *((Type*)inferred);
+	if (stmt_define_ast->requires_type_inference) {
+		t = infer_type(stmt_define_ast->value);
 		stmt_define_ast->define_type = t;
 	}
-	else if (stmt_define_ast->value != NULL) {
-		// else check the assignment value is valid
-		auto inferred = stmt_define_ast->value->visit(this);
-		t = *((Type*)inferred);
 
-		if (!t.matches_basic(stmt_define_ast->define_type))
+	if (stmt_define_ast->is_initialised) {
+		if (!t.matches_basic(stmt_define_ast->define_type)){
 			unit->error_handler.error("types do not match",
 				stmt_define_ast->identifier.index,
 				stmt_define_ast->identifier.line,
-				stmt_define_ast->identifier.index+stmt_define_ast->identifier.length,
+				stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
 				stmt_define_ast->identifier.line);
+			return NULL;
+		}
 	}
+
+
+	if (stmt_define_ast->is_constant && !stmt_define_ast->is_initialised) {
+		unit->error_handler.error("constant variable requires initialisation",
+			stmt_define_ast->identifier.index,
+			stmt_define_ast->identifier.line,
+			stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
+			stmt_define_ast->identifier.line);
+		return NULL;
+	}
+
+
+
+	sym_table.add_symbol(stmt_define_ast->identifier.value,
+		SymTableEntry<std::shared_ptr<Type>>(
+			std::make_shared<Type>(t),
+			stmt_define_ast->is_global,
+			stmt_define_ast->is_constant));
+	kng_log("done defining {}", stmt_define_ast->identifier.value);
+
+	// finally, visit the initialisation value
+	if (stmt_define_ast->is_initialised)
+		stmt_define_ast->value->visit(this);
+
 	// if we are at the first scope then this is a global variable
 	if (sym_table.level == 0) {
 		stmt_define_ast->is_global = 1;
 	}
 
-	sym_table.add_symbol(stmt_define_ast->identifier.value, 
-		SymTableEntry<std::shared_ptr<Type>>(
-			std::make_shared<Type>(t),
-			stmt_define_ast->is_global,
-			stmt_define_ast->is_constant));
 	return NULL; 
 }
 
@@ -126,6 +134,20 @@ void* TypeChecker::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) { return NULL
 void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { return NULL; }
 
 void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
+
+	// if we are defining a constant then set the fn name to that constant
+	// @TODO this is a terrible idea. imagine if the program was this:
+	// x : s32 1
+	// native_fn_call((){})
+	// we just declared a constant, however the lambda has nothing to do with it?
+	// we need to have a field in the ExprFnAST that says if it is a lambda or not
+
+	kng_warn("checking fn, lambda: {}", expr_fn_ast->is_lambda);
+	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
+	if (!expr_fn_ast->is_lambda) {
+		expr_fn_ast->full_type.fn_signature.anonymous_identifier = sym_table.latest_entry.first;
+	}
+
 
 	// @TODO if the fn is assigned to a constant, the functions name should be the same
 	// as the constan'ts identifier
