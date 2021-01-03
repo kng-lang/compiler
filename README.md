@@ -12,14 +12,14 @@ user : interface {
     age : u32
 }
 
-app.main := (args: string[]) exit_code : u32 {
+app.main : (args: string[]) exit_code : u32 {
 
-    name := args[0]
-    age := u32(args[0])
+    say_hello := (person : user)
+        io.println "hello {person.name}!"
 
-    person : user = (name, age)
+    james : user = ("james", "20")
 
-    io.println "hello {person.name}, nice to meet you!"
+    say_hello(james);
 
     exit_code = 0
 }
