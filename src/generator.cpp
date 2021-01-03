@@ -47,6 +47,7 @@ void LLVMCodeGen::generate() {
 	this->ast->visit(this);
 
 
+#define DEBUG
 #ifdef DEBUG
 	this->llvm_module->dump();
 #endif
@@ -277,17 +278,19 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		operation_types.push_back(convert_type(t));
 	llvm::FunctionType* ft = llvm::FunctionType::get(operation_types.at(0), {}, false);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.fn_signature.anonymous_identifier, *llvm_module);
-	llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "entry_block", f);
-	llvm_builder->SetInsertPoint(bb);
-
-	// code gen the fn body
-	expr_fn_ast->body->visit(this);
 	
-	llvm_builder->CreateRetVoid();
+	if (expr_fn_ast->has_body) {
+		llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "entry_block", f);
+		llvm_builder->SetInsertPoint(bb);
 
-	llvm_builder->ClearInsertionPoint();
-	llvm::verifyFunction(*f);
+		// code gen the fn body
+		expr_fn_ast->body->visit(this);
 
+		llvm_builder->CreateRetVoid();
+
+		llvm_builder->ClearInsertionPoint();
+		llvm::verifyFunction(*f);
+	}
 
 	// add the fn type to the symbol table
 	sym_table.add_symbol(expr_fn_ast->full_type.fn_signature.anonymous_identifier, SymTableEntry<void*>(ft));

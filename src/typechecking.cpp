@@ -127,9 +127,10 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { 
 
 void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
-	//sym_table.enter_scope();
-	expr_fn_ast->body->visit(this);
-	//sym_table.pop_scope();
+	// @TODO if the fn is assigned to a constant, the functions name should be the same
+	// as the constan'ts identifier
+	if(expr_fn_ast->has_body)
+		expr_fn_ast->body->visit(this);
 
 	return (void*)&expr_fn_ast->full_type;
 }
