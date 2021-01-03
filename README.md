@@ -4,7 +4,7 @@
 
 # KNG - Write beautiful & fast system code
 
-
+KNG is a compiled, systems programming language designed around ease of use & flexibility for the programmer
 
 ```
 user : interface {
@@ -25,6 +25,9 @@ app.main : (args: string[]) exit_code : u32 {
 }
 
 ```
+
+# Contributing
+Everyone is welcome to contribute! As KNG is in early stages of development, pull requests are the current way of contributing. Later on in KNGs lifecycle we may adopt a more 'professional' approach but for now PRs are welcome :)
 
 
 # Building
