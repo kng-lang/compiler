@@ -72,8 +72,11 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		stmt_define_ast->is_global = 1;
 	}
 
-
-	sym_table.add_symbol(stmt_define_ast->identifier.value, std::make_shared<Type>(t));
+	sym_table.add_symbol(stmt_define_ast->identifier.value, 
+		SymTableEntry<std::shared_ptr<Type>>(
+			std::make_shared<Type>(t),
+			stmt_define_ast->is_global,
+			stmt_define_ast->is_constant));
 	return NULL; 
 }
 
@@ -82,10 +85,22 @@ void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	// @TODO support error when assigning to constant
 	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
-	assert_crash(l_type != NULL, "lhs was null when type checking assignment");
+	assert_crash(l_type.value != NULL, "lhs was null when type checking assignment");
+	if (l_type.is_constant) {
+		unit->error_handler.error("cannot re-assign to constant",
+			stmt_assign_ast->variable.index,
+			stmt_assign_ast->variable.line,
+			stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
+			stmt_assign_ast->variable.line);
+	}
 	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
-	if (!l_type->matches_basic(*r_type))
-		kng_errr("um... assignment value doesn't match?");
+	if (!l_type.value->matches_basic(*r_type)) {
+		unit->error_handler.error("lhs doesn't match rhs",
+			stmt_assign_ast->variable.index,
+			stmt_assign_ast->variable.line,
+			stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
+			stmt_assign_ast->variable.line);
+	}
 	return NULL; 
 }
 

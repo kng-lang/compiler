@@ -85,9 +85,20 @@ struct Value {
 	} v;
 };
 
+template <typename T>
+struct SymTableEntry {
+	T value;
+	u8 is_global = 0;
+	u8 is_constant = 0;
+
+	SymTableEntry(){}
+	SymTableEntry(T value, u8 is_global = 0, u8 is_constant = 0) 
+		: value(value), is_global(is_global), is_constant(is_constant){}
+};
+
 template<typename T>
 struct SymTable {
-	std::map<s32, std::map<std::string, T>> entries;
+	std::map<s32, std::map<std::string, SymTableEntry<T>>> entries;
 	s32 level = 0;
 
 	SymTable(){}
@@ -97,20 +108,20 @@ struct SymTable {
 		kng_warn("dumping symtable at level {}", level);
 		for (s32 i = level; i >= 0; i--) {
 			kng_warn("level {}", i);
-			for (auto const& [key, value] : entries[i]) {
+			for (auto& [key, value] : entries[i]) {
 				kng_warn("level: {}, k: {}", i, key);
 			}
 		}
 	}
 
-	void add_symbol(std::string identifier, T entry) {
-		entries[level][identifier] = entry;
+	void add_symbol(std::string entry_id, SymTableEntry<T> entry) {
+		entries[level][entry_id] = entry;
 	}
-	T get_symbol(std::string identifier) {
-		// @TODO all levels
+
+	SymTableEntry<T> get_symbol(std::string entry_id) {
 		for (s32 i = level; i >= 0; i--) {
-			if (this->entries[i].count(identifier) > 0) {
-				return entries[i][identifier];
+			if (this->entries[i].count(entry_id) > 0) {
+				return entries[i][entry_id];
 			}
 		}
 		return NULL;

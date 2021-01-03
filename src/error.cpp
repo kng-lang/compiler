@@ -56,13 +56,12 @@ void ErrorHandler::error(
 	problem_string = get_src_at_line(unit->compile_file.file_contents, p_start_line);
 
 	// @TODO calculate where the start of the line is on the error line
-	kng_warn("error in {}:{}:{}", unit->compile_file.file_path, p_start_line, p_start_index);
-	kng_warn("");
-	kng_warn("{}", problem_string);
-	kng_warn("{}", build_pointer(p_start_index, p_end_index));
-	kng_warn("");
-	kng_warn("{}", problem);
-	kng_warn("===================================================");
+	kng_log("~~~ error in {}:{}:{}", unit->compile_file.file_path, p_start_line, p_start_index);
+	kng_log("~~~ ");
+	kng_log("~~~ {}", problem_string);
+	kng_log("~~~ {}", build_pointer(p_start_index, p_end_index));
+	kng_log("~~~ ");
+	kng_log("~~~ {}", problem);
 
 	errors_occured.push(Error(Error::Level::CRITICAL, Error::Type::CYCLIC_DEP));
 }
