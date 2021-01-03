@@ -1,4 +1,10 @@
+<p align="center">
+  <img src="./res/logo_small.png" alt="KNG logo" width="250">
+</p>
+
 # KNG - Write beautiful & fast system code
+
+
 
 ```
 user : interface {
