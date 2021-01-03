@@ -153,7 +153,7 @@ struct StmtInterfaceAssignAST : public StatementAST {
 };
 
 struct StmtReturnAST : public StatementAST {
-	std::shared_ptr<ExpressionAST> value;
+	std::shared_ptr<AST> value;
 	StmtReturnAST(){}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_RET; }

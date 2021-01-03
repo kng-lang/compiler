@@ -211,7 +211,7 @@ void Lexer::do_word(char start){
 			found_keyword = check_keyword("r", Token::Type::LOR); break;
 		}
 		case 'r': {
-			found_keyword = check_keyword("eturn", Token::Type::RETURN);
+			found_keyword = check_keyword("et", Token::Type::RETURN);
 			if (!found_keyword) found_keyword = check_keyword("un", Token::Type::RUN); 
 			break;
 		}

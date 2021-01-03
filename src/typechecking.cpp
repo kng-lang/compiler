@@ -67,14 +67,11 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		return NULL;
 	}
 
-
-
 	sym_table.add_symbol(stmt_define_ast->identifier.value,
 		SymTableEntry<std::shared_ptr<Type>>(
 			std::make_shared<Type>(t),
 			stmt_define_ast->is_global,
 			stmt_define_ast->is_constant));
-	kng_log("done defining {}", stmt_define_ast->identifier.value);
 
 	// finally, visit the initialisation value
 	if (stmt_define_ast->is_initialised)
@@ -114,7 +111,9 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 
 void* TypeChecker::visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_interface_assign_ast) { return NULL; }
 
-void* TypeChecker::visit_stmt_return(StmtReturnAST* stmt_return_ast) { return NULL; }
+void* TypeChecker::visit_stmt_return(StmtReturnAST* stmt_return_ast) { 
+	return NULL; 
+}
 
 void* TypeChecker::visit_stmt_continue_ast(StmtContinueAST* stmt_continue_ast) { return NULL; }
 
@@ -142,12 +141,10 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	// we just declared a constant, however the lambda has nothing to do with it?
 	// we need to have a field in the ExprFnAST that says if it is a lambda or not
 
-	kng_warn("checking fn, lambda: {}", expr_fn_ast->is_lambda);
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_fn_ast->is_lambda) {
 		expr_fn_ast->full_type.fn_signature.anonymous_identifier = sym_table.latest_entry.first;
 	}
-
 
 	// @TODO if the fn is assigned to a constant, the functions name should be the same
 	// as the constan'ts identifier

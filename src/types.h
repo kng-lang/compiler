@@ -15,6 +15,7 @@ struct InterfaceSignature{
 struct FnSignature {
 	std::string anonymous_identifier;
 	std::vector<Type> operation_types;
+	u8 has_return = 0;
 };
 
 struct Pattern {

@@ -32,9 +32,12 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::RETURN:{
+			StmtReturnAST r;
 			requires_delim = 1;
 			next();
-			stmt = std::make_shared<StmtReturnAST>();
+			if (expecting_expr())
+				r.value = parse_expression();
+			stmt = std::make_shared<StmtReturnAST>(r);
 			break;
 		}
 		case Token::Type::CONTINUE: {
@@ -437,6 +440,12 @@ std::shared_ptr<AST> Parser::parse_single(){
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::LPAREN: {
+
+			// at this point, we are either parsing a group or a fn.
+			// to tell the difference, if we consume a rparen we are obviously parsing a fn.
+			// if not, we need to check what comes next, if it is a definition stmt, then we are parsing a fn,
+			// if not then its a group
+
 			// parsing fn
 			if (consume(Token::Type::RPAREN)) {
 				ExprFnAST fn_ast;
@@ -446,8 +455,10 @@ std::shared_ptr<AST> Parser::parse_single(){
 				// e.g. x : (){} is the only way a fn can be a lambda
 				fn_ast.is_lambda = !parsing_constant_assignment;
 				fn_sig.anonymous_identifier = "lambda";
-				if (expecting_type())
+				if (expecting_type()) {
 					fn_sig.operation_types.push_back(parse_type());
+					fn_sig.has_return = 1;
+				}
 				else
 					fn_sig.operation_types.push_back(Type(Type::Types::U0));
 				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
@@ -459,7 +470,6 @@ std::shared_ptr<AST> Parser::parse_single(){
 				return std::make_shared<ExprFnAST>(fn_ast);
 			}
 			else {
-				// either parsing a group or a function
 				auto expression = parse_expression();
 				if (!consume(Token::Type::RPAREN)) {
 					unit->error_handler.error("expected ) as statement delimiter",

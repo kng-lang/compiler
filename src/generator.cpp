@@ -201,6 +201,7 @@ void* LLVMCodeGen::visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_inte
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_return(StmtReturnAST* stmt_return_ast) {
+	llvm_builder->CreateRet((llvm::Value*)stmt_return_ast->value->visit(this));
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_continue_ast(StmtContinueAST* stmt_continue_ast) {
@@ -286,7 +287,8 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		// code gen the fn body
 		expr_fn_ast->body->visit(this);
 
-		llvm_builder->CreateRetVoid();
+		if(!expr_fn_ast->full_type.fn_signature.has_return)
+			llvm_builder->CreateRetVoid();
 
 		llvm_builder->ClearInsertionPoint();
 		llvm::verifyFunction(*f);
