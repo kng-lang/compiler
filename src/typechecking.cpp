@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #include "typechecking.h"
 #include "compiler.h"
 
@@ -100,6 +104,13 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	}
 	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
 	if (!l_type.value->matches_basic(*r_type)) {
+
+		// see if we can cast
+		if (l_type.value->can_niave_cast(*r_type)) {
+			r_type->cast(*l_type.value);
+			return NULL;
+		}
+
 		unit->error_handler.error("lhs doesn't match rhs",
 			stmt_assign_ast->variable.index,
 			stmt_assign_ast->variable.line,

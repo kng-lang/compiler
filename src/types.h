@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #pragma once
 
 #include <memory>
@@ -26,8 +30,14 @@ struct Type {
 
 	const static char* debug_types[];
 
-	enum Types{
+	enum class Types{
 		UNKNOWN,
+		TYPE,    
+		// the difference TYPE & interface is subtle
+		// this is a type alias & only exists at compile time:
+		// x : type = interface { name : u8^ }
+		// this is a literal interface value and exists at runtime
+		// y : interface = interface { name : u8^}
 		U0,
 		U8,
 		U16,
@@ -43,7 +53,7 @@ struct Type {
 		INTERFACE,
 		PATTERN,		// sequence of types
 	};
-	Types t = UNKNOWN;
+	Types t = Types::UNKNOWN;
 	u8 constant = 0;
 	// e.g. ^u8
 	u8 ref = 0;
@@ -70,6 +80,11 @@ struct Type {
 	// matches deep determines whether a type's full type signature matches (e.g. do the members match etc)
 	u8 matches_deep(Type other);
 
+	// this is for when we have different number types that the compiler tries to cast implicitly
+	// an example is y : u8 = 1, by default integers are s32 and so the compiler tries to cast 1 to u8
+	u8 can_niave_cast(Type other);
+	void cast(Type other);
+	u8 is_number_type();
 	u8 is_integer_type();
 	u8 is_float_type();
 };

@@ -1,6 +1,10 @@
 #pragma once
 
 #include <memory>
+/*
+James Clarke - 2021
+*/
+
 #include <vector>
 #include "common.h"
 #include "ast.h"

@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #pragma once
 
 // http://what-when-how.com/compiler-writing/compile-time-error-handling-part-2/

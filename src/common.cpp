@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #include "common.h"
 
 u32 count_lines(std::string& s) {

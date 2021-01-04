@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #include "error.h"
 #include "compiler.h"
 

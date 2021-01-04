@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #include "exporter.h"
 #include "fileutils.h"
 

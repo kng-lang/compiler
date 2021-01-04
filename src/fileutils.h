@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #pragma once
 
 #include "common.h"

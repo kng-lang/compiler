@@ -1,4 +1,8 @@
- //-d -f c:/kng/compiler/tests/main.kng
+/*
+James Clarke - 2021
+*/
+
+//-d -f c:/kng/compiler/tests/main.kng
 #include "compiler.h"
 
 #include <string>

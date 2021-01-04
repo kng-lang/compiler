@@ -1,3 +1,6 @@
+/*
+James Clarke - 2021
+*/
 
 #include <fstream>
 #include <sstream>

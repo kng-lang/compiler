@@ -1,3 +1,7 @@
+/*
+James Clarke - 2021
+*/
+
 #include "generator.h"
 #include "compiler.h"
 #include <iostream>

@@ -3,6 +3,7 @@
 
 const char* Type::debug_types[] = {
 	"UNKNOWN",
+	"TYPE",
 	"U0",
 	"U8",
 	"U16",
@@ -21,7 +22,7 @@ const char* Type::debug_types[] = {
 
 std::string Type::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\":" << debug_types[this->t] << "\n\"ref\":" << this->ref << "\n}\n";
+	ss << "{\n\"type\":" << debug_types[(s32)this->t] << "\n\"ref\":" << this->ref << "\n}\n";
 	return ss.str();
 }
 
@@ -34,12 +35,27 @@ Type infer_type(std::shared_ptr<AST> ast){
 	}
 }
 
+u8 Type::can_niave_cast(Type other) {
+	if (is_number_type() && other.is_number_type()) {
+		return 1;
+	}
+	return 0;
+}
+
+void Type::cast(Type other) {
+	this->t = other.t;
+}
+
+u8 Type::is_number_type() {
+	return is_integer_type() || is_float_type();
+}
+
 u8 Type::is_integer_type() {
-	return t == U8 || t == U16 || t == U32 || t == S32 || t == S64;
+	return t == Types::U8 || t == Types::U16 || t == Types::U32 || t == Types::S32 || t == Types::S64;
 }
 
 u8 Type::is_float_type() {
-	return t == F32 || t == F64;
+	return t == Types::F32 || t == Types::F64;
 }
 
 /*template <typename T>

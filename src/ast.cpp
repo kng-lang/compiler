@@ -1,5 +1,8 @@
-#include "ast.h"
+/*
+James Clarke - 2021
+*/
 
+#include "ast.h"
 
 void AST::debug() {
 	kng_log("ast");
