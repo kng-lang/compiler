@@ -308,11 +308,17 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 	auto value = (llvm::Value*)expr_cast_ast->value->visit(this);
-	auto type = convert_type(expr_cast_ast->t);
-	//auto cast_instr = create_cast_instr();
+	if (expr_cast_ast->niavely_resolved)
+		return value;
+
+	auto l_type = expr_cast_ast->from_type;
+	auto r_type = expr_cast_ast->to_type;
+	llvm::Instruction::CastOps cast_instr;
 	
+	// check if the cast has been resolved at compile time
+
 	
-	return llvm_builder->CreateCast(llvm::Instruction::CastOps::SIToFP, value, type);
+	return llvm_builder->CreateCast(llvm::Instruction::CastOps::SIToFP, value, convert_type(r_type));
 }
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// create a load instruction

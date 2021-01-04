@@ -407,8 +407,10 @@ std::shared_ptr<AST> Parser::parse_cast() {
 				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 			return std::make_shared<ErrorAST>();
 		}
-		auto t = parse_type();
-		return std::make_shared<ExprCastAST>(higher_precedence, t);
+		ExprCastAST c;
+		c.to_type = parse_type();
+		c.value = higher_precedence;
+		return std::make_shared<ExprCastAST>(c);
 	}
 	return higher_precedence;
 }

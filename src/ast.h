@@ -222,9 +222,14 @@ struct ExprFnAST : public ExpressionAST {
 
 struct ExprCastAST : public ExpressionAST {
 	std::shared_ptr<AST> value;
-	Type t;
+	Type from_type;
+	Type to_type;
+	u8 niavely_resolved = 0;
 	ExprCastAST(){}
-	ExprCastAST(std::shared_ptr<AST> value, Type t) : value(value), t(t) {}
+	ExprCastAST(std::shared_ptr<AST> value, Type from_type, Type to_type) : 
+		value(value), 
+		from_type(from_type),
+		to_type(to_type){}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_CAST; }
 	virtual void* visit(ASTVisitor* visitor);

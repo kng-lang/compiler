@@ -179,7 +179,21 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 
 void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
-	return (void*)&expr_cast_ast->t;
+
+
+	// do niave casting here on the value
+	auto value_type = (Type*)expr_cast_ast->value->visit(this);
+	expr_cast_ast->from_type = *value_type;
+	auto l_type = expr_cast_ast->from_type;
+	auto r_type = expr_cast_ast->to_type;
+	if (l_type.can_niave_cast(r_type)){
+		value_type->cast(r_type);
+		expr_cast_ast->niavely_resolved = 1;
+	}
+
+	// we need to resolve the type of the from
+	expr_cast_ast->from_type = infer_type(expr_cast_ast->value);
+	return (void*)&expr_cast_ast->to_type;
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
