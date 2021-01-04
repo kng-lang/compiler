@@ -28,6 +28,7 @@ struct StmtContinueAST;
 struct StmtBreakAST;
 struct StmtIfAST;
 struct StmtLoopAST;
+struct ExprCastAST;
 struct ExprVarAST;
 struct ExprPatternAST;
 struct ExprInterfaceGetAST;
@@ -57,6 +58,7 @@ struct AST {
 		STMT_LOOP,
 		EXPR_INTER,
 		EXPR_FN,
+		EXPR_CAST,
 		EXPR_VAR,
 		EXPR_PATTERN,
 		EXPR_INTER_GET,
@@ -217,6 +219,17 @@ struct ExprFnAST : public ExpressionAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+
+struct ExprCastAST : public ExpressionAST {
+	std::shared_ptr<AST> value;
+	Type t;
+	ExprCastAST(){}
+	ExprCastAST(std::shared_ptr<AST> value, Type t) : value(value), t(t) {}
+	virtual std::string to_json();
+	virtual ASTType  type() { return ASTType::EXPR_CAST; }
+	virtual void* visit(ASTVisitor* visitor);
+};
+
 struct ExprVarAST : public ExpressionAST {
 	Token identifier;
 	ExprVarAST(Token identifier) : identifier(identifier){}
@@ -308,6 +321,7 @@ struct ASTVisitor {
 	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) = 0;
 	virtual void* visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) = 0;
 	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast) = 0;
+	virtual void* visit_expr_cast_ast(ExprCastAST* expr_cast_ast) = 0;
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
 	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) = 0;
 	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast) = 0;

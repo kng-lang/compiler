@@ -174,6 +174,15 @@ void* ExprFnAST::visit(ASTVisitor* visitor) {
 }
 
 
+std::string ExprCastAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\":\"ExprCastAST\",\n\"value\":" << value->to_json() << ",\n\"type\":"<<t.to_json()<<"\n}\n";
+	return ss.str();
+}
+
+void* ExprCastAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_cast_ast(this);
+}
 
 std::string ExprVarAST::to_json() {
 	std::stringstream ss;

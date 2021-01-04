@@ -31,6 +31,9 @@ void* TypeChecker::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast)
 
 void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
+	// @TODO this is crucial, we need to add the symbol to the symbol table before we visit its children...
+	// wait do we ?   x : fn { y : x } -> that isn't valid is it???
+
 	// first check that in this scope the variable isn't already defined
 	if (sym_table.entries.size()>0 
 		&& sym_table.entries[sym_table.level].count(stmt_define_ast->identifier.value)>0) {
@@ -44,20 +47,33 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 
-	Type t = stmt_define_ast->define_type;
+	Type l_type = stmt_define_ast->define_type;
+	Type* r_type=NULL;
+	// finally, visit the initialisation value
+	if (stmt_define_ast->is_initialised)
+		r_type=(Type*)stmt_define_ast->value->visit(this);
+
 	if (stmt_define_ast->requires_type_inference) {
-		t = infer_type(stmt_define_ast->value);
-		stmt_define_ast->define_type = t;
+		//l_type = infer_type(stmt_define_ast->value);
+		//stmt_define_ast->define_type = l_type;
+		assert_crash(r_type != NULL, "r_type was NULL");
+		l_type = *r_type;
+		stmt_define_ast->define_type = *r_type;
 	}
 
 	if (stmt_define_ast->is_initialised) {
-		if (!t.matches_basic(stmt_define_ast->define_type)){
-			unit->error_handler.error("types do not match",
-				stmt_define_ast->identifier.index,
-				stmt_define_ast->identifier.line,
-				stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
-				stmt_define_ast->identifier.line);
-			return NULL;
+		if (!l_type.matches_basic(*r_type)) {
+			if(r_type->can_niave_cast(l_type)) {
+				r_type->cast(l_type);
+			}
+			else {
+				unit->error_handler.error("types do not match",
+					stmt_define_ast->identifier.index,
+					stmt_define_ast->identifier.line,
+					stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
+					stmt_define_ast->identifier.line);
+					return NULL;
+			}
 		}
 	}
 
@@ -73,13 +89,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	sym_table.add_symbol(stmt_define_ast->identifier.value,
 		SymTableEntry<std::shared_ptr<Type>>(
-			std::make_shared<Type>(t),
+			std::make_shared<Type>(l_type),
 			stmt_define_ast->is_global,
 			stmt_define_ast->is_constant));
-
-	// finally, visit the initialisation value
-	if (stmt_define_ast->is_initialised)
-		stmt_define_ast->value->visit(this);
 
 	// if we are at the first scope then this is a global variable
 	if (sym_table.level == 0) {
@@ -163,6 +175,11 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		expr_fn_ast->body->visit(this);
 
 	return (void*)&expr_fn_ast->full_type;
+}
+
+
+void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
+	return (void*)&expr_cast_ast->t;
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {

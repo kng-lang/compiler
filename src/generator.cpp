@@ -302,6 +302,18 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	sym_table.add_symbol(expr_fn_ast->full_type.fn_signature.anonymous_identifier, SymTableEntry<void*>(ft));
 	return NULL;
 }
+
+
+
+void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
+
+	auto value = (llvm::Value*)expr_cast_ast->value->visit(this);
+	auto type = convert_type(expr_cast_ast->t);
+	//auto cast_instr = create_cast_instr();
+	
+	
+	return llvm_builder->CreateCast(llvm::Instruction::CastOps::SIToFP, value, type);
+}
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// create a load instruction
 	auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).value;

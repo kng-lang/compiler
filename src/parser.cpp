@@ -401,9 +401,14 @@ std::shared_ptr<AST> Parser::parse_un() {
 std::shared_ptr<AST> Parser::parse_cast() {
 	auto higher_precedence = parse_call();
 	if (consume(Token::AS)) {
-		auto op = next();
-		// @TODO do type stuff?
-		auto typ = next();
+		// expecting type here
+		if (!expecting_type()) {
+			unit->error_handler.error("expected type after 'as', casting requires a type",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return std::make_shared<ErrorAST>();
+		}
+		auto t = parse_type();
+		return std::make_shared<ExprCastAST>(higher_precedence, t);
 	}
 	return higher_precedence;
 }
@@ -413,6 +418,7 @@ std::shared_ptr<AST> Parser::parse_call() {
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_single(){ 
+	// @TODO implement casts
 	// @TODO implement groups e.g. (1+2) + (1+3)
 	auto t = next();
 	switch (t.type) {

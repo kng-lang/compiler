@@ -199,7 +199,9 @@ void Lexer::do_word(char start){
 		}
 		case 'e': found_keyword = check_keyword("lse", Token::Type::ELSE); break;
 		case 'f': {
-			found_keyword = check_keyword("or", Token::Type::FOR);
+			found_keyword = check_keyword("32", Token::Type::F32);
+			if (!found_keyword) found_keyword = check_keyword("64", Token::Type::F64);
+			if (!found_keyword) found_keyword = check_keyword("or", Token::Type::FOR);
 			if(!found_keyword) found_keyword = check_keyword("alse", Token::Type::FLSE);
 			break;
 		}
