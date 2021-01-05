@@ -17,8 +17,8 @@ TokenList Lexer::scan() {
 		auto current = next();
 		switch (current) {
 			// @TODO these are sequential i.e. \r\n is a newline
-			case '\n': token(Token::Type::NEWLINE); index = 1; line++; resetSavePoint(); break;
-			case '\r': token(Token::Type::NEWLINE); index = 1; line++; resetSavePoint(); break;
+			case '\n': index = 1; line++; resetSavePoint(); break;
+			case '\r': index = 1; line++; resetSavePoint(); break;
 			case '#': token(Token::Type::HASH); break;
 			case '+': token(Token::Type::PLUS); break;
 			case '-': token(Token::Type::MINUS); break;
@@ -108,7 +108,7 @@ void Lexer::decide(Token::Type t1, Token::Type t2, Token::Type t3){
 
 void Lexer::skip_whitespace(){
 	while (peek() == ' ' || peek() == '\t') {
-		next();
+	    next();
 		resetSavePoint();
 	}
 }

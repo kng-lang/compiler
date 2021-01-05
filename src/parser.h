@@ -23,6 +23,7 @@ struct Parser : public TokenConsumer{
 	std::shared_ptr<SymTable<Type>> sym_table;
 	u8 parsing_constant_assignment = 0;
 	u8 parsing_variable_assignment = 0;
+	u8 requiring_delimiter = 0;
 
 	Parser();
 	Parser(TokenList& tokens, CompilationUnit* unit);
@@ -34,7 +35,6 @@ struct Parser : public TokenConsumer{
 	u8 expecting_expr();
 	Type parse_type();
 	std::shared_ptr<AST> parse_stmt();
-	void do_newline();
 	std::shared_ptr<AST> parse_directive();
 	std::shared_ptr<AST> parse_if();
 	std::shared_ptr<AST> parse_for();

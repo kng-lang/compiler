@@ -26,18 +26,16 @@ std::shared_ptr<AST> Parser::parse() {
 
 std::shared_ptr<AST> Parser::parse_stmt(){
 	// consume empty newlines
-	u8 requires_delim = 0; // e.g. if 1 {} doesn't require a delimiter
-	do_newline();
+	requiring_delimiter = 0; // e.g. if 1 {} doesn't require a delimiter
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
 	switch (peek().type) {
 		case Token::Type::HASH: {
-			requires_delim = 0;
 			stmt = parse_directive();
 			break;
 		}
 		case Token::Type::RETURN:{
 			StmtReturnAST r;
-			requires_delim = 1;
+			requiring_delimiter = 1;
 			next();
 			if (expecting_expr())
 				r.value = parse_expression();
@@ -45,13 +43,13 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::CONTINUE: {
-			requires_delim = 1;
+			requiring_delimiter = 1;
 			next();
 			stmt = std::make_shared<StmtContinueAST>();
 			break;
 		}
 		case Token::Type::BREAK: {
-			requires_delim = 1;
+			requiring_delimiter = 1;
 			next();
 			stmt = std::make_shared<StmtBreakAST>();
 			break;
@@ -69,7 +67,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::IDENTIFIER: {
-			requires_delim = 1;
+			requiring_delimiter = 1;
 			// if we are dealing with an identifier, we could be doing various operations
 			switch (peek(1).type) {
 				case Token::Type::COLON:
@@ -79,25 +77,20 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}; // @TODO how do we know we are doing an assignment or expression?
 		default: {
-			requires_delim = 1;
+			requiring_delimiter = 1;
 			stmt = parse_expression();
 			break;
 		}
 	}
 	// @TODO it doesnt work if we dont have a newline at the end
 	// we use ; when we want multiple statements on one line
-	if (requires_delim && !(consume(Token::Type::NEWLINE) || consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
+	if (requiring_delimiter && !(consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
 		// @TODO this prev() stuff should probably be done with a function
-		unit->error_handler.error("expected ; or newline as statement delimiter",
+		unit->error_handler.error("expected ; as statement delimiter",
 			prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
 		return std::make_shared<ErrorAST>();
 	}
-	do_newline();
 	return stmt;
-}
-
-void Parser::do_newline() {
-	while (expect(Token::NEWLINE)) next();
 }
 
 std::shared_ptr<AST> Parser::parse_directive() {
@@ -172,21 +165,19 @@ std::shared_ptr<AST> Parser::parse_for(){
 // enter with { and exit with }
 std::shared_ptr<AST> Parser::parse_stmt_block() {
 
-
 	auto stmt_block = StmtBlockAST();
 
 	consume(Token::Type::LCURLY, "'{' expected");
 	if (!consume(Token::Type::RCURLY)) {
-		do_newline();
 		sym_table->enter_scope();
 		while (!end_of_block()) {
 			stmt_block.stmts.push_back(parse_stmt());
 		}
-		do_newline();
 		sym_table->pop_scope();
 		consume(Token::Type::RCURLY, "'}' expected");
 	}
 
+	requiring_delimiter = 0;
 	return std::make_shared<StmtBlockAST>(stmt_block);
 
 }
