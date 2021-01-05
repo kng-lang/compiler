@@ -217,7 +217,8 @@ u8 Parser::expecting_expr(){
 		|| expect(Token::Type::LPAREN)
 		|| expect(Token::Type::TRU)
 		|| expect(Token::Type::FLSE)
-		|| expect(Token::Type::LBRACKET);
+		|| expect(Token::Type::LBRACKET)
+		|| expect(Token::Type::LCURLY);
 }
 
 Type Parser::parse_type() {
@@ -271,7 +272,6 @@ std::shared_ptr<AST> Parser::parse_define() {
 		parsing_variable_assignment = 0;
 	}
 	else if(consume(Token::Type::COLON)){
-
 		if (expecting_type()) {
 			// if we have reached here, we are either dealing with x : u8, x : u8 = 1, x : u8 1
 			// variable decleration, variable decleration & assignment or constant decleration
@@ -299,6 +299,7 @@ std::shared_ptr<AST> Parser::parse_define() {
 			}
 			parsing_constant_assignment = 1;
 			define_ast.requires_type_inference = 1;
+			kng_log("parsing constant {}", peek().to_json());
 			define_ast.value = parse_expression();
 			define_ast.is_initialised = 1;
 			define_ast.is_constant = 1;
@@ -452,7 +453,8 @@ std::shared_ptr<AST> Parser::parse_single(){
 			std::vector<std::shared_ptr<AST>> array_values;
 			while (!expect(Token::Type::RCURLY)) {
 				array_values.push_back(parse_single());
-				consume(Token::Type::COMMA);
+				if(!expect(Token::Type::RCURLY))
+					consume(Token::Type::COMMA);
 			}
 			consume(Token::Type::RCURLY);
 			return std::make_shared<ExprLiteralArrayAST>(Type(Type::Types::UNKNOWN), Type(Type::Types::UNKNOWN), array_values.size(), array_values);
