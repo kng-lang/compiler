@@ -61,7 +61,6 @@ struct Type {
 	u8 is_arr = 0;
 	u8 pattern = 0;
 	u32 arr_length = 0;
-	u8 is_fn = 0;
 	std::vector<Type> patterns;
 	InterfaceSignature interface_signature;
 	FnSignature fn_signature;
@@ -102,22 +101,22 @@ struct Value {
 	} v;
 };
 
-template <typename T>
 struct SymTableEntry {
-	T value;
+	void* optional_data;
+	Type* type;
 	u8 is_global = 0;
 	u8 is_constant = 0;
 
 	SymTableEntry(){}
-	SymTableEntry(T value, u8 is_global = 0, u8 is_constant = 0) 
-		: value(value), is_global(is_global), is_constant(is_constant){}
+	SymTableEntry(void* optional_data, Type* type, u8 is_global, u8 is_constant) 
+		: optional_data(optional_data), type(type), is_global(is_global), is_constant(is_constant){}
 };
 
 template<typename T>
 struct SymTable {
 	// keep track of the latest entry
-	std::pair<std::string, SymTableEntry<T>> latest_entry;
-	std::map<s32, std::map<std::string, SymTableEntry<T>>> entries;
+	std::pair<std::string, SymTableEntry> latest_entry;
+	std::map<s32, std::map<std::string, SymTableEntry>> entries;
 	s32 level = 0;
 
 	SymTable(){}
@@ -133,18 +132,18 @@ struct SymTable {
 		}
 	}
 
-	void add_symbol(std::string entry_id, SymTableEntry<T> entry) {
-		latest_entry = std::pair<std::string, SymTableEntry<T>>(entry_id, entry);
+	void add_symbol(std::string entry_id, SymTableEntry entry) {
+		latest_entry = std::pair<std::string, SymTableEntry>(entry_id, entry);
 		entries[level][entry_id] = entry;
 	}
 
-	SymTableEntry<T> get_symbol(std::string entry_id) {
+	SymTableEntry get_symbol(std::string entry_id) {
 		for (s32 i = level; i >= 0; i--) {
 			if (this->entries[i].count(entry_id) > 0) {
 				return entries[i][entry_id];
 			}
 		}
-		return NULL;
+		return SymTableEntry();
 	}
 	void enter_scope() { level++; };
 	void pop_scope() { level--; }

@@ -106,12 +106,13 @@ void LLVMCodeGen::generate() {
 	pass.add(llvm::createCodeGenPreparePass());
 
 	pass.add(llvm::createPromoteMemoryToRegisterPass());
-	pass.add(llvm::createMergedLoadStoreMotionPass());
-	pass.add(llvm::createSCCPPass());
+	pass.add(llvm::createReassociatePass());
+	pass.add(llvm::createInterleavedLoadCombinePass());
+	pass.add(llvm::createNewGVNPass());
+	pass.add(llvm::createCFGSimplificationPass());
 	pass.add(llvm::createLoopUnrollPass());
 	pass.add(llvm::createLoopUnswitchPass());
 	pass.add(llvm::createLoopRotatePass());
-	pass.add(llvm::createCanonicalizeAliasesPass());
 
 
 	pass.run(*llvm_module);
@@ -122,6 +123,7 @@ void LLVMCodeGen::generate() {
 }
 
 void LLVMCodeGen::make_runtime() {
+
 	// first create the main function
 	llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(*llvm_context), { llvm::Type::getInt32Ty(*llvm_context), llvm::Type::getInt32PtrTy(*llvm_context) }, false);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "main", *llvm_module);
@@ -147,7 +149,7 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 		case Type::Types::F32:    tmp_type = llvm::Type::getFloatTy(*llvm_context); break;
 		case Type::Types::F64:    tmp_type = llvm::Type::getDoubleTy(*llvm_context); break;
 		case Type::Types::CHAR:   tmp_type = llvm::Type::getInt8Ty(*llvm_context); break; // ASCII FOR NOW?
-		case Type::Types::FN:     tmp_type = (llvm::Type*)sym_table.get_symbol(type.fn_signature.anonymous_identifier).value; break; // @TODO return the reference to the fn in the symbol table
+		case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)sym_table.get_symbol(type.fn_signature.anonymous_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
 		case Type::Types::STRING: tmp_type = NULL; break; // @TODO return a reference to the string interface using the symbol table
 
 	}
@@ -181,15 +183,15 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		// do alloca
 		if (stmt_define_ast->define_type.t != Type::Types::FN) {
 			creation_instr = llvm_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.value);
-			sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry<void*>(creation_instr));
+			sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 		}
 	}
 	else {
 		if(stmt_define_ast->define_type.t!=Type::Types::FN){
 			creation_instr = llvm_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.value), convert_type(stmt_define_ast->define_type));
-			sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry<void*>(creation_instr));
+			sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 		}else {
-
+			
 		}
 	}
 	
@@ -204,7 +206,8 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	// @TODO jesus fix this pls
 	if (stmt_define_ast->define_type.t == Type::Types::FN) {
-		stmt_define_ast->value->visit(this);
+		llvm::Function* fn = (llvm::Function*)stmt_define_ast->value->visit(this);
+		sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry(fn, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 	}
 	return NULL;
 }
@@ -214,7 +217,7 @@ void* LLVMCodeGen::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 void* LLVMCodeGen::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	// @TODO this assumes the variable decleration e.g. x : s32 was an alloca and not a global or a malloc etc
 	auto val = (llvm::Value*)stmt_assign_ast->value->visit(this);
-	auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value).value;
+	auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value).optional_data;
 	auto is_volative = false;
 	llvm_builder->CreateStore(val, ptr, is_volative);
 	return NULL;
@@ -317,8 +320,8 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	}
 
 	// add the fn type to the symbol table
-	sym_table.add_symbol(expr_fn_ast->full_type.fn_signature.anonymous_identifier, SymTableEntry<void*>(ft));
-	return NULL;
+	sym_table.add_symbol(expr_fn_ast->full_type.fn_signature.anonymous_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
+	return f;
 }
 
 
@@ -340,13 +343,27 @@ void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 }
 
 void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
-	return NULL;
+	auto fn = (llvm::Function*)(expr_call_ast->callee->visit(this));
+	return llvm_builder->CreateCall(fn, llvm::None);
 }
 
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	// create a load instruction
-	auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).value;
-	return llvm_builder->CreateLoad(instr);
+
+	// the problem here is that a variable can be a load, store etc
+
+	auto var_type = sym_table.get_symbol(expr_var_ast->identifier.value).type;
+
+	switch (var_type->t) {
+		case Type::Types::FN: {
+			auto fn_type = (llvm::Function*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			return fn_type;
+		}
+		default: {
+			// create a load instruction
+			auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			return llvm_builder->CreateLoad(instr);
+		}
+	}
 }
 void* LLVMCodeGen::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) {
 	return NULL;

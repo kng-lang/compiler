@@ -109,8 +109,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 	sym_table.add_symbol(stmt_define_ast->identifier.value,
-		SymTableEntry<std::shared_ptr<Type>>(
-			std::make_shared<Type>(l_type),
+		SymTableEntry(
+			nullptr,
+			&stmt_define_ast->define_type,
 			stmt_define_ast->is_global,
 			stmt_define_ast->is_constant));
 
@@ -127,7 +128,6 @@ void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	// @TODO support error when assigning to constant
 	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
-	kng_assert(l_type.value != NULL, "lhs was null when type checking assignment");
 	if (l_type.is_constant) {
 		unit->error_handler.error("cannot re-assign to constant",
 			stmt_assign_ast->variable.index,
@@ -136,11 +136,11 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 			stmt_assign_ast->variable.line);
 	}
 	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
-	if (!l_type.value->matches_basic(*r_type)) {
+	if (!l_type.type->matches_basic(*r_type)) {
 
 		// see if we can cast
-		if (l_type.value->can_niave_cast(*r_type)) {
-			r_type->cast(*l_type.value);
+		if (l_type.type->can_niave_cast(*r_type)) {
+			r_type->cast(*l_type.type);
 			return NULL;
 		}
 
@@ -220,15 +220,17 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	Type t_calle = *((Type*)expr_call_ast->callee->visit(this));
-	if (!t_calle.is_fn) {
+	if (!(t_calle.t==Type::Types::FN)) {
 		unit->error_handler.error("callee must be a fn",0,0,0,0);
 		return NULL;
 	}
+	
+	Type return_type = t_calle.fn_signature.operation_types.at(0);
 	return NULL;
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	return NULL;
+	return (Type*)sym_table.get_symbol(expr_var_ast->identifier.value).type;
 }
 
 void* TypeChecker::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) { return NULL; }
