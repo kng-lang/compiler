@@ -299,7 +299,6 @@ std::shared_ptr<AST> Parser::parse_define() {
 			}
 			parsing_constant_assignment = 1;
 			define_ast.requires_type_inference = 1;
-			kng_log("parsing constant {}", peek().to_json());
 			define_ast.value = parse_expression();
 			define_ast.is_initialised = 1;
 			define_ast.is_constant = 1;

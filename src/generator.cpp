@@ -50,12 +50,6 @@ void LLVMCodeGen::generate() {
 
 	this->ast->visit(this);
 
-
-#define DEBUG
-#ifdef DEBUG
-	this->llvm_module->dump();
-#endif
-
 	make_runtime();
 	optimise();
 
@@ -90,6 +84,7 @@ void LLVMCodeGen::generate() {
 	llvm_module->setTargetTriple(target_triple);
 
 	auto filename = "C:/kng/compiler/tests/output.s";
+
 	std::error_code ec;
 	raw_fd_ostream dest(filename, ec, sys::fs::OF_None);
 
@@ -100,12 +95,29 @@ void LLVMCodeGen::generate() {
 
 	legacy::PassManager pass;
 	auto filetype = CGFT_AssemblyFile; // CGFT_ObjectFile;
-
+		
+	
+    // https://llvm.org/docs/Passes.html
 	if (target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype)) {
 		kng_errr("TargetMachine can't emit a file of this type");
 		return;
 	}
+
+	pass.add(llvm::createCodeGenPreparePass());
+
+	pass.add(llvm::createPromoteMemoryToRegisterPass());
+	pass.add(llvm::createMergedLoadStoreMotionPass());
+	pass.add(llvm::createSCCPPass());
+	pass.add(llvm::createLoopUnrollPass());
+	pass.add(llvm::createLoopUnswitchPass());
+	pass.add(llvm::createLoopRotatePass());
+	pass.add(llvm::createCanonicalizeAliasesPass());
+
+
 	pass.run(*llvm_module);
+
+	if (this->unit->compile_options.debug_emission_flags & EMIT_IR_DEBUG)
+		this->llvm_module->dump();
 	dest.flush();
 }
 

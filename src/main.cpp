@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     options.add_options()
         ("f,file", "File to compile", cxxopts::value<std::string>())
-        ("d,debug", "Enable debugging", cxxopts::value<bool>()->default_value("false"))
+        ("d,debug", "Enable debugging", cxxopts::value<std::string>()->default_value(""))
         ("e,error", "Error level", cxxopts::value<u8>())
         ("t,threads", "Number of threads", cxxopts::value<u8>())
         ("h,help", "Print usage")
@@ -37,9 +37,6 @@ int main(int argc, char** argv) {
         std::cout << options.help() << std::endl;
         exit(0);
     }
-    bool debug = result["debug"].as<bool>();
-    if (debug)
-        kng_log("kng compiler debug enabled!");
 
     std::string file;
     if (result.count("file")) {
@@ -51,9 +48,15 @@ int main(int argc, char** argv) {
         if (result.count("threads")) {
             options.threads = result["threads"].as<u8>();
         }
-        if (debug) {
-            options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
-            options.debug_emission_flags |= EMIT_AST_DEBUG;
+        if (result.count("debug")) {
+            if(result["debug"].as<std::string>().compare("l")==0)
+                options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
+
+            else if (result["debug"].as<std::string>().compare("p") == 0)
+                options.debug_emission_flags |= EMIT_AST_DEBUG;
+
+            else if (result["debug"].as<std::string>().compare("g") == 0)
+                options.debug_emission_flags |= EMIT_IR_DEBUG;
         }
         
         compiler.compile(file, options);

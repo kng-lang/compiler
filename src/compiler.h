@@ -27,6 +27,7 @@ ways to handle #include
 
 #define EMIT_TOKEN_DEBUG 0x1<<0
 #define EMIT_AST_DEBUG   0x1<<1
+#define EMIT_IR_DEBUG    0x1<<2
 
 struct CompileOptions {
 	enum CompileTarget {

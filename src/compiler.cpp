@@ -42,9 +42,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("=============== SUCCESS :) =================");
 	kng_log("compiled {} file(s) and {} line(s) in {} ms.", importer.n_units, importer.n_lines, time);
-	kng_log("============================================");
 }
 
 u8 CompilationUnit::compile() {
@@ -53,9 +51,13 @@ u8 CompilationUnit::compile() {
 }
 
 TokenList CompilationUnit::compile_to_tokens() {
+	auto t1 = std::chrono::high_resolution_clock::now();
 	// lexical analysis
 	Lexer l(compile_file.file_contents, this);
 	auto tokens = l.scan();
+	auto t2 = std::chrono::high_resolution_clock::now();
+	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+	kng_log("lexed in {} ms.", time);
 	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG)
 		kng_log("lexer debug {}:\n{}", compile_file.file_path, tokens.to_json());
 	return tokens;
@@ -63,12 +65,17 @@ TokenList CompilationUnit::compile_to_tokens() {
 
 std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 	auto tokens = compile_to_tokens();
+	auto t1 = std::chrono::high_resolution_clock::now();
 	// parsing to an ast
 	Parser p(tokens, this);
 	auto ast = p.parse();
 
 	TypeChecker t(ast, this);
 	ast = t.check();
+
+	auto t2 = std::chrono::high_resolution_clock::now();
+	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+	kng_log("parsed in {} ms.", time);
 
 	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG)
 		kng_log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
@@ -79,8 +86,12 @@ void CompilationUnit::compile_to_bin() {
 	auto ast = compile_to_ast();
 	if (error_handler.how_many>0)
 		return;
+	auto t1 = std::chrono::high_resolution_clock::now();
 	LLVMCodeGen generator(ast, this);
 	generator.generate();
+	auto t2 = std::chrono::high_resolution_clock::now();
+	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
+	kng_log("generated in {} ms.", time);
 }
 
 u8 Importer::valid_import_path(std::string& path) {
