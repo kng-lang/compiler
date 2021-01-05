@@ -239,12 +239,12 @@ Type Parser::parse_type() {
 		if (expect(Token::Type::NUMBER)) {
 			// known size and stack allocated
 			Token size = next();
-			t.arr = 1;
+			t.is_arr = 1;
 			t.arr_length = std::stoi(size.value);
 		}
 		else {
 			// unknown size, we need to check during type checking if the array is initialised otherwise it is a pointer
-			t.arr = 1;
+			t.is_arr = 1;
 			t.ptr = 1;
 		}
 

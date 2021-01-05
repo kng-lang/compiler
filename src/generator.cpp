@@ -124,20 +124,25 @@ void LLVMCodeGen::optimise(){}
 
 
 llvm::Type* LLVMCodeGen::convert_type(Type type) {
+	llvm::Type* tmp_type;
 	switch (type.t) {
-		case Type::Types::U0:     return llvm::Type::getVoidTy(*llvm_context);
-		case Type::Types::U8:     return llvm::Type::getInt8Ty(*llvm_context);
-		case Type::Types::U16:    return llvm::Type::getInt16Ty(*llvm_context);
-		case Type::Types::U32:    return llvm::Type::getInt32Ty(*llvm_context);
-		case Type::Types::S32:    return llvm::Type::getInt32Ty(*llvm_context);
-		case Type::Types::S64:    return llvm::Type::getInt64Ty(*llvm_context);
-		case Type::Types::F32:    return llvm::Type::getFloatTy(*llvm_context);
-		case Type::Types::F64:    return llvm::Type::getDoubleTy(*llvm_context);
-		case Type::Types::CHAR:   return llvm::Type::getInt8Ty(*llvm_context); // ASCII FOR NOW?
-		case Type::Types::FN:     return (llvm::Type*)sym_table.get_symbol(type.fn_signature.anonymous_identifier).value; // @TODO return the reference to the fn in the symbol table
-		case Type::Types::STRING: return NULL; // @TODO return a reference to the string interface using the symbol table
+	case Type::Types::U0:     tmp_type = llvm::Type::getVoidTy(*llvm_context); break;
+		case Type::Types::U8:     tmp_type = llvm::Type::getInt8Ty(*llvm_context); break;
+		case Type::Types::U16:    tmp_type = llvm::Type::getInt16Ty(*llvm_context); break;
+		case Type::Types::U32:    tmp_type = llvm::Type::getInt32Ty(*llvm_context); break;
+		case Type::Types::S32:    tmp_type = llvm::Type::getInt32Ty(*llvm_context); break;
+		case Type::Types::S64:    tmp_type = llvm::Type::getInt64Ty(*llvm_context); break;
+		case Type::Types::F32:    tmp_type = llvm::Type::getFloatTy(*llvm_context); break;
+		case Type::Types::F64:    tmp_type = llvm::Type::getDoubleTy(*llvm_context); break;
+		case Type::Types::CHAR:   tmp_type = llvm::Type::getInt8Ty(*llvm_context); break; // ASCII FOR NOW?
+		case Type::Types::FN:     tmp_type = (llvm::Type*)sym_table.get_symbol(type.fn_signature.anonymous_identifier).value; break; // @TODO return the reference to the fn in the symbol table
+		case Type::Types::STRING: tmp_type = NULL; break; // @TODO return a reference to the string interface using the symbol table
 
 	}
+	// its only an array and not a ptr if the arr_length > 0 otherwise x : u8[] is a ptr
+	if(type.is_arr && type.arr_length>0)
+		tmp_type = llvm::ArrayType::get(tmp_type, type.arr_length);
+	return tmp_type;
 }
 
 void* LLVMCodeGen::visit_program(ProgramAST* program_ast){

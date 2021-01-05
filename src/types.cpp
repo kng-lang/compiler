@@ -86,14 +86,14 @@ void SymTable<T>::pop_scope() {
 
 u8 Type::matches_basic(Type other){
 	return this->t == other.t
-		&& this->arr == other.arr
+		&& this->is_arr == other.is_arr
 		&& this->arr_length == other.arr_length
 		&& this->ptr == other.ptr;
 }
 
 u8 Type::matches_deep(Type other){
 	return this->t == other.t
-		&& this->arr == other.arr
+		&& this->is_arr == other.is_arr
 		&& this->arr_length == other.arr_length;
 		// && this->interface_signature.matches(other.interface_signature);
 }
