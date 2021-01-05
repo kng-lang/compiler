@@ -56,7 +56,7 @@ struct Type {
 	Types t = Types::UNKNOWN;
 	u8 constant = 0;
 	// e.g. ^u8
-	u8 ref = 0;
+	u8 ptr = 0;
 	// e.g. u8[5]
 	u8 arr = 0;
 	u8 pattern = 0;
@@ -67,7 +67,7 @@ struct Type {
 
 	Type(){}
 	Type(Types t) : t(t){}
-	Type(Types t, u8 ref) : t(t), ref(ref){}
+	Type(Types t, u8 ptr) : t(t), ptr(ptr){}
 	Type(Types t, u8 arr, u32 arr_length) : t(t), arr(arr), arr_length(arr_length) {}
 	Type(Types t, u8 pattern, std::vector<Type> types) : t(t), pattern(pattern), patterns(patterns) {}
 	Type(Types t, FnSignature fn_sig) : t(t), fn_signature(fn_sig) {}

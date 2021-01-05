@@ -22,7 +22,7 @@ const char* Type::debug_types[] = {
 
 std::string Type::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\":" << debug_types[(s32)this->t] << "\n\"ref\":" << this->ref << "\n}\n";
+	ss << "{\n\"type\":" << debug_types[(s32)this->t] << "\n\"ptr\":" << this->ptr << "\n}\n";
 	return ss.str();
 }
 

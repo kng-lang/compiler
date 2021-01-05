@@ -220,19 +220,41 @@ u8 Parser::expecting_expr(){
 		|| expect(Token::Type::LBRACKET);
 }
 
-Type Parser::parse_type(){
+Type Parser::parse_type() {
+	Type t;
 	switch (next().type) {
-		case Token::Type::U0: return Type(Type::Types::U0);
-		case Token::Type::U8: return Type(Type::Types::U8);
-		case Token::Type::U16: return Type(Type::Types::U16);
-		case Token::Type::U32: return Type(Type::Types::U32);
-		case Token::Type::S32: return Type(Type::Types::S32);
-		case Token::Type::S64: return Type(Type::Types::S64);
-		case Token::Type::F32: return Type(Type::Types::F32);
-		case Token::Type::F64: return Type(Type::Types::F64);
-		case Token::Type::CHAR: return Type(Type::Types::CHAR);
-		case Token::Type::IDENTIFIER: return Type(Type::Types::INTERFACE);
+	case Token::Type::U0: t = Type(Type::Types::U0); break;
+	case Token::Type::U8: t = Type(Type::Types::U8); break;
+	case Token::Type::U16: t = Type(Type::Types::U16); break;
+	case Token::Type::U32: t = Type(Type::Types::U32); break;
+	case Token::Type::S32: t = Type(Type::Types::S32); break;
+	case Token::Type::S64: t = Type(Type::Types::S64); break;
+	case Token::Type::F32: t = Type(Type::Types::F32); break;
+	case Token::Type::F64: t = Type(Type::Types::F64); break;
+	case Token::Type::CHAR: t = Type(Type::Types::CHAR); break;
+	case Token::Type::IDENTIFIER: t = Type(Type::Types::INTERFACE); break;
 	}
+	// check if we are dealing with an array
+	if (consume(Token::Type::LBRACKET)){
+		if (expect(Token::Type::NUMBER)) {
+			// known size and stack allocated
+			Token size = next();
+			t.arr = 1;
+			t.arr_length = std::stoi(size.value);
+		}
+		else {
+			// unknown size, we need to check during type checking if the array is initialised otherwise it is a pointer
+			t.arr = 1;
+			t.ptr = 1;
+		}
+
+		if(!consume(Token::Type::RBRACKET)){
+			unit->error_handler.error("expected ] after array decleration",
+				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			return Type(Type::Types::UNKNOWN);
+		}
+	}
+	return t;
 }
 
 std::shared_ptr<AST> Parser::parse_define() {
@@ -511,10 +533,10 @@ std::shared_ptr<AST> Parser::parse_interface() {
 
 	expr_interface.anonymous_name = "tmp_anon_interface_name";
 
-	consume(Token::LBRACKET);
+	consume(Token::LCURLY);
 
 	// a list of definition
-	while (!consume(Token::RBRACKET)) {
+	while (!consume(Token::RCURLY)) {
 		parse_stmt();
 	}
 	return std::make_shared<ExprInterfaceAST>(expr_interface);
