@@ -36,7 +36,7 @@ Type infer_type(std::shared_ptr<AST> ast){
 }
 
 u8 Type::can_niave_cast(Type other) {
-	if (is_number_type() && other.is_number_type()) {
+	if (is_number_type() && other.is_number_type() && arr_length==other.arr_length) {
 		return 1;
 	}
 	return 0;

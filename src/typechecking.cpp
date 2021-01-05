@@ -5,6 +5,26 @@ James Clarke - 2021
 #include "typechecking.h"
 #include "compiler.h"
 
+
+// cast any ast (must be an expression) to a given type
+void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
+	switch (ast->type()) {
+	case AST::ASTType::EXPR_LIT: {
+		auto lit = std::static_pointer_cast<ExprLiteralAST>(ast);
+		lit->t.cast(t);
+		return;
+	}
+	case AST::ASTType::EXPR_LIT_ARRAY:{
+		auto arr = std::static_pointer_cast<ExprLiteralArrayAST>(ast);
+		arr->array_type.t = t.t; // @TODO should we cast the array_type here?
+		arr->contained_type.cast(t);
+		for (const auto& value : arr->values)
+			niave_cast_ast(t, value);
+		return;
+	}
+	}
+}
+
 std::shared_ptr<AST> TypeChecker::check() {
 	ast->visit(this);
 	return ast;
@@ -63,8 +83,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	if (stmt_define_ast->is_initialised) {
 		if (!l_type.matches_basic(*r_type)) {
+			// @TODO the problem here is that if we are dealing with an array, we need to cast each element individually
 			if(r_type->can_niave_cast(l_type)) {
-				r_type->cast(l_type);
+				niave_cast_ast(l_type, stmt_define_ast->value);
 			}
 			else {
 				unit->error_handler.error("types do not match",
@@ -237,6 +258,11 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	array_type.arr_length = expr_literal_array_ast->size;
 	expr_literal_array_ast->array_type = array_type;
 
-
 	return (void*)&expr_literal_array_ast->array_type;
+}
+
+void TypeChecker::cast_array(Type* r_type, Type l_type, std::shared_ptr<ExprLiteralArrayAST> array_ast) {
+	// we want to cast the r_type to the l_type and each value in the array_ast
+	r_type->cast(l_type);
+	// cast each value here
 }

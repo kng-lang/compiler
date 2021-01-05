@@ -21,7 +21,11 @@ struct TypeChecker : public ASTVisitor {
 	TypeChecker(std::shared_ptr<AST> ast, CompilationUnit* unit) : ASTVisitor(ast), unit(unit) {}
 
 	
+	// cast any ast (must be an expression) to a given type
+	void niave_cast_ast(Type t, std::shared_ptr<AST> ast);
 	std::shared_ptr<AST> check();
+
+	void cast_array(Type* r_type, Type l_type, std::shared_ptr<ExprLiteralArrayAST> array_ast);
 
 	virtual void* visit_program(ProgramAST* program_ast);
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast);
