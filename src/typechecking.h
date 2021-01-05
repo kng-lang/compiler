@@ -44,4 +44,5 @@ struct TypeChecker : public ASTVisitor {
 	virtual void* visit_expr_un_ast(ExprUnAST* expr_un_ast);
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast);
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast);
+	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast);
 };

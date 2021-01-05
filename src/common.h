@@ -11,17 +11,12 @@ James Clarke - 2021
 #define kng_warn(...) {spdlog::warn(__VA_ARGS__);}
 #define kng_errr(...) {spdlog::error(__VA_ARGS__);}
 
-#define assert_crash(condition, ...){    \
+#define kng_assert(condition, ...){    \
 		if (!condition) {					  \
 			spdlog::critical(__VA_ARGS__);	  \
 			exit(0);						  \
 		}									  \
 }											  			
-
-#define assert_warning(condition, ...){  \
-		if (!condition)					      \
-			spdlog::warn(__VA_ARGS__);	      \
-}			
 
 typedef uint8_t u8;
 typedef uint16_t u16;

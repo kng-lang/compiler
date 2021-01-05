@@ -66,6 +66,7 @@ struct AST {
 		EXPR_UN,
 		EXPR_GROUP,
 		EXPR_LIT,
+		EXPR_LIT_ARRAY
 	};
 	
 	u32 index;
@@ -306,6 +307,19 @@ struct ExprLiteralAST : public ExpressionAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+struct ExprLiteralArrayAST : public ExpressionAST {
+	Type array_type;
+	Type contained_type;
+	u32 size;
+	std::vector<std::shared_ptr<AST>> values;
+	ExprLiteralArrayAST() {}
+	ExprLiteralArrayAST(Type array_type, Type contained_type, u32 size, std::vector<std::shared_ptr<AST>> values) 
+		: array_type(array_type), contained_type(contained_type), size(size), values(values) {}
+	virtual std::string to_json();
+	virtual ASTType  type() { return ASTType::EXPR_LIT_ARRAY; }
+	virtual void* visit(ASTVisitor* visitor);
+};
+
 struct ASTVisitor {
 	std::shared_ptr<AST> ast;
 
@@ -333,4 +347,5 @@ struct ASTVisitor {
 	virtual void* visit_expr_un_ast(ExprUnAST* expr_un_ast) = 0;
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast) = 0;
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) = 0;
+	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) = 0;
 };

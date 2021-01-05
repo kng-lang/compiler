@@ -124,7 +124,7 @@ void LLVMCodeGen::optimise(){}
 
 
 llvm::Type* LLVMCodeGen::convert_type(Type type) {
-	llvm::Type* tmp_type;
+	llvm::Type* tmp_type = NULL;
 	switch (type.t) {
 	case Type::Types::U0:     tmp_type = llvm::Type::getVoidTy(*llvm_context); break;
 		case Type::Types::U8:     tmp_type = llvm::Type::getInt8Ty(*llvm_context); break;
@@ -142,6 +142,7 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 	// its only an array and not a ptr if the arr_length > 0 otherwise x : u8[] is a ptr
 	if(type.is_arr && type.arr_length>0)
 		tmp_type = llvm::ArrayType::get(tmp_type, type.arr_length);
+	kng_assert(tmp_type, "tmp_type NULL");
 	return tmp_type;
 }
 
@@ -185,7 +186,7 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		&& stmt_define_ast->define_type.t != Type::Types::FN) {
 		auto val = stmt_define_ast->value->visit(this);
 		auto is_volative = false;
-		assert_crash(creation_instr != NULL, "creaton_instr was null");
+		kng_assert(creation_instr != NULL, "creaton_instr was null");
 		llvm_builder->CreateStore((llvm::Value*)val, (llvm::Value*) creation_instr, is_volative);
 	}
 
@@ -354,4 +355,15 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 	case Type::Types::CHAR: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.v.as_u8); break;
 	}
 	return (void*)llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 123);
+}
+
+void* LLVMCodeGen::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) {
+	std::vector<llvm::Constant*> constants;
+	for (const auto& val : expr_literal_array_ast->values) {
+		constants.push_back((llvm::Constant * )val->visit(this));
+	}
+	llvm::ArrayRef<llvm::Constant*> array_ref(constants);
+	llvm::ArrayType* array_type = llvm::ArrayType::get(convert_type(expr_literal_array_ast->contained_type), expr_literal_array_ast->array_type.arr_length);
+	// note we do t.t here as the array type will be u8 array size 123, and we just want u8
+	return llvm::ConstantArray::get(array_type, array_ref);
 }

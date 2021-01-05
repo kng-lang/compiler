@@ -256,6 +256,16 @@ void* ExprLiteralAST::visit(ASTVisitor* visitor) {
 	return visitor->visit_expr_literal_ast(this);
 }
 
+std::string ExprLiteralArrayAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprLiteralArrayAST\",\n\"contained_type\":" << this->contained_type.to_json() << ",\n\"size\":" << this->size << "\n}\n";
+	return ss.str();
+}
+
+void* ExprLiteralArrayAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_literal_array_ast(this);
+}
+
 void* ExpressionAST::visit(ASTVisitor* visitor)
 {
 	return nullptr;

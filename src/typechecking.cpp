@@ -56,7 +56,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (stmt_define_ast->requires_type_inference) {
 		//l_type = infer_type(stmt_define_ast->value);
 		//stmt_define_ast->define_type = l_type;
-		assert_crash(r_type != NULL, "r_type was NULL");
+		kng_assert(r_type != NULL, "r_type was NULL");
 		l_type = *r_type;
 		stmt_define_ast->define_type = *r_type;
 	}
@@ -106,7 +106,7 @@ void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	// @TODO support error when assigning to constant
 	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
-	assert_crash(l_type.value != NULL, "lhs was null when type checking assignment");
+	kng_assert(l_type.value != NULL, "lhs was null when type checking assignment");
 	if (l_type.is_constant) {
 		unit->error_handler.error("cannot re-assign to constant",
 			stmt_assign_ast->variable.index,
@@ -212,4 +212,31 @@ void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
 	return (void*)&expr_literal_ast->t;
+}
+
+void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) {
+
+	// figure out the type of the array literal
+	Type contained_type;
+	u8 type_set = 0;
+	for (const auto& ast : expr_literal_array_ast->values) {
+		Type t = *((Type*)ast->visit(this));
+		if (!type_set)
+			contained_type = t;
+		else {
+			if (!contained_type.matches_basic(t)) {
+				kng_assert(false, "array values do not match!");
+				return NULL;
+			}
+		}
+	}
+
+	expr_literal_array_ast->contained_type = contained_type;
+	Type array_type = contained_type;
+	array_type.is_arr = 1;
+	array_type.arr_length = expr_literal_array_ast->size;
+	expr_literal_array_ast->array_type = array_type;
+
+
+	return (void*)&expr_literal_array_ast->array_type;
 }

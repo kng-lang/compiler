@@ -445,7 +445,18 @@ std::shared_ptr<AST> Parser::parse_single(){
 	// @TODO implement casts
 	// @TODO implement groups e.g. (1+2) + (1+3)
 	auto t = next();
+
 	switch (t.type) {
+		// array literal for now
+		case Token::Type::LCURLY: {
+			std::vector<std::shared_ptr<AST>> array_values;
+			while (!expect(Token::Type::RCURLY)) {
+				array_values.push_back(parse_single());
+				consume(Token::Type::COMMA);
+			}
+			consume(Token::Type::RCURLY);
+			return std::make_shared<ExprLiteralArrayAST>(Type(Type::Types::UNKNOWN), Type(Type::Types::UNKNOWN), array_values.size(), array_values);
+		}
 		case Token::Type::IDENTIFIER: {
 			return std::make_shared<ExprVarAST>(t);
 		}
@@ -514,7 +525,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 				return std::make_shared<ExprGroupAST>(group);
 			}
 		}
-		case Token::Type::LBRACKET: return parse_interface();
+		//case Token::Type::LBRACKET: return parse_interface();
 	}
 	unit->error_handler.error("unexpected code?",
 		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
