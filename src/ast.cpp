@@ -184,6 +184,16 @@ void* ExprCastAST::visit(ASTVisitor* visitor) {
 	return visitor->visit_expr_cast_ast(this);
 }
 
+std::string ExprCallAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\":\"ExprCastAST\",\n\"callee\":" << callee->to_json() << ",\n\"args\":" << args->to_json() << "\n}\n";
+	return ss.str();
+}
+
+void* ExprCallAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_call_ast(this);
+}
+
 std::string ExprVarAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\":\"ExprVarAST\",\n\"variable\":" << identifier.to_json() << "\n}\n";

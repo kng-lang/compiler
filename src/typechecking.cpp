@@ -217,6 +217,16 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 	return (void*)&expr_cast_ast->to_type;
 }
 
+
+void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
+	Type t_calle = *((Type*)expr_call_ast->callee->visit(this));
+	if (!t_calle.is_fn) {
+		unit->error_handler.error("callee must be a fn",0,0,0,0);
+		return NULL;
+	}
+	return NULL;
+}
+
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	return NULL;
 }

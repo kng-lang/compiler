@@ -338,6 +338,11 @@ void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 	
 	return llvm_builder->CreateCast(llvm::Instruction::CastOps::SIToFP, value, convert_type(r_type));
 }
+
+void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
+	return NULL;
+}
+
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// create a load instruction
 	auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).value;

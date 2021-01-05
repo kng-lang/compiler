@@ -176,14 +176,16 @@ std::shared_ptr<AST> Parser::parse_stmt_block() {
 	auto stmt_block = StmtBlockAST();
 
 	consume(Token::Type::LCURLY, "'{' expected");
-	do_newline();
-	sym_table->enter_scope();
-	while (!end_of_block()) {
-		stmt_block.stmts.push_back(parse_stmt());
+	if (!consume(Token::Type::RCURLY)) {
+		do_newline();
+		sym_table->enter_scope();
+		while (!end_of_block()) {
+			stmt_block.stmts.push_back(parse_stmt());
+		}
+		do_newline();
+		sym_table->pop_scope();
+		consume(Token::Type::RCURLY, "'}' expected");
 	}
-	do_newline();
-	sym_table->pop_scope();
-	consume(Token::Type::RCURLY, "'}' expected");
 
 	return std::make_shared<StmtBlockAST>(stmt_block);
 
@@ -439,6 +441,19 @@ std::shared_ptr<AST> Parser::parse_cast() {
 std::shared_ptr<AST> Parser::parse_call() {
 	auto higher_precedence = parse_single();
 	// check if next is var args
+	if (consume(Token::Type::LPAREN)) {
+		ExprCallAST call;
+		call.callee = higher_precedence;
+		if (!consume(Token::Type::RPAREN)) {
+			call.args = parse_call();
+			if (!consume(Token::Type::RPAREN)) {
+				unit->error_handler.error("expected closing ')' after fn call",
+					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				return std::make_shared<ErrorAST>();
+			}
+		}
+		return std::make_shared<ExprCallAST>(call);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_single(){ 
