@@ -2,7 +2,8 @@
   <img src="./res/logo_small.png" alt="KNG logo" width="250">
 </p>
 
-# KNG - Write beautiful & fast system code
+# KNG - Write beautiful & fast system code [![Documentation Status](https://readthedocs.org/projects/kng/badge/?version=latest)](https://kng.readthedocs.io/en/latest/?badge=latest)
+
 
 KNG is a compiled, systems programming language designed around ease of use & flexibility for the programmer
 
