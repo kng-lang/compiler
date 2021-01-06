@@ -70,8 +70,6 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (!(stmt_define_ast->define_type.is_constant && stmt_define_ast->define_type.t == Type::Types::FN))
 		sym_table.add_symbol(stmt_define_ast->identifier.value);
 
-
-
 	Type l_type = stmt_define_ast->define_type;
 	Type r_type;
 	Type* r_type_ptr;
