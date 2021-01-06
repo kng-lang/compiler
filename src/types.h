@@ -62,7 +62,7 @@ struct Type {
 	u8 pattern = 0;
 	u32 arr_length = 0;
 
-	// e.g. u8 : 1
+
 	u8 is_constant = 0;
 	u8 is_global = 0;
 
@@ -136,8 +136,12 @@ struct SymTable {
 			}
 		}
 	}
+	void add_symbol(std::string entry_id, SymTableEntry entry = SymTableEntry()) {
+		latest_entry = std::pair<std::string, SymTableEntry>(entry_id, entry);
+		entries[level][entry_id] = entry;
+	}
 
-	void add_symbol(std::string entry_id, SymTableEntry entry) {
+	void set_symbol(std::string entry_id, SymTableEntry entry) {
 		latest_entry = std::pair<std::string, SymTableEntry>(entry_id, entry);
 		entries[level][entry_id] = entry;
 	}

@@ -124,15 +124,15 @@ void LLVMCodeGen::make_runtime() {
 
 	// first create the main function
 
-	auto ptr_to_ptr = llvm::PointerType::getUnqual(llvm::Type::getInt32PtrTy(*llvm_context));
-
-	llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(*llvm_context), { llvm::Type::getInt32Ty(*llvm_context), ptr_to_ptr }, false);
-	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "main", *llvm_module);
-	llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "main_block", f);
-	llvm_builder->SetInsertPoint(bb);
-	llvm_builder->CreateRet(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 0));
-	llvm_builder->ClearInsertionPoint();
-	llvm::verifyFunction(*f);
+	//auto ptr_to_ptr = llvm::PointerType::getUnqual(llvm::Type::getInt32PtrTy(*llvm_context));
+	//
+	//llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(*llvm_context), { llvm::Type::getInt32Ty(*llvm_context), ptr_to_ptr }, false);
+	//llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "main", *llvm_module);
+	//llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "main_block", f);
+	//llvm_builder->SetInsertPoint(bb);
+	//llvm_builder->CreateRet(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 0));
+	//llvm_builder->ClearInsertionPoint();
+	//llvm::verifyFunction(*f);
 }
 
 void LLVMCodeGen::optimise(){}
@@ -384,6 +384,11 @@ void* LLVMCodeGen::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
 	case Token::Type::POINTER: {
 		//@TODO implement me!
 		// we first need to get the type that the load is of 
+		auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
+		return llvm_builder->CreateLoad(value);
+		break;
+	}
+	case Token::Type::BAND: {
 		auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
 		return llvm_builder->CreateLoad(value);
 		break;

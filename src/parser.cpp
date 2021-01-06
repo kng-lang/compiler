@@ -255,6 +255,7 @@ Type Parser::parse_type() {
 		}
 	}
 	t.ptr_indirection = ptr_indirection;
+	t.is_constant = parsing_constant_assignment;
 	return t;
 }
 
@@ -320,11 +321,6 @@ std::shared_ptr<AST> Parser::parse_assign() {
 		auto assign_value = parse_pattern();
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
-			// @TODO we can't assign to pointers
-			//case AST::ASTType::EXPR_VAR: {
-			//	auto variable_token = std::dynamic_pointer_cast<ExprVarAST>(higher_precedence);
-			//	return std::make_shared<StmtAssignAST>(variable_token->identifier, assign_value);
-			//}
 			case AST::ASTType::EXPR_INTER_GET: {
 				auto member_get = std::dynamic_pointer_cast<ExprInterfaceGetAST>(higher_precedence);
 				auto interface_value = member_get->value;
@@ -414,7 +410,7 @@ std::shared_ptr<AST> Parser::parse_mdmr() {
 }
 
 std::shared_ptr<AST> Parser::parse_un() {
-	if (expect(Token::Type::POINTER) || expect(Token::Type::BANG)) {
+	if (expect(Token::Type::POINTER) || expect(Token::Type::BANG) || expect(Token::Type::BAND)) {
 
 
 		// @TODO optimise by having a for consume(POINTER) for example so we can chain operations to reduce recursiveness

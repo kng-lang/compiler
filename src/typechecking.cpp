@@ -66,6 +66,11 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		return NULL;
 	}
 
+	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
+	if (!(stmt_define_ast->define_type.is_constant && stmt_define_ast->define_type.t == Type::Types::FN))
+		sym_table.add_symbol(stmt_define_ast->identifier.value);
+
+
 
 	Type l_type = stmt_define_ast->define_type;
 	Type r_type;
@@ -112,7 +117,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		return NULL;
 	}
 
-	sym_table.add_symbol(stmt_define_ast->identifier.value,
+	sym_table.set_symbol(stmt_define_ast->identifier.value,
 		SymTableEntry(
 			nullptr,
 			&stmt_define_ast->define_type,
@@ -275,6 +280,14 @@ void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
 		expr_un_ast->ast->visit(this);
 		// then reduce the ptr indirection
 		checked_type.ptr_indirection--;
+		break;
+	}
+	case Token::Type::BAND: {
+		// first get the type of the group
+		expr_un_ast->ast->visit(this);
+		// then reduce the ptr indirection
+		checked_type.ptr_indirection++;
+		break;
 	}
 	}
 	return NULL; 
@@ -298,7 +311,8 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	Type contained_type;
 	u8 type_set = 0;
 	for (const auto& ast : expr_literal_array_ast->values) {
-		Type t = *((Type*)ast->visit(this));
+		ast->visit(this);
+		Type t = checked_type;
 		if (!type_set)
 			contained_type = t;
 		else {
@@ -314,6 +328,8 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	array_type.is_arr = 1;
 	array_type.arr_length = expr_literal_array_ast->size;
 	expr_literal_array_ast->array_type = array_type;
+
+	checked_type_ptr = &expr_literal_array_ast->array_type;
 	checked_type = expr_literal_array_ast->array_type;
 	return NULL;
 	//return (void*)&expr_literal_array_ast->array_type;
