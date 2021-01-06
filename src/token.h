@@ -20,7 +20,9 @@ struct Token{
 		DOC, // documentation
 		UNDERSCORE,
 		NEWLINE,
+
 		HASH,
+		DIRECTIVE,
 
 		INCLUDE,
 		IMPORT,

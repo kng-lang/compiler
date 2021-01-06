@@ -29,8 +29,9 @@ const char* Token::debug_types[] = {
 		"UNDERSCORE",
 		"NEWLINE",
 		"HASH",
-		"INCLUDE",
+		"DIRECTIVE",
 
+		"INCLUDE",
 		"IMPORT",
 		"RUN",
 		"LINK",

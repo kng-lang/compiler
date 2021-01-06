@@ -29,8 +29,9 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 	requiring_delimiter = 0; // e.g. if 1 {} doesn't require a delimiter
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
 	switch (peek().type) {
-		case Token::Type::HASH: {
+		case Token::Type::DIRECTIVE: {
 			stmt = parse_directive();
+			requiring_delimiter = 1;
 			break;
 		}
 		case Token::Type::RETURN:{
@@ -94,7 +95,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 }
 
 std::shared_ptr<AST> Parser::parse_directive() {
-	consume(Token::HASH);
+	consume(Token::DIRECTIVE);
 	switch (next().type) {
 		case Token::Type::RUN: {
 				// create a new compilation unit to JIT the next statement
@@ -120,7 +121,8 @@ std::shared_ptr<AST> Parser::parse_directive() {
 			}
 			auto path = next();
 			auto valid_include = unit->importer->valid_include_path(unit->compile_file.file_path, path.value);
-			if (!(valid_include==Importer::DepStatus::OK)) {
+			if (valid_include==Importer::DepStatus::NO
+				|| valid_include==Importer::DepStatus::CYCLIC_DEP) {
 				std::string problem;
 				switch (valid_include) {
 				case Importer::DepStatus::CYCLIC_DEP: problem = "include path is causing a cyclic dependency"; break;
@@ -132,8 +134,9 @@ std::shared_ptr<AST> Parser::parse_directive() {
 			// finally if we have't already included this file then include it!
 			if (!unit->importer->already_included(unit->compile_file.file_path, path.value)) {
 				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
-				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value);
+				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value, valid_include);
 				auto ast = compilation_unit->compile_to_ast();
+				return ast;
 			}
 			break;
 		}

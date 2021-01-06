@@ -20,6 +20,7 @@ TokenList Lexer::scan() {
 			case '\n': index = 1; line++; resetSavePoint(); break;
 			case '\r': index = 1; line++; resetSavePoint(); break;
 			case '#': token(Token::Type::HASH); break;
+			case '@': token(Token::Type::DIRECTIVE); break;
 			case '+': token(Token::Type::PLUS); break;
 			case '-': token(Token::Type::MINUS); break;
 			case '*': token(Token::Type::STAR); break;

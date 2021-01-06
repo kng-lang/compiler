@@ -37,7 +37,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	importer = Importer(this);
 
-	auto unit = importer.include(path, path);
+	auto unit = importer.include(path, path, Importer::DepStatus::LOCAL);
 	unit->compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
@@ -46,7 +46,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 }
 
 u8 CompilationUnit::compile() {
-	kng_log("{}", compile_file.file_path);
+	kng_log("...{}", compile_file.file_path);
 	compile_to_bin();
 	return 1;
 }
@@ -58,9 +58,10 @@ TokenList CompilationUnit::compile_to_tokens() {
 	auto tokens = l.scan();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("lexed in {} ms.", time);
-	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG)
+	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG) {
 		kng_log("lexer debug {}:\n{}", compile_file.file_path, tokens.to_json());
+		kng_log("lexed in {} ms.", time);
+	}
 	return tokens;
 }
 
@@ -76,10 +77,10 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("parsed in {} ms.", time);
-
-	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG)
+	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG) {
 		kng_log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
+		kng_log("parsed in {} ms.", time);
+	}
 	return ast;
 }
 
@@ -92,7 +93,8 @@ void CompilationUnit::compile_to_bin() {
 	generator.generate();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("generated in {} ms.", time);
+	if(compile_options.debug_emission_flags&EMIT_IR_DEBUG)
+		kng_log("generated in {} ms.", time);
 }
 
 u8 Importer::valid_import_path(std::string& path) {
@@ -109,6 +111,18 @@ u8 Importer::valid_import_path(std::string& path) {
 	return 1;
 }
 
+std::string Importer::create_import_path(std::string& path, Importer::DepStatus dep_status) {
+	switch (dep_status) {
+		case DepStatus::LOCAL: return path; // if the path is local absolute then return it
+		case DepStatus::LIB: {
+			std::stringstream ss;
+			auto install_dir = std::getenv("KNG_PATH");
+			ss << install_dir << "lib/" << path;
+			return ss.str();
+		}
+	}
+}
+
 Importer::DepStatus Importer::valid_include_path(std::string& current_path, std::string& path) {
 	// we need to check for circular dependencies
 	// first get the target dependencies' dependencies
@@ -118,15 +132,25 @@ Importer::DepStatus Importer::valid_include_path(std::string& current_path, std:
 		return DepStatus::CYCLIC_DEP;
 
 	// first check the path relative to the current file
+	if (FILE* file = fopen(path.c_str(), "r")) {
+		fclose(file);
+		return DepStatus::LOCAL;
+	}
+	auto lib_path = create_import_path(path, DepStatus::LIB);
+	// first check the path relative to the current file
+	if (FILE* file = fopen(lib_path.c_str(), "r")) {
+		fclose(file);
+		return DepStatus::LIB;
+	}
 
-	// then check the path relative to the kng install e.g. c:/kng/lib/...
+
 
 	// then check the internet
 	// e.g. #include "https://www.github.com/kng/lib/example.kng"
 
 	// then check absolute
 
-	return DepStatus::OK;
+	return DepStatus::NO;
 }
 
 u8 Importer::already_included(std::string& current_path, std::string& path) {
@@ -139,8 +163,11 @@ std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
 	return unit;
 }
 
-std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path) {
-	CompileFile f(path);
+std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path, DepStatus dep_status) {
+
+	auto new_path = create_import_path(path, dep_status);
+	CompileFile f(new_path);
+
 	auto unit = std::make_shared<CompilationUnit>(f, compiler);
 	n_units++;
 	n_lines += count_lines(f.file_contents);
