@@ -33,6 +33,7 @@ struct Parser : public TokenConsumer{
 	u8 end_of_block();
 	u8 expecting_type();
 	u8 expecting_expr();
+	u8 expecting_def();
 	Type parse_type();
 	std::shared_ptr<AST> parse_stmt();
 	std::shared_ptr<AST> parse_directive();

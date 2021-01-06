@@ -117,6 +117,10 @@ u8 TokenConsumer::end() {
 	return current >= tokens.size();
 }
 
+u8 TokenConsumer::end(u32 ahead) {
+	return current+ahead >= tokens.size();
+}
+
 Token TokenConsumer::consume(Token::Type type, const std::string err_msg) {
 	if (peek().type != type)
 		// we need to insert an error AST here
@@ -135,6 +139,10 @@ u8 TokenConsumer::consume(Token::Type type) {
 
 u8 TokenConsumer::expect(Token::Type type) {
 	return !end() && peek().type == type;
+}
+
+u8 TokenConsumer::expect(Token::Type type, u32 ahead) {
+	return !end(ahead) && peek(ahead).type == type;
 }
 
 Token TokenConsumer::prev() {

@@ -136,9 +136,11 @@ struct TokenConsumer {
 	u32 current = 0;
 
 	virtual u8 end();
+	virtual u8 end(u32 ahead);
 	virtual Token consume(Token::Type type, const std::string err_msg);
 	virtual u8 consume(Token::Type type);
 	virtual u8 expect(Token::Type type);
+	virtual u8 expect(Token::Type type, u32 ahead);
 	virtual Token prev();
 	virtual Token peek();
 	virtual Token peek(u32 amount);

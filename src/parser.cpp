@@ -215,6 +215,10 @@ u8 Parser::expecting_expr(){
 		|| expect(Token::Type::LCURLY);
 }
 
+u8 Parser::expecting_def() {
+	return expect(Token::Type::IDENTIFIER) && expect(Token::Type::COLON, 1);
+}
+
 Type Parser::parse_type() {
 	Type t;
 	u8 ptr_indirection=0;
@@ -507,8 +511,8 @@ std::shared_ptr<AST> Parser::parse_single(){
 			// if not, we need to check what comes next, if it is a definition stmt, then we are parsing a fn,
 			// if not then its a group
 
-			// parsing fn
-			if (consume(Token::Type::RPAREN)) {
+			if(expect(Token::Type::RPAREN) || expecting_def()){
+				// doing fn
 				ExprFnAST fn_ast;
 				FnSignature fn_sig;
 				fn_ast.is_lambda = 1;
@@ -516,6 +520,18 @@ std::shared_ptr<AST> Parser::parse_single(){
 				// e.g. x : (){} is the only way a fn can be a lambda
 				fn_ast.is_lambda = !parsing_constant_assignment;
 				fn_sig.anonymous_identifier = "lambda";
+
+
+
+				std::vector<std::shared_ptr<AST>> params;
+				while (!expect(Token::Type::RPAREN)) {
+					params.push_back(parse_define());
+					if (!expect(Token::Type::RPAREN))
+						consume(Token::Type::COMMA);
+				}
+				consume(Token::Type::RPAREN);
+				fn_ast.params = params;
+
 				if (expecting_type()) {
 					fn_sig.operation_types.push_back(parse_type());
 					fn_sig.has_return = 1;
@@ -524,13 +540,12 @@ std::shared_ptr<AST> Parser::parse_single(){
 					fn_sig.operation_types.push_back(Type(Type::Types::U0));
 				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
 				// we need to check if the fn has a body
-				if (!consume(Token::Type::SEMI_COLON)) {
+				if (!expect(Token::Type::SEMI_COLON)) {
 					fn_ast.has_body = 1;
 					fn_ast.body = parse_stmt();
 				}
 				return std::make_shared<ExprFnAST>(fn_ast);
-			}
-			else {
+			}else {
 				auto expression = parse_expression();
 				if (!consume(Token::Type::RPAREN)) {
 					unit->error_handler.error("expected ) as statement delimiter",

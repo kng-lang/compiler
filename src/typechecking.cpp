@@ -127,6 +127,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		stmt_define_ast->is_global = 1;
 	}
 
+	checked_type = stmt_define_ast->define_type;
+	checked_type_ptr = &stmt_define_ast->define_type;
+
 	return NULL; 
 }
 
@@ -208,6 +211,14 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_fn_ast->is_lambda) {
 		expr_fn_ast->full_type.fn_signature.anonymous_identifier = sym_table.latest_entry.first;
+	}
+
+
+	// first resolve the type of the paramaters
+	for (const auto& param : expr_fn_ast->params) {
+		param->visit(this);
+		auto t = checked_type;
+		expr_fn_ast->full_type.fn_signature.operation_types.push_back(t);
 	}
 
 	// @TODO if the fn is assigned to a constant, the functions name should be the same

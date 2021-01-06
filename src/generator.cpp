@@ -307,11 +307,17 @@ void* LLVMCodeGen::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 
-	std::vector<llvm::Type*> operation_types;
-	for (const auto& t : expr_fn_ast->full_type.fn_signature.operation_types)
-		operation_types.push_back(convert_type(t));
+	llvm::Type* return_type = convert_type(expr_fn_ast->full_type.fn_signature.operation_types.at(0));
+	std::vector<llvm::Type*> param_types;
 
-	llvm::FunctionType* ft = llvm::FunctionType::get(operation_types.at(0), {}, false);
+
+
+
+	for (s32 i = (return_type==NULL) ? 0 : 1; i < expr_fn_ast->full_type.fn_signature.operation_types.size(); i++)
+		param_types.push_back(convert_type(expr_fn_ast->full_type.fn_signature.operation_types.at(i)));
+
+
+	llvm::FunctionType* ft = llvm::FunctionType::get(return_type, param_types, false);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.fn_signature.anonymous_identifier, *llvm_module);
 	
 	if (expr_fn_ast->has_body) {
@@ -323,8 +329,6 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 		if (!expr_fn_ast->full_type.fn_signature.has_return)
 			llvm_builder->CreateRetVoid();
-		else
-			llvm_builder->CreateRet(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 0));
 
 		llvm_builder->ClearInsertionPoint();
 		llvm::verifyFunction(*f);
