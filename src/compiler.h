@@ -72,8 +72,10 @@ struct CompilationUnit;
 struct Importer {
 
 	enum class DepStatus {
-		OK = 0,
-		CYCLIC_DEP = 1
+		NO = 0,
+		LOCAL = 1,
+		LIB = 2,
+		CYCLIC_DEP = 3
 	};
 
 	Compiler* compiler;
@@ -85,12 +87,13 @@ struct Importer {
 
 	Importer(){}
 	Importer(Compiler* compiler) : compiler(compiler){}
+	std::string create_import_path(std::string& path, Importer::DepStatus dep_status);
 	u8 valid_import_path(std::string& path);
 	DepStatus valid_include_path(std::string& current_path, std::string& path);
 	u8 already_included(std::string& current_path, std::string& path);
 	std::shared_ptr<CompilationUnit> new_unit(std::string& path, Compiler* compiler);
 	std::shared_ptr<CompilationUnit> import(std::string& path);
-	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path);
+	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path, DepStatus dep_status);
 };
 
 struct Compiler {

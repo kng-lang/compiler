@@ -1,0 +1,2 @@
+printf : (format : ^u8);
+getchar : () s32;
