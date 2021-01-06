@@ -8,20 +8,20 @@ KNG is a compiled, systems programming language designed around ease of use & fl
 
 ```
 user : interface {
-    name : string
-    age : u32
+    name : string;
+    age : u32;
 }
 
 app.main : (args: string[]) exit_code : u32 {
 
     say_hello := (person : user)
-        io.println "hello {person.name}!"
+        io.println "hello {person.name}!";
 
-    james : user = ("james", "20")
+    james : user = ("james", "20");
 
     say_hello(james);
 
-    exit_code = 0
+    exit_code = 0;
 }
 
 ```

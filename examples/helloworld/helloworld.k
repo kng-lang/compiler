@@ -1,5 +1,5 @@
 
 
-@import "io"
+@import "io";
 
-app.main : () io.println "hello world!"
+app.main : () io.println "hello world!";

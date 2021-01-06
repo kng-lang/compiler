@@ -1,5 +1,5 @@
 
 
-@require "io"
+@require "io";
 
-app.main : () io.println "hello world!"
+app.main : () io.println "hello world!";
