@@ -23,11 +23,11 @@ int main(int argc, char** argv) {
 
     options.add_options()
         ("f,file", "File to compile", cxxopts::value<std::string>())
-        ("b,build", "Build type", cxxopts::value<std::string>())
-        ("d,debug", "Enable debugging", cxxopts::value<std::string>()->default_value(""))
-        ("o,optimise", "Enable optimising", cxxopts::value<u8>())
-        ("e,error", "Error level", cxxopts::value<u8>())
-        ("t,threads", "Number of threads", cxxopts::value<u8>())
+        ("b,build", "Build type [object, asm, exec]", cxxopts::value<std::string>()->default_value("object"))
+        ("d,debug", "Enable debugging [l (lexer), p (parser), g (generator)]", cxxopts::value<std::string>())
+        ("o,optimise", "Enable optimising [UNAVAILABLE]", cxxopts::value<u8>())
+        ("e,error", "Error level [UNAVAILABLE]", cxxopts::value<u8>())
+        ("t,threads", "Number of threads [UNAVAILABLE]", cxxopts::value<u8>())
         ("h,help", "Print usage")
         ;
 
