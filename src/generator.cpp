@@ -2,6 +2,7 @@
 James Clarke - 2021
 */
 
+#include <filesystem>
 #include "generator.h"
 #include "compiler.h"
 #include <iostream>
@@ -82,10 +83,12 @@ void LLVMCodeGen::generate() {
 	llvm_module->setDataLayout(target_machine->createDataLayout());
 	llvm_module->setTargetTriple(target_triple);
 
-	auto filename = "C:/kng/compiler/tests/output";
+	auto curr_path = std::filesystem::current_path().string();
+	std::stringstream ss;
+	ss << curr_path << "/output";
 
 	std::error_code ec;
-	raw_fd_ostream dest(filename, ec, sys::fs::OF_None);
+	raw_fd_ostream dest(ss.str(), ec, sys::fs::OF_None);
 
 	if (ec) {
 		kng_errr("Could not open file: {}", ec.message());
