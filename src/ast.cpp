@@ -80,7 +80,7 @@ void* StmtDefineAST::visit(ASTVisitor* visitor) {
 
 std::string StmtAssignAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"StmtAssignAST\",\n\"variable\":" << variable.to_json() << ",\n\"value\":" << value->to_json() << "}\n";
+	ss << "{\n\"type\": \"StmtAssignAST\",\n\"assignee\":" << assignee->to_json() << ",\n\"value\":" << value->to_json() << "}\n";
 	return ss.str();
 }
 

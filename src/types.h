@@ -61,6 +61,11 @@ struct Type {
 	u8 is_arr = 0;
 	u8 pattern = 0;
 	u32 arr_length = 0;
+
+	// e.g. u8 : 1
+	u8 is_constant = 0;
+	u8 is_global = 0;
+
 	std::vector<Type> patterns;
 	InterfaceSignature interface_signature;
 	FnSignature fn_signature;

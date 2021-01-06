@@ -68,23 +68,27 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 
 	Type l_type = stmt_define_ast->define_type;
-	Type* r_type=NULL;
+	Type r_type;
+	Type* r_type_ptr;
 	// finally, visit the initialisation value
-	if (stmt_define_ast->is_initialised)
-		r_type=(Type*)stmt_define_ast->value->visit(this);
+	if (stmt_define_ast->is_initialised) {
+		stmt_define_ast->value->visit(this);
+		r_type = checked_type;
+		r_type_ptr = checked_type_ptr;
+	}
 
 	if (stmt_define_ast->requires_type_inference) {
 		//l_type = infer_type(stmt_define_ast->value);
 		//stmt_define_ast->define_type = l_type;
-		kng_assert(r_type != NULL, "r_type was NULL");
-		l_type = *r_type;
-		stmt_define_ast->define_type = *r_type;
+		kng_assert(r_type_ptr != NULL, "r_type was NULL");
+		l_type = r_type;
+		stmt_define_ast->define_type = r_type;
 	}
 
 	if (stmt_define_ast->is_initialised) {
-		if (!l_type.matches_basic(*r_type)) {
+		if (!l_type.matches_basic(r_type)) {
 			// @TODO the problem here is that if we are dealing with an array, we need to cast each element individually
-			if(r_type->can_niave_cast(l_type)) {
+			if(r_type_ptr->can_niave_cast(l_type)) {
 				niave_cast_ast(l_type, stmt_define_ast->value);
 			}
 			else {
@@ -126,29 +130,42 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 void* TypeChecker::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_interface_define_ast) { return NULL; }
 
 void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
-	// @TODO support error when assigning to constant
-	auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
-	if (l_type.is_constant) {
-		unit->error_handler.error("cannot re-assign to constant",
-			stmt_assign_ast->variable.index,
-			stmt_assign_ast->variable.line,
-			stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
-			stmt_assign_ast->variable.line);
-	}
-	auto r_type = (Type*)stmt_assign_ast->value->visit(this);
-	if (!l_type.type->matches_basic(*r_type)) {
+
+	// @TODO support error handling here
+
+
+	//// @TODO support error when assigning to constant
+	//auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
+
+
+
+
+
+	stmt_assign_ast->assignee->visit(this);
+	auto l_type = checked_type;
+
+	//if (l_type.is_constant) {
+	//	unit->error_handler.error("cannot re-assign to constant",
+	//		stmt_assign_ast->variable.index,
+	//		stmt_assign_ast->variable.line,
+	//		stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
+	//		stmt_assign_ast->variable.line);
+	//}
+	stmt_assign_ast->value->visit(this);
+	auto r_type = checked_type;
+	auto r_type_ptr = checked_type_ptr;
+	if (!l_type.matches_basic(r_type)) {
 
 		// see if we can cast
-		if (l_type.type->can_niave_cast(*r_type)) {
-			r_type->cast(*l_type.type);
+		if (l_type.can_niave_cast(r_type)) {
+			r_type_ptr->cast(l_type);
 			return NULL;
 		}
-
 		unit->error_handler.error("lhs doesn't match rhs",
-			stmt_assign_ast->variable.index,
-			stmt_assign_ast->variable.line,
-			stmt_assign_ast->variable.index + stmt_assign_ast->variable.length,
-			stmt_assign_ast->variable.line);
+			0,
+			1,
+			0,
+			1);
 	}
 	return NULL; 
 }
@@ -195,7 +212,12 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	if(expr_fn_ast->has_body)
 		expr_fn_ast->body->visit(this);
 
-	return (void*)&expr_fn_ast->full_type;
+
+	checked_type_ptr = &expr_fn_ast->full_type;
+	checked_type = expr_fn_ast->full_type;
+
+	return NULL;
+	//return (void*)&expr_fn_ast->full_type;
 }
 
 
@@ -214,7 +236,9 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 	// we need to resolve the type of the from
 	expr_cast_ast->from_type = infer_type(expr_cast_ast->value);
-	return (void*)&expr_cast_ast->to_type;
+	checked_type = expr_cast_ast->to_type;
+	return NULL;
+	//return (void*)&expr_cast_ast->to_type;
 }
 
 
@@ -226,37 +250,46 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	}
 	
 	Type return_type = t_calle.fn_signature.operation_types.at(0);
+	checked_type = return_type;
 	return NULL;
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	return (Type*)sym_table.get_symbol(expr_var_ast->identifier.value).type;
+	checked_type_ptr = (Type*)sym_table.get_symbol(expr_var_ast->identifier.value).type;
+	checked_type = *checked_type_ptr;
+	return NULL;
 }
 
 void* TypeChecker::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) { return NULL; }
 
-void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { return NULL; }
+void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { 
+
+	return NULL; 
+}
 
 void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) { 
 
-
-
 	switch (expr_un_ast->op.type) {
 	case Token::Type::POINTER:{
-		auto t = (Type*)expr_un_ast->ast->visit(this);
-		t->ptr_indirection--; // @TODO this may break the gen stage as we have modified the type...
-		return t;
+		// first get the type of the group
+		expr_un_ast->ast->visit(this);
+		// then reduce the ptr indirection
+		checked_type.ptr_indirection--;
 	}
 	}
 	return NULL; 
 }
 
 void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
-	return expr_group_ast->visit(this);
+	expr_group_ast->visit(this);
+	return NULL;
 }
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
-	return (void*)&expr_literal_ast->t;
+	checked_type = expr_literal_ast->t;
+	checked_type_ptr = &expr_literal_ast->t;
+	//return (void*)&expr_literal_ast->t;
+	return NULL;
 }
 
 void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) {
@@ -281,8 +314,9 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	array_type.is_arr = 1;
 	array_type.arr_length = expr_literal_array_ast->size;
 	expr_literal_array_ast->array_type = array_type;
-
-	return (void*)&expr_literal_array_ast->array_type;
+	checked_type = expr_literal_array_ast->array_type;
+	return NULL;
+	//return (void*)&expr_literal_array_ast->array_type;
 }
 
 void TypeChecker::cast_array(Type* r_type, Type l_type, std::shared_ptr<ExprLiteralArrayAST> array_ast) {

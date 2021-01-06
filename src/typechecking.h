@@ -15,7 +15,8 @@ struct CompilationUnit;
 struct TypeChecker : public ASTVisitor {
 	CompilationUnit* unit;
 	SymTable<std::shared_ptr<Type>> sym_table;
-
+	Type checked_type;
+	Type* checked_type_ptr;
 
 	TypeChecker() {}
 	TypeChecker(std::shared_ptr<AST> ast, CompilationUnit* unit) : ASTVisitor(ast), unit(unit) {}

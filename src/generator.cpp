@@ -222,7 +222,8 @@ void* LLVMCodeGen::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 void* LLVMCodeGen::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	// @TODO this assumes the variable decleration e.g. x : s32 was an alloca and not a global or a malloc etc
 	auto val = (llvm::Value*)stmt_assign_ast->value->visit(this);
-	auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value).optional_data;
+	auto ptr = (llvm::Value*)stmt_assign_ast->assignee->visit(this);
+	//auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value).optional_data;
 	auto is_volative = false;
 	llvm_builder->CreateStore(val, ptr, is_volative);
 	return NULL;
@@ -364,9 +365,10 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 			return fn_type;
 		}
 		default: {
-			// create a load instruction
-			auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
-			return llvm_builder->CreateLoad(instr);
+			return (llvm::Value*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			//// create a load instruction
+			//auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			//return llvm_builder->CreateLoad(instr);
 		}
 	}
 }

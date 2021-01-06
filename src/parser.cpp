@@ -321,10 +321,10 @@ std::shared_ptr<AST> Parser::parse_assign() {
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
 			// @TODO we can't assign to pointers
-			case AST::ASTType::EXPR_VAR: {
-				auto variable_token = std::dynamic_pointer_cast<ExprVarAST>(higher_precedence);
-				return std::make_shared<StmtAssignAST>(variable_token->identifier, assign_value);
-			}
+			//case AST::ASTType::EXPR_VAR: {
+			//	auto variable_token = std::dynamic_pointer_cast<ExprVarAST>(higher_precedence);
+			//	return std::make_shared<StmtAssignAST>(variable_token->identifier, assign_value);
+			//}
 			case AST::ASTType::EXPR_INTER_GET: {
 				auto member_get = std::dynamic_pointer_cast<ExprInterfaceGetAST>(higher_precedence);
 				auto interface_value = member_get->value;
@@ -332,6 +332,9 @@ std::shared_ptr<AST> Parser::parse_assign() {
 				return std::make_shared<StmtInterfaceAssignAST>(interface_value, member_token, assign_value);
 			}
 			default: {
+
+				return std::make_shared<StmtAssignAST>(higher_precedence, assign_value);
+
 				//@TODO use AST position information
 				unit->error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
 				return std::make_shared<ErrorAST>();

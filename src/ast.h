@@ -136,10 +136,11 @@ struct StmtDefineAST : public StatementAST {
 };
 
 struct StmtAssignAST : public StatementAST {
-	Token variable;
+	//Token variable;
+	std::shared_ptr<AST> assignee;
 	std::shared_ptr<AST> value;
 
-	StmtAssignAST(Token variable, std::shared_ptr<AST> value) : variable(variable), value(value){}
+	StmtAssignAST(std::shared_ptr<AST> assignee, std::shared_ptr<AST> value) : assignee(assignee), value(value){}
 
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_ASSIGN; }
