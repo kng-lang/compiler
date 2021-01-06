@@ -35,7 +35,15 @@ struct CompileOptions {
 		X64,
 		CLR,
 	};
+
+	enum class BuildTarget {
+		ASSEMBLY,
+		OBJECT,
+		EXEC
+	};
+
 	CompileTarget compile_target;
+	BuildTarget build_target;
 	// which debug information should be emitted during compilation
 	u8 debug_emission_flags = 0;
 	u8 optimise = 0;

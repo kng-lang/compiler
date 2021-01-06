@@ -82,7 +82,7 @@ void LLVMCodeGen::generate() {
 	llvm_module->setDataLayout(target_machine->createDataLayout());
 	llvm_module->setTargetTriple(target_triple);
 
-	auto filename = "C:/kng/compiler/tests/output.s";
+	auto filename = "C:/kng/compiler/tests/output";
 
 	std::error_code ec;
 	raw_fd_ostream dest(filename, ec, sys::fs::OF_None);
@@ -93,11 +93,17 @@ void LLVMCodeGen::generate() {
 	}
 
 	legacy::PassManager pass;
-	auto filetype = CGFT_AssemblyFile; // CGFT_ObjectFile;
+	llvm::CodeGenFileType file_type;
+	switch (unit->compile_options.build_target) {
+		case CompileOptions::BuildTarget::ASSEMBLY: file_type = CGFT_AssemblyFile; break;
+		case CompileOptions::BuildTarget::OBJECT: 
+		case CompileOptions::BuildTarget::EXEC:
+			file_type = CGFT_ObjectFile; break;
+	}
 		
 	
     // https://llvm.org/docs/Passes.html
-	if (target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype)) {
+	if (target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
 		kng_errr("TargetMachine can't emit a file of this type");
 		return;
 	}
@@ -359,7 +365,12 @@ void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	auto fn = (llvm::Function*)(expr_call_ast->callee->visit(this));
-	return llvm_builder->CreateCall(fn, llvm::None);
+
+
+	std::vector<llvm::Value*> args = { (llvm::Value*)expr_call_ast->args->visit(this) };
+	llvm::ArrayRef<llvm::Value*> arg_array(args);
+
+	return llvm_builder->CreateCall(fn, arg_array);
 }
 
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {

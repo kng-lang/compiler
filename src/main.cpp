@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
 
     options.add_options()
         ("f,file", "File to compile", cxxopts::value<std::string>())
+        ("b,build", "Build type", cxxopts::value<std::string>())
         ("d,debug", "Enable debugging", cxxopts::value<std::string>()->default_value(""))
         ("o,optimise", "Enable optimising", cxxopts::value<u8>())
         ("e,error", "Error level", cxxopts::value<u8>())
@@ -44,13 +45,26 @@ int main(int argc, char** argv) {
         file = result["file"].as<std::string>();
         
         Compiler compiler;
-
         CompileOptions options;
+
+        if (result.count("build")) {
+            auto b = result["build"].as<std::string>();
+            if (b.compare("assembly") == 0) {
+                options.build_target = CompileOptions::BuildTarget::ASSEMBLY;
+            }
+            else if (b.compare("object")) {
+                options.build_target = CompileOptions::BuildTarget::OBJECT;
+            }
+            else if (b.compare("exec")) {
+                options.build_target = CompileOptions::BuildTarget::EXEC;
+            }
+        }
         if (result.count("optimise"))
             options.optimise = 1;
         if (result.count("threads")) {
             options.threads = result["threads"].as<u8>();
         }
+
         if (result.count("debug")) {
             if(result["debug"].as<std::string>().compare("l")==0)
                 options.debug_emission_flags |= EMIT_TOKEN_DEBUG;

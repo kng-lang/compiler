@@ -257,13 +257,13 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 
 void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
-	Type t_calle = *((Type*)expr_call_ast->callee->visit(this));
-	if (!(t_calle.t==Type::Types::FN)) {
+	expr_call_ast->callee->visit(this);
+	if (!(checked_type.t==Type::Types::FN)) {
 		unit->error_handler.error("callee must be a fn",0,0,0,0);
 		return NULL;
 	}
 	
-	Type return_type = t_calle.fn_signature.operation_types.at(0);
+	Type return_type = checked_type.fn_signature.operation_types.at(0);
 	checked_type = return_type;
 	return NULL;
 }
