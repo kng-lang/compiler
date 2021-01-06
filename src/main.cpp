@@ -49,13 +49,13 @@ int main(int argc, char** argv) {
 
         if (result.count("build")) {
             auto b = result["build"].as<std::string>();
-            if (b.compare("assembly") == 0) {
+            if (b.compare("asm")==0) {
                 options.build_target = CompileOptions::BuildTarget::ASSEMBLY;
             }
-            else if (b.compare("object")) {
+            else if (b.compare("object") == 0) {
                 options.build_target = CompileOptions::BuildTarget::OBJECT;
             }
-            else if (b.compare("exec")) {
+            else if (b.compare("exec") == 0) {
                 options.build_target = CompileOptions::BuildTarget::EXEC;
             }
         }

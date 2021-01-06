@@ -46,6 +46,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 }
 
 u8 CompilationUnit::compile() {
+	kng_log("{}", compile_file.file_path);
 	compile_to_bin();
 	return 1;
 }

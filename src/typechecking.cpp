@@ -262,7 +262,6 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 		unit->error_handler.error("callee must be a fn",0,0,0,0);
 		return NULL;
 	}
-	
 	Type return_type = checked_type.fn_signature.operation_types.at(0);
 	checked_type = return_type;
 	return NULL;
