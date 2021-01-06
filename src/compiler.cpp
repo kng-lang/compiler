@@ -46,7 +46,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 }
 
 u8 CompilationUnit::compile() {
-	kng_log("{}", compile_file.file_path);
+	kng_log("...{}", compile_file.file_path);
 	compile_to_bin();
 	return 1;
 }
@@ -58,9 +58,10 @@ TokenList CompilationUnit::compile_to_tokens() {
 	auto tokens = l.scan();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("lexed in {} ms.", time);
-	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG)
+	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG) {
 		kng_log("lexer debug {}:\n{}", compile_file.file_path, tokens.to_json());
+		kng_log("lexed in {} ms.", time);
+	}
 	return tokens;
 }
 
@@ -76,10 +77,10 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("parsed in {} ms.", time);
-
-	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG)
+	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG) {
 		kng_log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
+		kng_log("parsed in {} ms.", time);
+	}
 	return ast;
 }
 
@@ -92,7 +93,8 @@ void CompilationUnit::compile_to_bin() {
 	generator.generate();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("generated in {} ms.", time);
+	if(compile_options.debug_emission_flags&EMIT_IR_DEBUG)
+		kng_log("generated in {} ms.", time);
 }
 
 u8 Importer::valid_import_path(std::string& path) {

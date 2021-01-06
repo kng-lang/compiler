@@ -136,9 +136,6 @@ std::shared_ptr<AST> Parser::parse_directive() {
 				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
 				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value, valid_include);
 				auto ast = compilation_unit->compile_to_ast();
-
-
-				kng_log("done include!!!");
 				return ast;
 			}
 			break;
