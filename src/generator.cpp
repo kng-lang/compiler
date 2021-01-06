@@ -51,7 +51,6 @@ void LLVMCodeGen::generate() {
 	this->ast->visit(this);
 
 	make_runtime();
-	optimise();
 
 	using namespace llvm;
 
@@ -114,11 +113,10 @@ void LLVMCodeGen::generate() {
 	pass.add(llvm::createLoopUnswitchPass());
 	pass.add(llvm::createLoopRotatePass());
 
-
 	pass.run(*llvm_module);
 
 	if (this->unit->compile_options.debug_emission_flags & EMIT_IR_DEBUG)
-		this->llvm_module->dump();
+		llvm_module->print(llvm::errs(), nullptr);
 	dest.flush();
 }
 
