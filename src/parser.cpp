@@ -449,6 +449,7 @@ std::shared_ptr<AST> Parser::parse_call() {
 		ExprCallAST call;
 		call.callee = higher_precedence;
 		if (!consume(Token::Type::RPAREN)) {
+			call.has_args = 1;
 			call.args = parse_call();
 			if (!consume(Token::Type::RPAREN)) {
 				unit->error_handler.error("expected closing ')' after fn call",
@@ -488,8 +489,22 @@ std::shared_ptr<AST> Parser::parse_single(){
 			break;
 		}
 		case Token::Type::STRING: {
-			// @TODO arrays
-			return std::make_shared<ExprLiteralAST>();
+			// @TODO in retrospect, this is a terrible idea. we want the assembly file to have this as a global in .data section
+			// such as .text_const: "hello world"
+			// treat this as an array
+			std::vector<std::shared_ptr<AST>> array_values;
+
+			ExprLiteralAST lit_ast;
+			lit_ast.t = Type(Type::Types::U8);
+			auto& s = t.value;
+			for (const auto& c : s) {
+				lit_ast.v.v.as_u8 = c;
+				array_values.push_back(std::make_shared<ExprLiteralAST>(lit_ast));
+			}
+			lit_ast.v.v.as_u8 = 0;
+			array_values.push_back(std::make_shared<ExprLiteralAST>(lit_ast));
+
+			return std::make_shared<ExprLiteralArrayAST>(Type(Type::Types::UNKNOWN), Type(Type::Types::UNKNOWN), array_values.size(), array_values);
 			break;
 		}
 		case Token::Type::TRU: {

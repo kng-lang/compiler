@@ -243,10 +243,12 @@ struct ExprCastAST : public ExpressionAST {
 struct ExprCallAST : public ExpressionAST {
 	std::shared_ptr<AST> callee;
 	std::shared_ptr<AST> args;
+	u8 has_args = 0;
 	ExprCallAST() {}
-	ExprCallAST(std::shared_ptr<AST> callee, std::shared_ptr<AST> args) :
+	ExprCallAST(std::shared_ptr<AST> callee, std::shared_ptr<AST> args, u8 has_args) :
 		callee(callee),
-		args(args) {}
+		args(args),
+		has_args(has_args){}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_CALL; }
 	virtual void* visit(ASTVisitor* visitor);
