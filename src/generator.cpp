@@ -377,6 +377,17 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
+
+	switch (expr_un_ast->op.type) {
+	case Token::Type::POINTER: {
+		//@TODO implement me!
+		// we first need to get the type that the load is of 
+		auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
+		return llvm_builder->CreateLoad(value);
+		break;
+	}
+	}
+
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {

@@ -245,7 +245,7 @@ Type Parser::parse_type() {
 		else {
 			// unknown size, we need to check during type checking if the array is initialised otherwise it is a pointer
 			t.is_arr = 1;
-			t.ptr_indirection = 1;
+			ptr_indirection++;
 		}
 
 		if(!consume(Token::Type::RBRACKET)){
@@ -320,6 +320,7 @@ std::shared_ptr<AST> Parser::parse_assign() {
 		auto assign_value = parse_pattern();
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
+			// @TODO we can't assign to pointers
 			case AST::ASTType::EXPR_VAR: {
 				auto variable_token = std::dynamic_pointer_cast<ExprVarAST>(higher_precedence);
 				return std::make_shared<StmtAssignAST>(variable_token->identifier, assign_value);
@@ -410,15 +411,17 @@ std::shared_ptr<AST> Parser::parse_mdmr() {
 }
 
 std::shared_ptr<AST> Parser::parse_un() {
-	auto higher_precedence = parse_cast();
 	if (expect(Token::Type::POINTER) || expect(Token::Type::BANG)) {
+
+
+		// @TODO optimise by having a for consume(POINTER) for example so we can chain operations to reduce recursiveness
+
 		auto op = next();
 		auto ast = parse_un();
-#define LEFT 0
-#define RIGHT 1
-		auto un = ExprUnAST(op, ast, LEFT);
+		auto un = ExprUnAST(op, ast, ExprUnAST::Side::LEFT);
+		return std::make_shared<ExprUnAST>(un);
 	}
-	return higher_precedence;
+	return parse_cast();
 }
 std::shared_ptr<AST> Parser::parse_cast() {
 	auto higher_precedence = parse_call();

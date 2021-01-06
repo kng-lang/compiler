@@ -248,7 +248,7 @@ void* ExprGroupAST::visit(ASTVisitor* visitor) {
 
 std::string ExprUnAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprUnAST\",\n\"op\":" << op.to_json() << ",\n\"ast\":" << ast->to_json() << ",\n\"side\":" << side << "\n}\n";
+	ss << "{\n\"type\": \"ExprUnAST\",\n\"op\":" << op.to_json() << ",\n\"ast\":" << ast->to_json() << "\n}\n";
 	return ss.str();
 }
 

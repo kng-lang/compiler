@@ -289,12 +289,18 @@ struct ExprBinAST : public ExpressionAST {
 };
 
 struct ExprUnAST : public ExpressionAST {
+
+	enum class Side {
+		LEFT,
+		RIGHT
+	};
+
 	Token op;
 	std::shared_ptr<AST> ast;
-	u8 side; // left (0), right (1)
+	Side side;
 
 	ExprUnAST(){}
-	ExprUnAST(Token op, std::shared_ptr<AST> ast, u8 side) : op(op), ast(ast), side(side){}
+	ExprUnAST(Token op, std::shared_ptr<AST> ast, Side side) : op(op), ast(ast), side(side){}
 
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_UN; }

@@ -237,7 +237,19 @@ void* TypeChecker::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interf
 
 void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { return NULL; }
 
-void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) { return NULL; }
+void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) { 
+
+
+
+	switch (expr_un_ast->op.type) {
+	case Token::Type::POINTER:{
+		auto t = (Type*)expr_un_ast->ast->visit(this);
+		t->ptr_indirection--; // @TODO this may break the gen stage as we have modified the type...
+		return t;
+	}
+	}
+	return NULL; 
+}
 
 void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 	return expr_group_ast->visit(this);
