@@ -22,7 +22,7 @@ const char* Type::debug_types[] = {
 
 std::string Type::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\":" << debug_types[(s32)this->t] << "\n\"ptr\":" << this->ptr << "\n}\n";
+	ss << "{\n\"type\":" << debug_types[(s32)this->t] << "\n\"ptr\":" << this->ptr_indirection << "\n}\n";
 	return ss.str();
 }
 
@@ -36,7 +36,9 @@ Type infer_type(std::shared_ptr<AST> ast){
 }
 
 u8 Type::can_niave_cast(Type other) {
-	if (is_number_type() && other.is_number_type() && arr_length==other.arr_length) {
+	if (is_number_type() && other.is_number_type() 
+		&& arr_length==other.arr_length 
+		&& ptr_indirection==other.ptr_indirection) {
 		return 1;
 	}
 	return 0;
@@ -88,7 +90,7 @@ u8 Type::matches_basic(Type other){
 	return this->t == other.t
 		&& this->is_arr == other.is_arr
 		&& this->arr_length == other.arr_length
-		&& this->ptr == other.ptr;
+		&& this->ptr_indirection == other.ptr_indirection;
 }
 
 u8 Type::matches_deep(Type other){

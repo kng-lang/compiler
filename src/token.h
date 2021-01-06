@@ -50,7 +50,7 @@ struct Token{
 		F64,
 		CHAR,
 
-		REFERENCE,
+		POINTER,
 		DOT,
 		DOUBLEDOT,
 		TRIPLEDOT,

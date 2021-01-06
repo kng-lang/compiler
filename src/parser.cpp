@@ -197,7 +197,8 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::F32)
 		|| expect(Token::Type::F64)
 		|| expect(Token::Type::CHAR)
-		|| expect(Token::Type::IDENTIFIER);
+		|| expect(Token::Type::IDENTIFIER)
+		|| expect(Token::Type::POINTER);
 }
 
 u8 Parser::expecting_expr(){
@@ -216,6 +217,11 @@ u8 Parser::expecting_expr(){
 
 Type Parser::parse_type() {
 	Type t;
+	u8 ptr_indirection=0;
+	while (consume(Token::Type::POINTER)){
+		ptr_indirection += 1;
+	}
+
 	switch (next().type) {
 	case Token::Type::U0: t = Type(Type::Types::U0); break;
 	case Token::Type::U8: t = Type(Type::Types::U8); break;
@@ -239,7 +245,7 @@ Type Parser::parse_type() {
 		else {
 			// unknown size, we need to check during type checking if the array is initialised otherwise it is a pointer
 			t.is_arr = 1;
-			t.ptr = 1;
+			t.ptr_indirection = 1;
 		}
 
 		if(!consume(Token::Type::RBRACKET)){
@@ -248,6 +254,7 @@ Type Parser::parse_type() {
 			return Type(Type::Types::UNKNOWN);
 		}
 	}
+	t.ptr_indirection = ptr_indirection;
 	return t;
 }
 
@@ -404,7 +411,7 @@ std::shared_ptr<AST> Parser::parse_mdmr() {
 
 std::shared_ptr<AST> Parser::parse_un() {
 	auto higher_precedence = parse_cast();
-	if (expect(Token::Type::REFERENCE) || expect(Token::Type::BANG)) {
+	if (expect(Token::Type::POINTER) || expect(Token::Type::BANG)) {
 		auto op = next();
 		auto ast = parse_un();
 #define LEFT 0

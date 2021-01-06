@@ -31,7 +31,7 @@ TokenList Lexer::scan() {
 			case '}': token(Token::Type::RCURLY); break;
 			case '_': token(Token::Type::UNDERSCORE); break;
 			case ';': token(Token::Type::SEMI_COLON); break;
-			case '^': token(Token::Type::REFERENCE); break;
+			case '^': token(Token::Type::POINTER); break;
 			case ',': token(Token::Type::COMMA); break;
 
 			case '&': decide(Token::Type::BAND, Token::Type::LAND); break;

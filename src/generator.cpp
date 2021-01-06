@@ -101,17 +101,17 @@ void LLVMCodeGen::generate() {
 		kng_errr("TargetMachine can't emit a file of this type");
 		return;
 	}
-
-	pass.add(llvm::createCodeGenPreparePass());
-
-	pass.add(llvm::createPromoteMemoryToRegisterPass());
-	pass.add(llvm::createReassociatePass());
-	pass.add(llvm::createInterleavedLoadCombinePass());
-	pass.add(llvm::createNewGVNPass());
-	pass.add(llvm::createCFGSimplificationPass());
-	pass.add(llvm::createLoopUnrollPass());
-	pass.add(llvm::createLoopUnswitchPass());
-	pass.add(llvm::createLoopRotatePass());
+	if (unit->compile_options.optimise) {
+		pass.add(llvm::createCodeGenPreparePass());
+		pass.add(llvm::createPromoteMemoryToRegisterPass());
+		pass.add(llvm::createReassociatePass());
+		pass.add(llvm::createInterleavedLoadCombinePass());
+		pass.add(llvm::createNewGVNPass());
+		pass.add(llvm::createCFGSimplificationPass());
+		pass.add(llvm::createLoopUnrollPass());
+		pass.add(llvm::createLoopUnswitchPass());
+		pass.add(llvm::createLoopRotatePass());
+	}
 
 	pass.run(*llvm_module);
 
@@ -123,7 +123,10 @@ void LLVMCodeGen::generate() {
 void LLVMCodeGen::make_runtime() {
 
 	// first create the main function
-	llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(*llvm_context), { llvm::Type::getInt32Ty(*llvm_context), llvm::Type::getInt32PtrTy(*llvm_context) }, false);
+
+	auto ptr_to_ptr = llvm::PointerType::getUnqual(llvm::Type::getInt32PtrTy(*llvm_context));
+
+	llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(*llvm_context), { llvm::Type::getInt32Ty(*llvm_context), ptr_to_ptr }, false);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "main", *llvm_module);
 	llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "main_block", f);
 	llvm_builder->SetInsertPoint(bb);
@@ -152,8 +155,12 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 
 	}
 	// its only an array and not a ptr if the arr_length > 0 otherwise x : u8[] is a ptr
-	if(type.is_arr && type.arr_length>0)
+	if (type.is_arr && type.arr_length > 0)
 		tmp_type = llvm::ArrayType::get(tmp_type, type.arr_length);
+	if (type.ptr_indirection) {
+		for (int i = 0; i < type.ptr_indirection; i++)
+			tmp_type = llvm::PointerType::getUnqual(tmp_type);
+	}
 	kng_assert(tmp_type, "tmp_type NULL");
 	return tmp_type;
 }

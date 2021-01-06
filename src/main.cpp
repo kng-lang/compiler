@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
     options.add_options()
         ("f,file", "File to compile", cxxopts::value<std::string>())
         ("d,debug", "Enable debugging", cxxopts::value<std::string>()->default_value(""))
+        ("o,optimise", "Enable optimising", cxxopts::value<u8>())
         ("e,error", "Error level", cxxopts::value<u8>())
         ("t,threads", "Number of threads", cxxopts::value<u8>())
         ("h,help", "Print usage")
@@ -45,6 +46,8 @@ int main(int argc, char** argv) {
         Compiler compiler;
 
         CompileOptions options;
+        if (result.count("optimise"))
+            options.optimise = 1;
         if (result.count("threads")) {
             options.threads = result["threads"].as<u8>();
         }
