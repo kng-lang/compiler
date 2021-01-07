@@ -307,7 +307,8 @@ void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
-	checked_type = expr_literal_ast->t;
+
+    checked_type = expr_literal_ast->t;
 	checked_type_ptr = &expr_literal_ast->t;
 	//return (void*)&expr_literal_ast->t;
 	return NULL;
@@ -341,10 +342,4 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	checked_type = expr_literal_array_ast->array_type;
 	return NULL;
 	//return (void*)&expr_literal_array_ast->array_type;
-}
-
-void TypeChecker::cast_array(Type* r_type, Type l_type, std::shared_ptr<ExprLiteralArrayAST> array_ast) {
-	// we want to cast the r_type to the l_type and each value in the array_ast
-	r_type->cast(l_type);
-	// cast each value here
 }

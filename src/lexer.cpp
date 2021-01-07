@@ -223,7 +223,8 @@ void Lexer::do_word(char start){
 			break;
 		}
 		case 's': {
-			found_keyword = check_keyword("32", Token::Type::S32);
+			found_keyword = check_keyword("8", Token::Type::S8);
+			if (!found_keyword) found_keyword = check_keyword("32", Token::Type::S32);
 			if (!found_keyword) found_keyword = check_keyword("65", Token::Type::S64);
 			break;
 		}

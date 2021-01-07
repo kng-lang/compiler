@@ -41,7 +41,9 @@ struct Type {
 		// y : interface = interface { name : u8^}
 		U0,
 		U8,
+		S8,
 		U16,
+		S16,
 		U32,
 		U64,
 		S32,
@@ -96,24 +98,19 @@ struct Type {
 };
 
 struct Value {
-	//union v {
-	//	u8  as_u8;
-	//	u16 as_u16;
-	//	u32 as_u32;
-	//	s32 as_s32;
-	//	s64 as_s64;
-	//	f32 as_f32;
-	//	f64 as_f64;
-	//	std::string as_string;
-	//
-	//	v(){}
-	//	~v(){}
-	//} v;
 
-
-
-	std::variant<char, u8, u16, u32, s32, s64, f32, f64, std::string> values;
-
+	std::string value;
+	u8 as_u8() { return std::atoi(value.c_str()); }
+	s8 as_s8() { return std::atoi(value.c_str()); }
+	u16 as_u16() { return std::atoi(value.c_str()); }
+	s16 as_s16() { return std::atoi(value.c_str()); }
+	u32 as_u32() { return std::atoi(value.c_str()); }
+	s32 as_s32() { return std::atoi(value.c_str()); }
+	s64 as_s64() { return std::atoi(value.c_str()); }
+	f32 as_f32() { return std::atof(value.c_str()); }
+	f64 as_f64() { return std::atof(value.c_str()); }
+	char as_char() { return value.at(0); }
+	std::string as_string() { return value; }
 };
 
 struct SymTableEntry {

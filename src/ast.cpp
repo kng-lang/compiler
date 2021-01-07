@@ -258,7 +258,7 @@ void* ExprUnAST::visit(ASTVisitor* visitor) {
 
 std::string ExprLiteralAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\": \"ExprLiteralAST\",\n\"type\":" << this->t.to_json() << ",\n\"value\":" << std::get<s32>(this->v.values) << "\n}\n";
+	ss << "{\n\"type\": \"ExprLiteralAST\",\n\"type\":" << this->t.to_json() << ",\n\"value\":" << this->v.value << "\n}\n";
 	return ss.str();
 }
 

@@ -6,7 +6,9 @@ const char* Type::debug_types[] = {
 	"TYPE",
 	"U0",
 	"U8",
+	"S8",
 	"U16",
+	"S16",
 	"U32",
 	"U64",
 	"S32",
@@ -53,7 +55,7 @@ u8 Type::is_number_type() {
 }
 
 u8 Type::is_integer_type() {
-	return t == Types::U8 || t == Types::U16 || t == Types::U32 || t == Types::S32 || t == Types::S64;
+	return t == Types::U8 || t == Types::S8 || t == Types::U16 || t == Types::S16 || t == Types::U32 || t == Types::S32 || t == Types::S64;
 }
 
 u8 Type::is_float_type() {

@@ -200,10 +200,13 @@ u8 Parser::end_of_block() {
 }
 
 u8 Parser::expecting_type() {
+	// @TODO this should be done as a numeric check e.g. (u32)expect() > 12 etc
 	return 
 		expect(Token::Type::U0)
 		|| expect(Token::Type::U8)
+		|| expect(Token::Type::S8)
 		|| expect(Token::Type::U16)
+		|| expect(Token::Type::S16)
 		|| expect(Token::Type::U32)
 		|| expect(Token::Type::S32)
 		|| expect(Token::Type::S64)
@@ -242,7 +245,9 @@ Type Parser::parse_type() {
 	switch (next().type) {
 	case Token::Type::U0: t = Type(Type::Types::U0); break;
 	case Token::Type::U8: t = Type(Type::Types::U8); break;
+	case Token::Type::S8: t = Type(Type::Types::S8); break;
 	case Token::Type::U16: t = Type(Type::Types::U16); break;
+	case Token::Type::S16: t = Type(Type::Types::S16); break;
 	case Token::Type::U32: t = Type(Type::Types::U32); break;
 	case Token::Type::S32: t = Type(Type::Types::S32); break;
 	case Token::Type::S64: t = Type(Type::Types::S64); break;
@@ -497,7 +502,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::NUMBER: {
 			ExprLiteralAST lit_ast;
 			lit_ast.t = Type(Type::Types::S32, 0);
-			lit_ast.v.values = (s32)stoi(t.value);
+			lit_ast.v.value = t.value;
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 			break;
 		}
@@ -519,7 +524,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 			//
 			//return std::make_shared<ExprLiteralArrayAST>(Type(Type::Types::UNKNOWN), Type(Type::Types::UNKNOWN), array_values.size(), array_values);
 			ExprLiteralAST string_lit;
-			string_lit.v.values = t.value;
+			string_lit.v.value = t.value;
 			string_lit.t = Type(Type::Types::STRING);
 			return std::make_shared<ExprLiteralAST>(string_lit);
 			break;
@@ -527,13 +532,13 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::TRU: {
 			ExprLiteralAST lit_ast;
 			lit_ast.t = Type(Type::Types::U8, 0);
-			lit_ast.v.values = (u8)1;
+			lit_ast.v.value = "1";
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::FLSE: {
 			ExprLiteralAST lit_ast;
 			lit_ast.t = Type(Type::Types::U8, 0);
-			lit_ast.v.values = (u8)0;
+			lit_ast.v.value = "0";
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::LPAREN: {

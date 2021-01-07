@@ -43,7 +43,9 @@ struct Token{
 
 		U0,
 		U8,
+		S8,
 		U16,
+		S16,
 		U32,
 		U64,
 		S32,

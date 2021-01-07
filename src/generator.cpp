@@ -88,6 +88,7 @@ void LLVMCodeGen::generate() {
 	ss << curr_path << "/output";
 
 	std::error_code ec;
+
 	raw_fd_ostream dest(ss.str(), ec, sys::fs::OF_None);
 
 	if (ec) {
@@ -126,6 +127,9 @@ void LLVMCodeGen::generate() {
 
 	if (this->unit->compile_options.debug_emission_flags & EMIT_IR_DEBUG)
 		llvm_module->print(llvm::errs(), nullptr);
+
+
+
 	dest.flush();
 }
 
@@ -152,7 +156,9 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 	switch (type.t) {
 	case Type::Types::U0:     tmp_type = llvm::Type::getVoidTy(*llvm_context); break;
 		case Type::Types::U8:     tmp_type = llvm::Type::getInt8Ty(*llvm_context); break;
+		case Type::Types::S8:     tmp_type = llvm::Type::getInt8Ty(*llvm_context); break;
 		case Type::Types::U16:    tmp_type = llvm::Type::getInt16Ty(*llvm_context); break;
+		case Type::Types::S16:    tmp_type = llvm::Type::getInt16Ty(*llvm_context); break;
 		case Type::Types::U32:    tmp_type = llvm::Type::getInt32Ty(*llvm_context); break;
 		case Type::Types::S32:    tmp_type = llvm::Type::getInt32Ty(*llvm_context); break;
 		case Type::Types::S64:    tmp_type = llvm::Type::getInt64Ty(*llvm_context); break;
@@ -452,20 +458,23 @@ void* LLVMCodeGen::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 	switch (expr_literal_ast->t.t) {
-	case Type::Types::U8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), std::get<u8>(expr_literal_ast->v.values)); break;
-	case Type::Types::U16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), std::get<u16>(expr_literal_ast->v.values)); break;
-	case Type::Types::U32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), std::get<u32>(expr_literal_ast->v.values)); break;
-	case Type::Types::S32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), std::get<s32>(expr_literal_ast->v.values)); break;
-	case Type::Types::S64: return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvm_context), std::get<s64>(expr_literal_ast->v.values)); break;
-	case Type::Types::F32: return llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*llvm_context), std::get<f32>(expr_literal_ast->v.values)); break;
-	case Type::Types::F64: return llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*llvm_context),std::get<f64>( expr_literal_ast->v.values)); break;
-	case Type::Types::CHAR: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), std::get<char>(expr_literal_ast->v.values)); break;
+	case Type::Types::U8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context),   expr_literal_ast->v.as_u8()); break;
+	case Type::Types::S8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_s8()); break;
+	case Type::Types::U16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.as_u16()); break;
+	case Type::Types::S16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.as_s16()); break;
+	case Type::Types::U32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.as_u32()); break;
+	case Type::Types::S32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.as_s32()); break;
+	case Type::Types::S64: return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvm_context), expr_literal_ast->v.as_s64()); break;
+	case Type::Types::F32: return llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*llvm_context), expr_literal_ast->v.as_f32()); break;
+	case Type::Types::F64: return llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*llvm_context),expr_literal_ast->v.as_f64()); break;
+	case Type::Types::CHAR: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_char()); break;
 	case Type::Types::STRING: {
-		return llvm_builder->CreateGlobalString(std::get<std::string>(expr_literal_ast->v.values));
+		return llvm_builder->CreateGlobalString(expr_literal_ast->v.as_string());
 		//return llvm::ConstantDataArray::getString(*llvm_context, std::get<std::string>(expr_literal_ast->v.values), true);
 	}
 	}
-	return (void*)llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 123);
+	kng_assert(false, "invalid type");
+	return NULL;
 }
 
 void* LLVMCodeGen::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) {

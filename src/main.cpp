@@ -2,7 +2,6 @@
 James Clarke - 2021
 */
 
-//-d -f c:/kng/compiler/tests/main.kng
 #include "compiler.h"
 
 #include <string>
@@ -14,7 +13,6 @@ James Clarke - 2021
 #include "exporter.h"
 
 int main(int argc, char** argv) {
-
     Exporter e;
     SymTable<Type> s;
     e.export_globals(s);
