@@ -2,7 +2,7 @@
 
 @import "build";
 
-app.build : () {
+main : () {
     builder := Builder();
     builder.add_src "helloworld.k";
     builder.optimise Builder.OPTIMISE_FULL;

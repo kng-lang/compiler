@@ -1,0 +1,15 @@
+// the include directive is a way to directly include code from another file
+@include "io/print.kng";
+
+main : (){
+    print("hello world!\n");
+}
+
+
+
+// we can also bind the include to a namespace type
+io : @incude "io/print.kng"; // or io : namespace = @include "io/print.kng"
+
+main : (){
+    io.print("hello world!\n");
+}

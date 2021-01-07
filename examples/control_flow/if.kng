@@ -1,0 +1,20 @@
+// NOTE in the future we will support 'case' based if statements
+
+
+
+
+main : (){
+
+    // if statements are done like every other language
+    condition : u32 = 1;
+    other_condition : u32 = -1;
+
+    if condition {
+
+    }else if other_condition {
+
+    }else {
+
+    }
+
+}

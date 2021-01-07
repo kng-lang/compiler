@@ -1,0 +1,13 @@
+
+// we can decalre global variables
+x : s32 = 1;
+x := 1;
+
+
+// we can even initialise them with any expression
+x : s32 = square(99) + 123;
+
+
+// we can declare constants
+x : s32 1
+x : 1

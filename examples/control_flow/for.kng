@@ -1,0 +1,48 @@
+
+
+// this example demonstrates how to use for loops.
+
+main : (){
+
+    list : {1, 2, 3};
+
+    // this will iterate over each item.
+    // i is a pointer to the item, therefore modifying i will modify the array
+    for i in list {
+        // double each item
+        ^i = ^i * 2;
+    }
+
+    // this is useful for cases when we have a set of interfaces that we need to update
+
+    entities : {Entity(), Entity(), Entity()};
+    for entity in entities {
+        entity.tick();
+    }
+
+
+    // if we want to get an index over a range we can do this
+    // as we are attempting to iterate over a non, iterable, we do an indexed-based iteration
+    for i in 100 {
+        
+    }
+
+
+    // if we want to combine the 2 methods (get a pointer and an index, we can do that like this)
+    // i is a u32 and entity is a pointer
+    for i, entity in entities {
+
+    }
+
+
+    // to loop whilst a condition is true
+    for condition {
+        condition = false;
+    }
+
+    // to loop forever, we can have an empty for loop
+    for {
+
+    }
+
+}

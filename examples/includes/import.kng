@@ -1,0 +1,32 @@
+// importing works similar to @include, however it behaves differently at the compiler level.
+// importing allows us to import entire kng projects rather than a single file. The files in the project
+// are linked at compile time rather than a C-like #include. This means faster compile times as we can
+// compile each individual file in the project on another core. It also allows for object-file caching
+// if the project is stale (e.g. runtime library projects)
+
+
+// this code allows us to import the io project
+io : @import "io";
+
+main : (){
+    io.println("hello world!\n");
+}
+
+// we can also import remove projects
+
+opengl : @import "http://github.com/kng/open_gl";
+
+
+// we can also use regex in the import string
+
+project : @import "project_version_*";
+
+
+// to create a project, simply create a directory structure like so.
+// the compiler will automatically detect if a folder is a project if the root_folder
+// matches the project dir
+
+// - project_name_here
+// --- project_files.kng
+// --- sub_project_dir
+// ------ sub_project_files.kng

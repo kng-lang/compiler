@@ -1,0 +1,43 @@
+
+
+
+
+
+
+
+// here, we see that main is declared as a constant using : rather than :=,
+// this means at compile time, the fn name will not be mangled. We would use
+// a constant fn if we require the output assembly to be the same, e.g. writing a kernel
+main : (){
+
+}
+
+
+// if however, we declared main as a lambda... the name would be mangled as
+// it is possible to rebind main to another lambda
+main := (){
+
+}
+
+
+// we can of course nest functions
+
+main : (){
+    nested : (){
+
+    }
+}
+
+
+// we can pass functions as arguments
+
+
+pass_me_a_fn(f : (param : s32)){
+    f(123);
+}
+
+main : (){
+    pass_me_a_fn((f : s32){
+        ret f; 
+    });
+}
