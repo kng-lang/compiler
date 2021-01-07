@@ -325,7 +325,7 @@ struct ExprLiteralAST : public ExpressionAST {
 	Type t;
 	Value v;
 	ExprLiteralAST(){}
-	ExprLiteralAST(Type t, Value v) : t(t), v(v){}
+	ExprLiteralAST(Type t, Value v) : t(t) { this->v = v; }
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_LIT; }
 	virtual void* visit(ASTVisitor* visitor);

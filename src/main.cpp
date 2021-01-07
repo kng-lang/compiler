@@ -22,11 +22,11 @@ int main(int argc, char** argv) {
     cxxopts::Options options("kng compiler", "The kng compiler");
 
     options.add_options()
+        ("e,exec", "Print usage")
         ("f,file", "File to compile", cxxopts::value<std::string>())
-        ("b,build", "Build type [object, asm, exec]", cxxopts::value<std::string>()->default_value("object"))
         ("d,debug", "Enable debugging [l (lexer), p (parser), g (generator)]", cxxopts::value<std::string>())
         ("o,optimise", "Enable optimising [UNAVAILABLE]", cxxopts::value<u8>())
-        ("e,error", "Error level [UNAVAILABLE]", cxxopts::value<u8>())
+        ("w,warning", "Warning level [UNAVAILABLE]", cxxopts::value<u8>())
         ("t,threads", "Number of threads [UNAVAILABLE]", cxxopts::value<u8>())
         ("h,help", "Print usage")
         ;
@@ -47,17 +47,8 @@ int main(int argc, char** argv) {
         Compiler compiler;
         CompileOptions options;
 
-        if (result.count("build")) {
-            auto b = result["build"].as<std::string>();
-            if (b.compare("asm")==0) {
-                options.build_target = CompileOptions::BuildTarget::ASSEMBLY;
-            }
-            else if (b.compare("object") == 0) {
-                options.build_target = CompileOptions::BuildTarget::OBJECT;
-            }
-            else if (b.compare("exec") == 0) {
-                options.build_target = CompileOptions::BuildTarget::EXEC;
-            }
+        if (result.count("exec")) {
+            options.build_target = CompileOptions::BuildTarget::OBJECT;
         }
         if (result.count("optimise"))
             options.optimise = 1;

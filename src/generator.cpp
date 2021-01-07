@@ -160,7 +160,7 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 		case Type::Types::F64:    tmp_type = llvm::Type::getDoubleTy(*llvm_context); break;
 		case Type::Types::CHAR:   tmp_type = llvm::Type::getInt8Ty(*llvm_context); break; // ASCII FOR NOW?
 		case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)sym_table.get_symbol(type.fn_signature.anonymous_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
-		case Type::Types::STRING: tmp_type = NULL; break; // @TODO return a reference to the string interface using the symbol table
+		case Type::Types::STRING: tmp_type = llvm::Type::getInt8PtrTy(*llvm_context); break; // @TODO return a reference to the string interface using the symbol table
 
 	}
 	// its only an array and not a ptr if the arr_length > 0 otherwise x : u8[] is a ptr
@@ -431,14 +431,18 @@ void* LLVMCodeGen::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 	switch (expr_literal_ast->t.t) {
-	case Type::Types::U8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.v.as_u8); break;
-	case Type::Types::U16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.v.as_u16); break;
-	case Type::Types::U32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.v.as_u32); break;
-	case Type::Types::S32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.v.as_s32); break;
-	case Type::Types::S64: return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvm_context), expr_literal_ast->v.v.as_s64); break;
-	case Type::Types::F32: return llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*llvm_context), expr_literal_ast->v.v.as_f32); break;
-	case Type::Types::F64: return llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*llvm_context), expr_literal_ast->v.v.as_s64); break;
-	case Type::Types::CHAR: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.v.as_u8); break;
+	case Type::Types::U8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), std::get<u8>(expr_literal_ast->v.values)); break;
+	case Type::Types::U16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), std::get<u16>(expr_literal_ast->v.values)); break;
+	case Type::Types::U32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), std::get<u32>(expr_literal_ast->v.values)); break;
+	case Type::Types::S32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), std::get<s32>(expr_literal_ast->v.values)); break;
+	case Type::Types::S64: return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvm_context), std::get<s64>(expr_literal_ast->v.values)); break;
+	case Type::Types::F32: return llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*llvm_context), std::get<f32>(expr_literal_ast->v.values)); break;
+	case Type::Types::F64: return llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*llvm_context),std::get<f64>( expr_literal_ast->v.values)); break;
+	case Type::Types::CHAR: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), std::get<char>(expr_literal_ast->v.values)); break;
+	case Type::Types::STRING: {
+		return llvm_builder->CreateGlobalString(std::get<std::string>(expr_literal_ast->v.values));
+		//return llvm::ConstantDataArray::getString(*llvm_context, std::get<std::string>(expr_literal_ast->v.values), true);
+	}
 	}
 	return (void*)llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 123);
 }

@@ -258,8 +258,21 @@ void Lexer::do_number(char start){
 
 void Lexer::do_string(char start) {
 	std::stringstream ss;
-	while (!end() && peek() != start)
-		ss << next();
+	while (!end() && peek() != start) {
+		auto c = next();
+		// check for escape sequences
+		if (c == '\\') {
+			switch (next()) {
+				case 'n':  {ss << '\n'; break;}
+				case 'r':  {ss << '\r'; break;}
+				case '\'': {ss << '\''; break;}
+				case '\t': {ss << '\t'; break;}
+			}
+		}
+		else {
+			ss << c;
+		}
+	}
 	// consume past the delimiter
 	next();
 	token(Token::Type::STRING, ss.str());
@@ -271,7 +284,6 @@ void Lexer::do_comment(){
 			next();
 	}
 	else if (consume('*')) {
-		kng_log("mme");
 		start:
 		while (!consume('*')) next();
 		if (!consume('/')) {
@@ -282,4 +294,8 @@ void Lexer::do_comment(){
 }
 
 void Lexer::do_documentation(){
+}
+
+
+void Lexer::do_escape(){
 }

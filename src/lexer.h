@@ -57,5 +57,6 @@ struct Lexer {
 	void do_string(char start);
 	void do_comment();
 	void do_documentation();
+	void do_escape();
 	TokenList scan();
 };

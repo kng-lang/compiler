@@ -4,6 +4,7 @@ James Clarke - 2021
 
 #pragma once
 
+#include <variant>
 #include <memory>
 #include <map>
 #include "common.h"
@@ -95,15 +96,24 @@ struct Type {
 };
 
 struct Value {
-	union v {
-		u8  as_u8;
-		u16 as_u16;
-		u32 as_u32;
-		s32 as_s32;
-		s64 as_s64;
-		f32 as_f32;
-		f64 as_f64;
-	} v;
+	//union v {
+	//	u8  as_u8;
+	//	u16 as_u16;
+	//	u32 as_u32;
+	//	s32 as_s32;
+	//	s64 as_s64;
+	//	f32 as_f32;
+	//	f64 as_f64;
+	//	std::string as_string;
+	//
+	//	v(){}
+	//	~v(){}
+	//} v;
+
+
+
+	std::variant<char, u8, u16, u32, s32, s64, f32, f64, std::string> values;
+
 };
 
 struct SymTableEntry {
