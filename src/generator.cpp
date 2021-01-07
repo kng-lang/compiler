@@ -301,6 +301,24 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
+	kng_log("generating loop!");
+
+	// first create the start block
+	llvm::BasicBlock* body_block = llvm::BasicBlock::Create(*llvm_context, "then");
+	llvm::BasicBlock* loop_end_block = llvm::BasicBlock::Create(*llvm_context, "end");
+	
+	llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(body_block);
+	llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(loop_end_block);
+
+
+	if (stmt_loop_ast->loop_type == StmtLoopAST::LoopType::INF) {
+		llvm_builder->CreateBr(body_block);
+		auto prev_insert = llvm_builder->GetInsertPoint();
+		llvm_builder->SetInsertPoint(body_block);
+		stmt_loop_ast->body->visit(this);
+		llvm_builder->CreateBr(body_block);
+		llvm_builder->SetInsertPoint(loop_end_block);
+	}
 	return NULL;
 }
 

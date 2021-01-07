@@ -155,12 +155,22 @@ std::shared_ptr<AST> Parser::parse_if(){
 	}
 	if_ast.if_cond = if_cond;
 	if_ast.if_stmt = if_stmt;
+	requiring_delimiter = 0;
 	return std::make_shared<StmtIfAST>(if_ast);
 }
 
 std::shared_ptr<AST> Parser::parse_for(){
 	StmtLoopAST loop_ast;
 	consume(Token::Type::FOR);
+	// if there is no condition, then the for loop is infinite
+	if (expecting_expr()) {
+		loop_ast.loop_type = StmtLoopAST::LoopType::INF;
+	}
+	else {
+		kng_assert(false,  "not implemented yet!");
+	}
+	loop_ast.body = parse_stmt();
+	requiring_delimiter = 0;
 	return std::make_shared<StmtLoopAST>(loop_ast);
 }
 
@@ -214,7 +224,7 @@ u8 Parser::expecting_expr(){
 		|| expect(Token::Type::LPAREN)
 		|| expect(Token::Type::TRU)
 		|| expect(Token::Type::FLSE)
-		|| expect(Token::Type::LBRACKET)
+		|| expect(Token::Type::LBRACKET) // the problem is { can start a stmt and an expression...
 		|| expect(Token::Type::LCURLY);
 }
 

@@ -193,6 +193,15 @@ struct StmtIfAST : public StatementAST {
 };
 
 struct StmtLoopAST : public StatementAST {
+	
+	enum class LoopType {
+		INF,
+	};
+
+	StmtLoopAST(){}
+
+	LoopType loop_type;
+	std::shared_ptr<AST> body;
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_LOOP; }
 	virtual void* visit(ASTVisitor* visitor);
