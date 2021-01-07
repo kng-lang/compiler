@@ -78,8 +78,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}; // @TODO how do we know we are doing an assignment or expression?
 		default: {
-			requiring_delimiter = 1;
-			stmt = parse_expression();
+			parse_expression_stmt();
 			break;
 		}
 	}
@@ -332,15 +331,20 @@ std::shared_ptr<AST> Parser::parse_define() {
 }
 
 
-std::shared_ptr<AST> Parser::parse_expression() { 
+std::shared_ptr<AST> Parser::parse_expression_stmt() {
+	requiring_delimiter = 1;
 	return parse_assign();
+}
+
+std::shared_ptr<AST> Parser::parse_expression() { 
+	return parse_pattern();
 }
 
 
 std::shared_ptr<AST> Parser::parse_assign() { 
-	auto higher_precedence = parse_pattern();
+	auto higher_precedence = parse_expression();
 	if (consume(Token::ASSIGN)) {
-		auto assign_value = parse_pattern();
+		auto assign_value = parse_expression();
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
 			case AST::ASTType::EXPR_INTER_GET: {
@@ -367,17 +371,17 @@ std::shared_ptr<AST> Parser::parse_assign() {
 std::shared_ptr<AST> Parser::parse_pattern() {
 	auto higher_precedence = parse_lor();
 	// @TODO figure out how to check a pattern when no comma is used
-	if (consume(Token::Type::COMMA)) {
-		std::vector<std::shared_ptr<AST>> asts;
-		asts.push_back(higher_precedence);
-		while (!expect(Token::Type::END)) {
-			asts.push_back(parse_lor());
-			// consume comma if it exists e.g. a, b, c or a b c
-			consume(Token::Type::COMMA);
-		}
-		auto pattern = ExprPatternAST(asts);
-		return std::make_shared<ExprPatternAST>(pattern);
-	}
+	//if (consume(Token::Type::COMMA)) {
+	//	std::vector<std::shared_ptr<AST>> asts;
+	//	asts.push_back(higher_precedence);
+	//	while (!expect(Token::Type::END)) {
+	//		asts.push_back(parse_lor());
+	//		// consume comma if it exists e.g. a, b, c or a b c
+	//		consume(Token::Type::COMMA);
+	//	}
+	//	auto pattern = ExprPatternAST(asts);
+	//	return std::make_shared<ExprPatternAST>(pattern);
+	//}
 	return higher_precedence;
 }
 
@@ -467,8 +471,14 @@ std::shared_ptr<AST> Parser::parse_call() {
 		ExprCallAST call;
 		call.callee = higher_precedence;
 		if (!consume(Token::Type::RPAREN)) {
+
+			// @TODO this should parse a pattern e.g. 1, 2, 3 rather than like this!
+			while(!expect(Token::Type::RPAREN)){
+				call.args.push_back(parse_expression());
+				if (!expect(Token::Type::RPAREN))
+					consume(Token::Type::COMMA);
+			}
 			call.has_args = 1;
-			call.args = parse_call();
 			if (!consume(Token::Type::RPAREN)) {
 				unit->error_handler.error("expected closing ')' after fn call",
 					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);

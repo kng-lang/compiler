@@ -1,0 +1,42 @@
+// note generics are not currently supported
+
+
+
+
+// for this example, we dont need to use <> as tje compiler can infer it
+do_something : (data : $generic_type) $generic_type {
+    x : $generic_type = data;
+    ret x;
+}
+
+do_something("a string!");
+do_something(123);
+
+
+
+// example with interface
+vector : {
+    data : $data_type[];
+    vector : ();
+    vector : (data : $data_type[]) {
+        this.data = data;
+    }
+}
+v : vector({1,2,3});
+
+
+// using interfaces instead of generics
+// the problem with this example, is that an interface type must be a pointer
+vector : {
+    data : interface[];
+    vector : ();
+    vector : (data : interface[]) {
+        this.data = data;
+    }
+}
+v : vector({1,2,3});
+// we would have to do to ensure the arryay values are pointers
+v : vector({
+    malloc(s32, 1),
+    malloc(s32, 2),
+    malloc(s32, 3)});

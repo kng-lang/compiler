@@ -63,6 +63,7 @@ struct Type {
 	// e.g. u8[5]
 	u8 is_arr = 0;
 	u8 pattern = 0;
+	u8 is_constant_str; // for when we have ""?
 	u32 arr_length = 0;
 
 

@@ -398,7 +398,11 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 
 	llvm::ArrayRef<llvm::Value*> arg_array;
 	if (expr_call_ast->has_args) {
-		std::vector<llvm::Value*> args = { (llvm::Value*)expr_call_ast->args->visit(this) };
+		std::vector<llvm::Value*> args;
+		for (const auto& arg : expr_call_ast->args) {
+			args.push_back((llvm::Value*)arg->visit(this));
+		}
+		//std::vector<llvm::Value*> args = { (llvm::Value*)expr_call_ast->args->visit(this) };
 		arg_array = llvm::ArrayRef<llvm::Value*>(args);
 	}
 	else {
