@@ -248,6 +248,8 @@ void* LLVMCodeGen::visit_stmt_continue_ast(StmtContinueAST* stmt_continue_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) {
+	kng_assert(exit_block, "exit_block was null");
+	llvm_builder->CreateBr(exit_block);
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
@@ -306,6 +308,7 @@ void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 	// first create the start block
 	llvm::BasicBlock* body_block = llvm::BasicBlock::Create(*llvm_context, "then");
 	llvm::BasicBlock* loop_end_block = llvm::BasicBlock::Create(*llvm_context, "end");
+	this->exit_block = loop_end_block;
 	
 	llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(body_block);
 	llvm_builder->GetInsertBlock()->getParent()->getBasicBlockList().push_back(loop_end_block);

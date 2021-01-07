@@ -62,6 +62,11 @@ struct LLVMCodeGen : public CodeGen {
 	std::unique_ptr<llvm::LLVMContext> llvm_context;
 	std::unique_ptr<llvm::IRBuilder<>> llvm_builder;
 	std::shared_ptr<llvm::Module> llvm_module;
+
+
+	// set the exit block when entering a new block
+	llvm::BasicBlock* exit_block;
+
 	// used for types and instructions
 	SymTable<LLVMSymEntry> sym_table;
 	LLVMCodeGen(){}
