@@ -65,23 +65,22 @@ struct LLVMCodeGen : public CodeGen {
 	};
 
 
-	std::shared_ptr<AST> ast;
-	CompilationUnit* unit;
-	std::unique_ptr<llvm::LLVMContext> llvm_context;
-	std::unique_ptr<llvm::IRBuilder<>> llvm_builder;
-	std::shared_ptr<llvm::Module> llvm_module;
+	std::shared_ptr<AST> m_ast;
+	CompilationUnit* m_unit;
+	std::unique_ptr<llvm::LLVMContext> m_context;
+	std::unique_ptr<llvm::IRBuilder<>> m_builder;
+	std::shared_ptr<llvm::Module> m_module;
 
 	// every time we visit an expression, we need to set this type so we can convert it to a value
-	FetchedType fetched_type;
-	llvm::Value* fetched_value;
-	u8 require_store_instr = 0;
+	FetchedType m_fetched_type;
+	llvm::Value* m_fetched_value;
 	// set the exit block when entering a new block
-	llvm::BasicBlock* exit_block;
+	llvm::BasicBlock* m_exit_block;
 
 	// used for types and instructions
-	SymTable<LLVMSymEntry> sym_table;
+	SymTable<LLVMSymEntry> m_sym_table;
 	LLVMCodeGen(){}
-	LLVMCodeGen(std::shared_ptr<AST> ast, CompilationUnit* unit) : ast(ast), unit(unit) {}
+	LLVMCodeGen(std::shared_ptr<AST> ast, CompilationUnit* unit) : m_ast(ast), m_unit(unit) {}
 	virtual void generate();
 	void make_runtime();
 	void optimise();

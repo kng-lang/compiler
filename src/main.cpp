@@ -45,27 +45,27 @@ int main(int argc, char** argv) {
         CompileOptions options;
 
         if (result.count("exec")) {
-            options.build_target = CompileOptions::BuildTarget::OBJECT;
+            options.m_build_target = CompileOptions::BuildTarget::OBJECT;
         }
         else {
-            options.build_target = CompileOptions::BuildTarget::OBJECT;
+            options.m_build_target = CompileOptions::BuildTarget::OBJECT;
         }
         if (result.count("optimise"))
-            options.optimise = 1;
+            options.m_optimise = 1;
         if (result.count("threads")) {
-            options.threads = result["threads"].as<u8>();
+            options.m_threads = result["threads"].as<u8>();
         }
 
 
         if (result.count("debug")) {
             if(result["debug"].as<std::string>().compare("l")==0)
-                options.debug_emission_flags |= EMIT_TOKEN_DEBUG;
+                options.m_debug_flags |= EMIT_TOKEN_DEBUG;
 
             else if (result["debug"].as<std::string>().compare("p") == 0)
-                options.debug_emission_flags |= EMIT_AST_DEBUG;
+                options.m_debug_flags |= EMIT_AST_DEBUG;
 
             else if (result["debug"].as<std::string>().compare("g") == 0)
-                options.debug_emission_flags |= EMIT_IR_DEBUG;
+                options.m_debug_flags |= EMIT_IR_DEBUG;
         }
         
         compiler.compile(file, options);

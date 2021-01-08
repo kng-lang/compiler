@@ -42,17 +42,17 @@ struct CompileOptions {
 		EXEC
 	};
 
-	CompileTarget compile_target;
-	BuildTarget build_target;
+	CompileTarget m_compile_target;
+	BuildTarget m_build_target;
 	// which debug information should be emitted during compilation
-	u8 debug_emission_flags = 0;
-	u8 optimise = 0;
+	u8 m_debug_flags = 0;
+	u8 m_optimise = 0;
 	// by default only show critical errors
-	u8 error_level = 3;
+	u8 m_error_level = 3;
 	// number of threads to use during compilation (1 is the default)
-	u8 threads = 1;
+	u8 m_threads = 1;
 	// the target output
-	std::string output_filename;
+	std::string m_output_filename;
 };
 
 struct TokenList;
@@ -60,8 +60,13 @@ struct AST;
 
 // a file to be compiled
 struct CompileFile {
-	std::string file_path;
-	std::string file_contents;
+	enum class FileType {
+		FILE,
+		RAW  // supporting compile directly in comand line or repl
+	};
+	std::string m_file_path;
+	std::string m_file_contents;
+	FileType m_file_type;
 
 	CompileFile(){}
 	CompileFile(std::string& path);
@@ -78,15 +83,15 @@ struct Importer {
 		CYCLIC_DEP = 3
 	};
 
-	Compiler* compiler;
+	Compiler* m_compiler;
 	// the importer manages the compilation units
-	std::map<std::string, std::shared_ptr<CompilationUnit>> units;
-	std::map<std::string, std::vector<std::string>> unit_dependencies;
-	u32 n_units = 0;
-	u32 n_lines = 0;
+	std::map<std::string, std::shared_ptr<CompilationUnit>> m_units;
+	std::map<std::string, std::vector<std::string>> m_unit_dependencies;
+	u32 m_unit_count = 0;
+	u32 m_line_count = 0;
 
 	Importer(){}
-	Importer(Compiler* compiler) : compiler(compiler){}
+	Importer(Compiler* compiler) : m_compiler(compiler){}
 	std::string create_import_path(std::string& path, Importer::DepStatus dep_status);
 	u8 valid_import_path(std::string& path);
 	DepStatus valid_include_path(std::string& current_path, std::string& path);
@@ -97,11 +102,11 @@ struct Importer {
 };
 
 struct Compiler {
-	CompileOptions options;
-	Importer importer;
+	CompileOptions m_options;
+	Importer m_importer;
 
-	std::string lexer_debug_output;
-	std::string parser_debug_output;
+	std::string m_lexer_debug_output;
+	std::string m_parser_debug_output;
 
 	void compile(std::string& path, CompileOptions options);
 };
@@ -109,11 +114,11 @@ struct Compiler {
 struct Importer;
 
 struct CompilationUnit {
-	Compiler* compiler;
-	Importer* importer;
-	CompileOptions compile_options;
-	CompileFile compile_file;
-	ErrorHandler error_handler;
+	Compiler* m_compiler;
+	Importer* m_importer;
+	CompileOptions m_compile_options;
+	CompileFile m_compile_file;
+	ErrorHandler m_error_handler;
 
 	CompilationUnit(){}
 	CompilationUnit(CompileFile compile_file, Compiler* compiler);

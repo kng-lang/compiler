@@ -8,35 +8,35 @@ James Clarke - 2021
 Parser::Parser(){}
 
 Parser::Parser(TokenList& tokens, CompilationUnit* unit){
-	this->tokens = tokens.tokens;
-	this->unit = unit;
-	this->sym_table = std::make_shared<SymTable<Type>>();
+	this->tokens = tokens.m_tokens;
+	this->m_unit = unit;
+	this->m_sym_table = std::make_shared<SymTable<Type>>();
 }
 
 
 std::shared_ptr<AST> Parser::parse() {
-	this->root_ast = std::make_shared<AST>();
+	this->m_root_ast = std::make_shared<AST>();
 	auto program = ProgramAST();
 	// @TODO ignore newlines when parsing stuff
-	while (!end() && peek().type != Token::Type::END)	
+	while (!end() && peek().m_type != Token::Type::END)	
 		program.stmts.push_back(parse_stmt());
-	this->root_ast = std::make_shared<ProgramAST>(program);
-	return this->root_ast;
+	this->m_root_ast = std::make_shared<ProgramAST>(program);
+	return this->m_root_ast;
 }
 
 std::shared_ptr<AST> Parser::parse_stmt(){
 	// consume empty newlines
-	requiring_delimiter = 0; // e.g. if 1 {} doesn't require a delimiter
+	m_requiring_delimiter = 0; // e.g. if 1 {} doesn't require a delimiter
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
-	switch (peek().type) {
+	switch (peek().m_type) {
 		case Token::Type::DIRECTIVE: {
 			stmt = parse_directive();
-			requiring_delimiter = 1;
+			m_requiring_delimiter = 1;
 			break;
 		}
 		case Token::Type::RETURN:{
 			StmtReturnAST r;
-			requiring_delimiter = 1;
+			m_requiring_delimiter = 1;
 			next();
 			if (expecting_expr())
 				r.value = parse_expression();
@@ -44,13 +44,13 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::CONTINUE: {
-			requiring_delimiter = 1;
+			m_requiring_delimiter = 1;
 			next();
 			stmt = std::make_shared<StmtContinueAST>();
 			break;
 		}
 		case Token::Type::BREAK: {
-			requiring_delimiter = 1;
+			m_requiring_delimiter = 1;
 			next();
 			stmt = std::make_shared<StmtBreakAST>();
 			break;
@@ -68,9 +68,9 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			break;
 		}
 		case Token::Type::IDENTIFIER: {
-			requiring_delimiter = 1;
+			m_requiring_delimiter = 1;
 			// if we are dealing with an identifier, we could be doing various operations
-			switch (peek(1).type) {
+			switch (peek(1).m_type) {
 				case Token::Type::COLON:
 				case Token::Type::QUICK_ASSIGN: stmt = parse_define(); break;
 				default: stmt = parse_expression_stmt(); break;
@@ -79,16 +79,16 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 		}; // @TODO how do we know we are doing an assignment or expression?
 		default: {
 			parse_expression();
-			requiring_delimiter = 1;
+			m_requiring_delimiter = 1;
 			break;
 		}
 	}
 	// @TODO it doesnt work if we dont have a newline at the end
 	// we use ; when we want multiple statements on one line
-	if (requiring_delimiter && !(consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
+	if (m_requiring_delimiter && !(consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
 		// @TODO this prev() stuff should probably be done with a function
-		unit->error_handler.error("expected ; as statement delimiter",
-			prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+		m_unit->m_error_handler.error("expected ; as statement delimiter",
+			prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 		return std::make_shared<ErrorAST>();
 	}
 	return stmt;
@@ -96,7 +96,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 
 std::shared_ptr<AST> Parser::parse_directive() {
 	consume(Token::DIRECTIVE);
-	switch (next().type) {
+	switch (next().m_type) {
 		case Token::Type::RUN: {
 				// create a new compilation unit to JIT the next statement
 				auto stmt_to_jit = parse_stmt();
@@ -115,26 +115,26 @@ std::shared_ptr<AST> Parser::parse_directive() {
 			//}
 
 			if (!expect(Token::Type::STRING)) {
-				unit->error_handler.error("expected string as filename to include",
-					prev().index, prev().line, prev().index + prev().length, prev().line);
+				m_unit->m_error_handler.error("expected string as filename to include",
+					prev().m_index, prev().m_line, prev().m_index + prev().m_length, prev().m_line);
 				return std::make_shared<ErrorAST>();
 			}
 			auto path = next();
-			auto valid_include = unit->importer->valid_include_path(unit->compile_file.file_path, path.value);
+			auto valid_include = m_unit->m_importer->valid_include_path(m_unit->m_compile_file.m_file_path, path.m_value);
 			if (valid_include==Importer::DepStatus::NO
 				|| valid_include==Importer::DepStatus::CYCLIC_DEP) {
 				std::string problem;
 				switch (valid_include) {
 				case Importer::DepStatus::CYCLIC_DEP: problem = "include path is causing a cyclic dependency"; break;
 				}
-				unit->error_handler.error(problem,
-					prev().index, prev().line, prev().index + prev().length, prev().line);
+				m_unit->m_error_handler.error(problem,
+					prev().m_index, prev().m_line, prev().m_index + prev().m_length, prev().m_line);
 				return std::make_shared<ErrorAST>();
 			}
 			// finally if we have't already included this file then include it!
-			if (!unit->importer->already_included(unit->compile_file.file_path, path.value)) {
+			if (!m_unit->m_importer->already_included(m_unit->m_compile_file.m_file_path, path.m_value)) {
 				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
-				auto compilation_unit = unit->importer->include(unit->compile_file.file_path, path.value, valid_include);
+				auto compilation_unit = m_unit->m_importer->include(m_unit->m_compile_file.m_file_path, path.m_value, valid_include);
 				auto ast = compilation_unit->compile_to_ast();
 				return ast;
 			}
@@ -155,7 +155,7 @@ std::shared_ptr<AST> Parser::parse_if(){
 	}
 	if_ast.if_cond = if_cond;
 	if_ast.if_stmt = if_stmt;
-	requiring_delimiter = 0;
+	m_requiring_delimiter = 0;
 	return std::make_shared<StmtIfAST>(if_ast);
 }
 
@@ -170,7 +170,7 @@ std::shared_ptr<AST> Parser::parse_for(){
 		kng_assert(false,  "not implemented yet!");
 	}
 	loop_ast.body = parse_stmt();
-	requiring_delimiter = 0;
+	m_requiring_delimiter = 0;
 	return std::make_shared<StmtLoopAST>(loop_ast);
 }
 
@@ -182,21 +182,21 @@ std::shared_ptr<AST> Parser::parse_stmt_block() {
 
 	consume(Token::Type::LCURLY, "'{' expected");
 	if (!consume(Token::Type::RCURLY)) {
-		sym_table->enter_scope();
+		m_sym_table->enter_scope();
 		while (!end_of_block()) {
 			stmt_block.stmts.push_back(parse_stmt());
 		}
-		sym_table->pop_scope();
+		m_sym_table->pop_scope();
 		consume(Token::Type::RCURLY, "'}' expected");
 	}
 
-	requiring_delimiter = 0;
+	m_requiring_delimiter = 0;
 	return std::make_shared<StmtBlockAST>(stmt_block);
 
 }
 
 u8 Parser::end_of_block() {
-	return end() || (peek().type == Token::RCURLY || peek().type == Token::END);
+	return end() || (peek().m_type == Token::RCURLY || peek().m_type == Token::END);
 }
 
 u8 Parser::expecting_type() {
@@ -242,7 +242,7 @@ Type Parser::parse_type() {
 		ptr_indirection += 1;
 	}
 
-	switch (next().type) {
+	switch (next().m_type) {
 	case Token::Type::U0: t = Type(Type::Types::U0); break;
 	case Token::Type::U8: t = Type(Type::Types::U8); break;
 	case Token::Type::S8: t = Type(Type::Types::S8); break;
@@ -261,23 +261,23 @@ Type Parser::parse_type() {
 		if (expect(Token::Type::NUMBER)) {
 			// known size and stack allocated
 			Token size = next();
-			t.is_arr = 1;
-			t.arr_length = std::stoi(size.value);
+			t.m_is_arr = 1;
+			t.m_arr_length = std::stoi(size.m_value);
 		}
 		else {
 			// unknown size, we need to check during type checking if the array is initialised otherwise it is a pointer
-			t.is_arr = 1;
+			t.m_is_arr = 1;
 			ptr_indirection++;
 		}
 
 		if(!consume(Token::Type::RBRACKET)){
-			unit->error_handler.error("expected ] after array decleration",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			m_unit->m_error_handler.error("expected ] after array decleration",
+				prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 			return Type(Type::Types::UNKNOWN);
 		}
 	}
-	t.ptr_indirection = ptr_indirection;
-	t.is_constant = parsing_constant_assignment;
+	t.m_ptr_indirection = ptr_indirection;
+	t.m_is_constant = m_parsing_constant_assignment;
 	return t;
 }
 
@@ -285,14 +285,14 @@ std::shared_ptr<AST> Parser::parse_define() {
 	StmtDefineAST define_ast;
 	define_ast.identifier = next();
 	if(consume(Token::Type::QUICK_ASSIGN)){
-		parsing_variable_assignment = 1;
+		m_parsing_variable_assignment = 1;
 		// at this point, we are expecting to parse an expression as without an expression the syntax is invalid
 
 		define_ast.requires_type_inference = 1;
 		// @TODO check an expression exists???
 		define_ast.value = parse_expression();
 		define_ast.is_initialised = 1;
-		parsing_variable_assignment = 0;
+		m_parsing_variable_assignment = 0;
 	}
 	else if(consume(Token::Type::COLON)){
 		if (expecting_type()) {
@@ -304,28 +304,28 @@ std::shared_ptr<AST> Parser::parse_define() {
 			u8 expecting_expression = expecting_expr();
 			u8 parsing_constant = expecting_expression;
 			define_ast.is_constant = parsing_constant;
-			parsing_constant_assignment = parsing_constant;
+			m_parsing_constant_assignment = parsing_constant;
 			if (expecting_expression || consume(Token::Type::ASSIGN)) {
-				parsing_variable_assignment = 1;
+				m_parsing_variable_assignment = 1;
 				define_ast.is_initialised = 1;
 				define_ast.value = parse_expression();
-				parsing_variable_assignment = 0;
+				m_parsing_variable_assignment = 0;
 			}
-			if (parsing_constant_assignment) parsing_constant_assignment = 0;
+			if (m_parsing_constant_assignment) m_parsing_constant_assignment = 0;
 		}
 		else {
 			// if we reached here we MUST expect an inferred constant e.g. x : 1
 			if (!expecting_expr()) {
-				unit->error_handler.error("expected type after :",
-					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				m_unit->m_error_handler.error("expected type after :",
+					prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 				return std::make_shared<ErrorAST>();
 			}
-			parsing_constant_assignment = 1;
+			m_parsing_constant_assignment = 1;
 			define_ast.requires_type_inference = 1;
 			define_ast.value = parse_expression();
 			define_ast.is_initialised = 1;
 			define_ast.is_constant = 1;
-			parsing_constant_assignment = 0;
+			m_parsing_constant_assignment = 0;
 		}
 	}
 	return std::make_shared<StmtDefineAST>(define_ast);
@@ -358,7 +358,7 @@ std::shared_ptr<AST> Parser::parse_assign() {
 				return std::make_shared<StmtAssignAST>(higher_precedence, assign_value);
 
 				//@TODO use AST position information
-				unit->error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
+				m_unit->m_error_handler.error("cannot assign to lhs", 0, 1, 0, 1);
 				return std::make_shared<ErrorAST>();
 			}
 		}
@@ -453,8 +453,8 @@ std::shared_ptr<AST> Parser::parse_cast() {
 	if (consume(Token::AS)) {
 		// expecting type here
 		if (!expecting_type()) {
-			unit->error_handler.error("expected type after 'as', casting requires a type",
-				prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+			m_unit->m_error_handler.error("expected type after 'as', casting requires a type",
+				prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 			return std::make_shared<ErrorAST>();
 		}
 		ExprCastAST c;
@@ -480,8 +480,8 @@ std::shared_ptr<AST> Parser::parse_call() {
 			}
 			call.has_args = 1;
 			if (!consume(Token::Type::RPAREN)) {
-				unit->error_handler.error("expected closing ')' after fn call",
-					prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+				m_unit->m_error_handler.error("expected closing ')' after fn call",
+					prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 				return std::make_shared<ErrorAST>();
 			}
 		}
@@ -494,7 +494,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 	// @TODO implement groups e.g. (1+2) + (1+3)
 	auto t = next();
 
-	switch (t.type) {
+	switch (t.m_type) {
 		// array literal for now
 		case Token::Type::LCURLY: {
 			std::vector<std::shared_ptr<AST>> array_values;
@@ -512,7 +512,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::NUMBER: {
 			ExprLiteralAST lit_ast;
 			lit_ast.t = Type(Type::Types::S32, 0);
-			lit_ast.v.value = t.value;
+			lit_ast.v.value = t.m_value;
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 			break;
 		}
@@ -534,7 +534,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 			//
 			//return std::make_shared<ExprLiteralArrayAST>(Type(Type::Types::UNKNOWN), Type(Type::Types::UNKNOWN), array_values.size(), array_values);
 			ExprLiteralAST string_lit;
-			string_lit.v.value = t.value;
+			string_lit.v.value = t.m_value;
 			string_lit.t = Type(Type::Types::STRING);
 			return std::make_shared<ExprLiteralAST>(string_lit);
 			break;
@@ -565,8 +565,8 @@ std::shared_ptr<AST> Parser::parse_single(){
 				fn_ast.is_lambda = 1;
 				// the fn can only be a lambda if it isn't being assigned to a constant
 				// e.g. x : (){} is the only way a fn can be a lambda
-				fn_ast.is_lambda = !parsing_constant_assignment;
-				fn_sig.anonymous_identifier = "lambda";
+				fn_ast.is_lambda = !m_parsing_constant_assignment;
+				fn_sig.m_anonymous_identifier = "lambda";
 
 
 
@@ -580,11 +580,11 @@ std::shared_ptr<AST> Parser::parse_single(){
 				fn_ast.params = params;
 
 				if (expecting_type()) {
-					fn_sig.operation_types.push_back(parse_type());
-					fn_sig.has_return = 1;
+					fn_sig.m_operation_types.push_back(parse_type());
+					fn_sig.m_has_return = 1;
 				}
 				else
-					fn_sig.operation_types.push_back(Type(Type::Types::U0));
+					fn_sig.m_operation_types.push_back(Type(Type::Types::U0));
 				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
 				// we need to check if the fn has a body
 				if (!expect(Token::Type::SEMI_COLON)) {
@@ -595,8 +595,8 @@ std::shared_ptr<AST> Parser::parse_single(){
 			}else {
 				auto expression = parse_expression();
 				if (!consume(Token::Type::RPAREN)) {
-					unit->error_handler.error("expected ) as statement delimiter",
-						prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+					m_unit->m_error_handler.error("expected ) as statement delimiter",
+						prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 					return std::make_shared<ErrorAST>();
 				}
 				auto group = ExprGroupAST(expression);
@@ -605,8 +605,8 @@ std::shared_ptr<AST> Parser::parse_single(){
 		}
 		//case Token::Type::LBRACKET: return parse_interface();
 	}
-	unit->error_handler.error("unexpected code?",
-		prev().index + prev().length + 1, prev().line, prev().index + prev().length + 1, prev().line);
+	m_unit->m_error_handler.error("unexpected code?",
+		prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
 	return std::make_shared<ErrorAST>(); 
 }
 

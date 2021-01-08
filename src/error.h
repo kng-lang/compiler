@@ -32,11 +32,11 @@ struct Error{
 		CYCLIC_DEP,			  // when files include each other
 	};
 
-	Level level;
-	Type type;
+	Level m_level;
+	Type m_type;
 
 	Error(){}
-	Error(Level level, Type type) : level(level), type(type){}
+	Error(Level level, Type type) : m_level(level), m_type(type){}
 };
 
 struct ErrorTable {

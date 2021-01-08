@@ -13,40 +13,40 @@ James Clarke - 2021
 #include "typechecking.h"
 
 CompilationUnit::CompilationUnit(CompileFile compile_file, Compiler* compiler)
-	: compile_file(compile_file), compiler(compiler), importer(&compiler->importer), compile_options(compiler->options){
-	this->error_handler = ErrorHandler(this);
+	: m_compile_file(compile_file), m_compiler(compiler), m_importer(&compiler->m_importer), m_compile_options(compiler->m_options){
+	this->m_error_handler = ErrorHandler(this);
 }
 
 CompileFile::CompileFile(std::string& path) {
-	this->file_path = path;
+	this->m_file_path = path;
 	// open a test file
 	std::ifstream f;
 	f.open(path);
 	std::stringstream buffer;
 	buffer << f.rdbuf();
-	file_contents = buffer.str();
+	m_file_contents = buffer.str();
 }
 
 void Compiler::compile(std::string& path, CompileOptions options) {
 
-	this->options = options;
+	this->m_options = options;
 
 	kng_log("kng compiler v0_1");
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 
-	importer = Importer(this);
+	m_importer = Importer(this);
 
-	auto unit = importer.include(path, path, Importer::DepStatus::LOCAL);
+	auto unit = m_importer.include(path, path, Importer::DepStatus::LOCAL);
 	unit->compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("compiled {} file(s) and {} line(s) in {} ms.", importer.n_units, importer.n_lines, time);
+	kng_log("compiled {} file(s) and {} line(s) in {} ms.", m_importer.m_unit_count, m_importer.m_line_count, time);
 }
 
 u8 CompilationUnit::compile() {
-	kng_log("...{}", compile_file.file_path);
+	kng_log("...{}", m_compile_file.m_file_path);
 	compile_to_bin();
 	return 1;
 }
@@ -54,12 +54,12 @@ u8 CompilationUnit::compile() {
 TokenList CompilationUnit::compile_to_tokens() {
 	auto t1 = std::chrono::high_resolution_clock::now();
 	// lexical analysis
-	Lexer l(compile_file.file_contents, this);
+	Lexer l(m_compile_file.m_file_contents, this);
 	auto tokens = l.scan();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	if (compile_options.debug_emission_flags & EMIT_TOKEN_DEBUG) {
-		kng_log("lexer debug {}:\n{}", compile_file.file_path, tokens.to_json());
+	if (m_compile_options.m_debug_flags & EMIT_TOKEN_DEBUG) {
+		kng_log("lexer debug {}:\n{}", m_compile_file.m_file_path, tokens.to_json());
 		kng_log("lexed in {} ms.", time);
 	}
 	return tokens;
@@ -77,8 +77,8 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	if (compile_options.debug_emission_flags & EMIT_AST_DEBUG) {
-		kng_log("parser debug {}:\n{}", compile_file.file_path, ast->to_json());
+	if (m_compile_options.m_debug_flags & EMIT_AST_DEBUG) {
+		kng_log("parser debug {}:\n{}", m_compile_file.m_file_path, ast->to_json());
 		kng_log("parsed in {} ms.", time);
 	}
 	return ast;
@@ -86,14 +86,14 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 
 void CompilationUnit::compile_to_bin() {
 	auto ast = compile_to_ast();
-	if (error_handler.how_many>0)
+	if (m_error_handler.how_many>0)
 		return;
 	auto t1 = std::chrono::high_resolution_clock::now();
 	LLVMCodeGen generator(ast, this);
 	generator.generate();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	if(compile_options.debug_emission_flags&EMIT_IR_DEBUG)
+	if(m_compile_options.m_debug_flags&EMIT_IR_DEBUG)
 		kng_log("generated in {} ms.", time);
 }
 
@@ -126,7 +126,7 @@ std::string Importer::create_import_path(std::string& path, Importer::DepStatus 
 Importer::DepStatus Importer::valid_include_path(std::string& current_path, std::string& path) {
 	// we need to check for circular dependencies
 	// first get the target dependencies' dependencies
-	auto to_imports_dependencies = unit_dependencies[path];
+	auto to_imports_dependencies = m_unit_dependencies[path];
 	// then check if we are inside that
 	if (std::find(to_imports_dependencies.begin(), to_imports_dependencies.end(), current_path) != to_imports_dependencies.end())
 		return DepStatus::CYCLIC_DEP;
@@ -154,12 +154,12 @@ Importer::DepStatus Importer::valid_include_path(std::string& current_path, std:
 }
 
 u8 Importer::already_included(std::string& current_path, std::string& path) {
-	return units.count(path)>0;
+	return m_units.count(path)>0;
 }
 
 std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
 	CompileFile f(path);
-	auto unit = std::make_shared<CompilationUnit>(f, compiler);
+	auto unit = std::make_shared<CompilationUnit>(f, m_compiler);
 	return unit;
 }
 
@@ -168,11 +168,11 @@ std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, st
 	auto new_path = create_import_path(path, dep_status);
 	CompileFile f(new_path);
 
-	auto unit = std::make_shared<CompilationUnit>(f, compiler);
-	n_units++;
-	n_lines += count_lines(f.file_contents);
-	units[path] = unit;
+	auto unit = std::make_shared<CompilationUnit>(f, m_compiler);
+	m_unit_count++;
+	m_line_count += count_lines(f.m_file_contents);
+	m_units[path] = unit;
 	// get the current unit
-	unit_dependencies[current_path].push_back(path);
+	m_unit_dependencies[current_path].push_back(path);
 	return unit;
 }

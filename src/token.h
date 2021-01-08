@@ -112,27 +112,27 @@ struct Token{
 
 	};
 
-	Type type;
-	u32 index  = 0;
-	u32 line   = 0;
-	u32 length = 0;
+	Type m_type;
+	u32 m_index  = 0;
+	u32 m_line   = 0;
+	u32 m_length = 0;
 
-	std::string value;
+	std::string m_value;
 
 	std::string to_json();
 
 	void debug() {
-		kng_log("token: {}", debug_types[type]);
+		kng_log("token: {}", debug_types[m_type]);
 	}
 };
 
 struct TokenList {
-	std::vector<Token> tokens;
+	std::vector<Token> m_tokens;
 	// used for debugging, linting etc
 	std::string to_json();
 
 	TokenList() {}
-	TokenList(std::vector<Token> tokens) : tokens(tokens) {}
+	TokenList(std::vector<Token> tokens) : m_tokens(tokens) {}
 };
 
 struct TokenConsumer {

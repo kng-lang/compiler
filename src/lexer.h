@@ -17,18 +17,18 @@ struct Compiler;
 struct Lexer {
 
 
-	CompilationUnit* unit;
+	CompilationUnit* m_unit;
 	// the actual source file
-	std::string src;
+	std::string m_src; // @TODO this should be a ref
 	// current char being scanned
-	u32 current = 0;
+	u32 m_current = 0;
 	// index and line along with offsets used for error handling
-	u32 index = 1;
-	u32 line = 1;
-	u32 indexSavePoint = 1;
-	u32 lineSavePoint = 1;
+	u32 m_index = 1;
+	u32 m_line = 1;
+	u32 m_index_save_point = 1;
+	u32 m_line_save_point = 1;
 
-	std::vector<Token> tokens;
+	std::vector<Token> m_tokens;
 
 	Lexer(){}
 	Lexer(std::string& file_contents, CompilationUnit* unit);

@@ -25,7 +25,7 @@ const char* Type::debug_types[] = {
 
 std::string Type::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\":" << debug_types[(s32)this->t] << "\n\"ptr\":" << this->ptr_indirection << "\n}\n";
+	ss << "{\n\"type\":" << debug_types[(s32)this->m_type] << "\n\"ptr\":" << this->m_ptr_indirection << "\n}\n";
 	return ss.str();
 }
 
@@ -40,15 +40,15 @@ Type infer_type(std::shared_ptr<AST> ast){
 
 u8 Type::can_niave_cast(Type other) {
 	if (is_number_type() && other.is_number_type() 
-		&& arr_length==other.arr_length 
-		&& ptr_indirection==other.ptr_indirection) {
+		&& m_arr_length==other.m_arr_length 
+		&& m_ptr_indirection==other.m_ptr_indirection) {
 		return 1;
 	}
 	return 0;
 }
 
 void Type::cast(Type other) {
-	this->t = other.t;
+	this->m_type = other.m_type;
 }
 
 u8 Type::is_number_type() {
@@ -56,11 +56,11 @@ u8 Type::is_number_type() {
 }
 
 u8 Type::is_integer_type() {
-	return t == Types::U8 || t == Types::S8 || t == Types::U16 || t == Types::S16 || t == Types::U32 || t == Types::S32 || t == Types::S64;
+	return m_type == Types::U8 || m_type == Types::S8 || m_type == Types::U16 || m_type == Types::S16 || m_type == Types::U32 || m_type == Types::S32 || m_type == Types::S64;
 }
 
 u8 Type::is_float_type() {
-	return t == Types::F32 || t == Types::F64;
+	return m_type == Types::F32 || m_type == Types::F64;
 }
 
 /*template <typename T>
@@ -90,15 +90,15 @@ void SymTable<T>::pop_scope() {
 
 
 u8 Type::matches_basic(Type other){
-	return this->t == other.t
-		&& this->is_arr == other.is_arr
-		&& this->arr_length == other.arr_length
-		&& this->ptr_indirection == other.ptr_indirection;
+	return this->m_type == other.m_type
+		&& this->m_is_arr == other.m_is_arr
+		&& this->m_arr_length == other.m_arr_length
+		&& this->m_ptr_indirection == other.m_ptr_indirection;
 }
 
 u8 Type::matches_deep(Type other){
-	return this->t == other.t
-		&& this->is_arr == other.is_arr
-		&& this->arr_length == other.arr_length;
+	return this->m_type == other.m_type
+		&& this->m_is_arr == other.m_is_arr
+		&& this->m_arr_length == other.m_arr_length;
 		// && this->interface_signature.matches(other.interface_signature);
 }

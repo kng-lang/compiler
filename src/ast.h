@@ -368,10 +368,10 @@ struct ExprLiteralArrayAST : public ExpressionAST {
 };
 
 struct ASTVisitor {
-	std::shared_ptr<AST> ast;
+	std::shared_ptr<AST> m_ast;
 
 	ASTVisitor(){}
-	ASTVisitor(std::shared_ptr<AST> ast) : ast(ast){}
+	ASTVisitor(std::shared_ptr<AST> ast) : m_ast(ast){}
 
 	virtual void* visit_program(ProgramAST* program_ast) = 0;
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast) = 0;

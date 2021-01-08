@@ -15,15 +15,15 @@ James Clarke - 2021
 struct Compiler;
 
 struct Parser : public TokenConsumer{
-	CompilationUnit* unit;
+	CompilationUnit* m_unit;
 
 	//u32 current = 0;
-	ErrorHandler* err_handler;
-	std::shared_ptr<AST> root_ast;
-	std::shared_ptr<SymTable<Type>> sym_table;
-	u8 parsing_constant_assignment = 0;
-	u8 parsing_variable_assignment = 0;
-	u8 requiring_delimiter = 0;
+	ErrorHandler* m_err_handler;
+	std::shared_ptr<AST> m_root_ast;
+	std::shared_ptr<SymTable<Type>> m_sym_table;
+	u8 m_parsing_constant_assignment = 0;
+	u8 m_parsing_variable_assignment = 0;
+	u8 m_requiring_delimiter = 0;
 
 	Parser();
 	Parser(TokenList& tokens, CompilationUnit* unit);

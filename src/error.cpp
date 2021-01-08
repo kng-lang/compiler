@@ -54,13 +54,13 @@ void ErrorHandler::error(
 	how_many++;
 
 	auto problem_string = select_problem_area(
-		unit->compile_file.file_contents, p_start_index, p_start_line, p_end_index, p_end_line
+		unit->m_compile_file.m_file_contents, p_start_index, p_start_line, p_end_index, p_end_line
 		);
 
-	problem_string = get_src_at_line(unit->compile_file.file_contents, p_start_line);
+	problem_string = get_src_at_line(unit->m_compile_file.m_file_contents, p_start_line);
 
 	// @TODO calculate where the start of the line is on the error line
-	kng_log("~~~ error in {}:{}:{}", unit->compile_file.file_path, p_start_line, p_start_index);
+	kng_log("~~~ error in {}:{}:{}", unit->m_compile_file.m_file_path, p_start_line, p_start_index);
 	kng_log("~~~ ");
 	kng_log("~~~ {}", problem_string);
 	kng_log("~~~ {}", build_pointer(p_start_index, p_end_index));

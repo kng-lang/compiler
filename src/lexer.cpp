@@ -6,8 +6,8 @@ James Clarke - 2021
 #include "compiler.h"
 
 Lexer::Lexer(std::string& file_contents, CompilationUnit* unit){
-	this->unit = unit;
-	this->src = file_contents;
+	this->m_unit = unit;
+	this->m_src = file_contents;
 }
 
 TokenList Lexer::scan() {
@@ -17,8 +17,8 @@ TokenList Lexer::scan() {
 		auto current = next();
 		switch (current) {
 			// @TODO these are sequential i.e. \r\n is a newline
-			case '\n': index = 1; line++; resetSavePoint(); break;
-			case '\r': index = 1; line++; resetSavePoint(); break;
+			case '\n': m_index = 1; m_line++; resetSavePoint(); break;
+			case '\r': m_index = 1; m_line++; resetSavePoint(); break;
 			case '#': token(Token::Type::HASH); break;
 			case '@': token(Token::Type::DIRECTIVE); break;
 			case '+': token(Token::Type::PLUS); break;
@@ -61,7 +61,7 @@ TokenList Lexer::scan() {
 	}
 
 	token(Token::Type::END);
-	return TokenList(tokens);
+	return TokenList(m_tokens);
 }
 
 void Lexer::token(Token::Type type) {
@@ -70,12 +70,12 @@ void Lexer::token(Token::Type type) {
 
 void Lexer::token(Token::Type type, std::string value) {
 	Token tok;
-	tok.index = this->indexSavePoint;
-	tok.line = this->lineSavePoint;
-	tok.length = this->index - this->indexSavePoint;
-	tok.type = type;
-	tok.value = value;
-	tokens.push_back(tok);
+	tok.m_index = this->m_index_save_point;
+	tok.m_line = this->m_line_save_point;
+	tok.m_length = this->m_index - this->m_index_save_point;
+	tok.m_type = type;
+	tok.m_value = value;
+	m_tokens.push_back(tok);
 	resetSavePoint();
 }
 
@@ -115,8 +115,8 @@ void Lexer::skip_whitespace(){
 }
 
 void Lexer::resetSavePoint() {
-	indexSavePoint = index;
-	lineSavePoint = line;
+	m_index_save_point = m_index;
+	m_line_save_point = m_line;
 }
 
 u8 Lexer::consume(char c) {
@@ -132,15 +132,15 @@ char Lexer::prev(){
 }
 
 char Lexer::peek(){
-	return src.at(current);
+	return m_src.at(m_current);
 }
 
 char Lexer::peek(u32 amount) {
-	return src.at(current + amount);
+	return m_src.at(m_current + amount);
 }
 
 char Lexer::peek_ahead() {
-	return src.at(current + 1);
+	return m_src.at(m_current + 1);
 }
 
 char Lexer::next(){
@@ -148,14 +148,14 @@ char Lexer::next(){
 }
 
 char Lexer::advance(u32 amount){
-	index +=amount;
-	char c = src.at(current);
-	current += amount;
+	m_index +=amount;
+	char c = m_src.at(m_current);
+	m_current += amount;
 	return c;
 }
 
 u8 Lexer::end() {
-	return current > src.size()-1 || src.size()==0;
+	return m_current > m_src.size()-1 || m_src.size()==0;
 }
 
 u8 Lexer::is_letter(char c){
@@ -176,7 +176,7 @@ u8 Lexer::check_keyword(std::string rest, Token::Type t) {
 	for (i; i < rest.size() && !end(); i++)
 		if (peek(i) != rest.at(i))
 			return 0;
-	if (!(current + i > src.length() - 1) && (is_letter(peek(i)) || is_digit(peek(i)) || peek(i) == '_'))
+	if (!(m_current + i > m_src.length() - 1) && (is_letter(peek(i)) || is_digit(peek(i)) || peek(i) == '_'))
 		return 0;
 	advance((u32)rest.size());
 	token(t);

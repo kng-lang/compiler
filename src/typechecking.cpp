@@ -16,7 +16,7 @@ void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
 	}
 	case AST::ASTType::EXPR_LIT_ARRAY:{
 		auto arr = std::static_pointer_cast<ExprLiteralArrayAST>(ast);
-		arr->array_type.t = t.t; // @TODO should we cast the array_type here?
+		arr->array_type.m_type = t.m_type; // @TODO should we cast the array_type here?
 		arr->contained_type.cast(t);
 		for (const auto& value : arr->values)
 			niave_cast_ast(t, value);
@@ -26,8 +26,8 @@ void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
 }
 
 std::shared_ptr<AST> TypeChecker::check() {
-	ast->visit(this);
-	return ast;
+	m_ast->visit(this);
+	return m_ast;
 }
 
 void* TypeChecker::visit_program(ProgramAST* program_ast) { 
@@ -37,10 +37,10 @@ void* TypeChecker::visit_program(ProgramAST* program_ast) {
 }
 
 void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
-	sym_table.enter_scope();
+	m_sym_table.enter_scope();
 	for (const auto& ast : stmt_block_ast->stmts)
 		ast->visit(this);
-	sym_table.pop_scope();
+	m_sym_table.pop_scope();
 	return NULL; 
 }
 
@@ -55,20 +55,20 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// wait do we ?   x : fn { y : x } -> that isn't valid is it???
 
 	// first check that in this scope the variable isn't already defined
-	if (sym_table.entries.size()>0 
-		&& sym_table.entries[sym_table.level].count(stmt_define_ast->identifier.value)>0) {
-		unit->error_handler.error("symbol already defined!",
-			stmt_define_ast->identifier.index,
-			stmt_define_ast->identifier.line,
-			stmt_define_ast->identifier.index+stmt_define_ast->identifier.length,
-			stmt_define_ast->identifier.line
+	if (m_sym_table.entries.size()>0 
+		&& m_sym_table.entries[m_sym_table.level].count(stmt_define_ast->identifier.m_value)>0) {
+		m_unit->m_error_handler.error("symbol already defined!",
+			stmt_define_ast->identifier.m_index,
+			stmt_define_ast->identifier.m_line,
+			stmt_define_ast->identifier.m_index+stmt_define_ast->identifier.m_length,
+			stmt_define_ast->identifier.m_line
 			);
 		return NULL;
 	}
 
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
-	if (!(stmt_define_ast->define_type.is_constant && stmt_define_ast->define_type.t == Type::Types::FN))
-		sym_table.add_symbol(stmt_define_ast->identifier.value);
+	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.m_type == Type::Types::FN))
+		m_sym_table.add_symbol(stmt_define_ast->identifier.m_value);
 
 	Type l_type = stmt_define_ast->define_type;
 	Type r_type;
@@ -76,8 +76,8 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// finally, visit the initialisation value
 	if (stmt_define_ast->is_initialised) {
 		stmt_define_ast->value->visit(this);
-		r_type = checked_type;
-		r_type_ptr = checked_type_ptr;
+		r_type = m_checked_type;
+		r_type_ptr = m_checked_type_ptr;
 	}
 
 	if (stmt_define_ast->requires_type_inference) {
@@ -95,11 +95,11 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				niave_cast_ast(l_type, stmt_define_ast->value);
 			}
 			else {
-				unit->error_handler.error("types do not match",
-					stmt_define_ast->identifier.index,
-					stmt_define_ast->identifier.line,
-					stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
-					stmt_define_ast->identifier.line);
+				m_unit->m_error_handler.error("types do not match",
+					stmt_define_ast->identifier.m_index,
+					stmt_define_ast->identifier.m_line,
+					stmt_define_ast->identifier.m_index + stmt_define_ast->identifier.m_length,
+					stmt_define_ast->identifier.m_line);
 					return NULL;
 			}
 		}
@@ -107,15 +107,15 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 
 	if (stmt_define_ast->is_constant && !stmt_define_ast->is_initialised) {
-		unit->error_handler.error("constant variable requires initialisation",
-			stmt_define_ast->identifier.index,
-			stmt_define_ast->identifier.line,
-			stmt_define_ast->identifier.index + stmt_define_ast->identifier.length,
-			stmt_define_ast->identifier.line);
+		m_unit->m_error_handler.error("constant variable requires initialisation",
+			stmt_define_ast->identifier.m_index,
+			stmt_define_ast->identifier.m_line,
+			stmt_define_ast->identifier.m_index + stmt_define_ast->identifier.m_length,
+			stmt_define_ast->identifier.m_line);
 		return NULL;
 	}
 
-	sym_table.set_symbol(stmt_define_ast->identifier.value,
+	m_sym_table.set_symbol(stmt_define_ast->identifier.m_value,
 		SymTableEntry(
 			nullptr,
 			&stmt_define_ast->define_type,
@@ -123,12 +123,12 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			stmt_define_ast->is_constant));
 
 	// if we are at the first scope then this is a global variable
-	if (sym_table.level == 0) {
+	if (m_sym_table.level == 0) {
 		stmt_define_ast->is_global = 1;
 	}
 
-	checked_type = stmt_define_ast->define_type;
-	checked_type_ptr = &stmt_define_ast->define_type;
+	m_checked_type = stmt_define_ast->define_type;
+	m_checked_type_ptr = &stmt_define_ast->define_type;
 
 	return NULL; 
 }
@@ -148,7 +148,7 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 
 
 	stmt_assign_ast->assignee->visit(this);
-	auto l_type = checked_type;
+	auto l_type = m_checked_type;
 
 	//if (l_type.is_constant) {
 	//	unit->error_handler.error("cannot re-assign to constant",
@@ -158,8 +158,8 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	//		stmt_assign_ast->variable.line);
 	//}
 	stmt_assign_ast->value->visit(this);
-	auto r_type = checked_type;
-	auto r_type_ptr = checked_type_ptr;
+	auto r_type = m_checked_type;
+	auto r_type_ptr = m_checked_type_ptr;
 	if (!l_type.matches_basic(r_type)) {
 
 		// see if we can cast
@@ -167,7 +167,7 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 			r_type_ptr->cast(l_type);
 			return NULL;
 		}
-		unit->error_handler.error("lhs doesn't match rhs",
+		m_unit->m_error_handler.error("lhs doesn't match rhs",
 			0,
 			1,
 			0,
@@ -210,15 +210,15 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_fn_ast->is_lambda) {
-		expr_fn_ast->full_type.fn_signature.anonymous_identifier = sym_table.latest_entry.first;
+		expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier = m_sym_table.latest_entry.first;
 	}
 
 
 	// first resolve the type of the paramaters
 	for (const auto& param : expr_fn_ast->params) {
 		param->visit(this);
-		auto t = checked_type;
-		expr_fn_ast->full_type.fn_signature.operation_types.push_back(t);
+		auto t = m_checked_type;
+		expr_fn_ast->full_type.m_fn_signature.m_operation_types.push_back(t);
 	}
 
 	// @TODO if the fn is assigned to a constant, the functions name should be the same
@@ -227,8 +227,8 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		expr_fn_ast->body->visit(this);
 
 
-	checked_type_ptr = &expr_fn_ast->full_type;
-	checked_type = expr_fn_ast->full_type;
+	m_checked_type_ptr = &expr_fn_ast->full_type;
+	m_checked_type = expr_fn_ast->full_type;
 
 	return NULL;
 	//return (void*)&expr_fn_ast->full_type;
@@ -240,37 +240,37 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 	// do niave casting here on the value
 	expr_cast_ast->value->visit(this);
-	auto value_type = checked_type;
+	auto value_type = m_checked_type;
 	expr_cast_ast->from_type = value_type;
 	auto l_type = expr_cast_ast->from_type;
 	auto r_type = expr_cast_ast->to_type;
 	if (l_type.can_niave_cast(r_type)){
-		checked_type_ptr->cast(r_type);
+		m_checked_type_ptr->cast(r_type);
 		expr_cast_ast->niavely_resolved = 1;
 	}
 
 	// we need to resolve the type of the from
 	expr_cast_ast->from_type = infer_type(expr_cast_ast->value);
-	checked_type = expr_cast_ast->to_type;
+	m_checked_type = expr_cast_ast->to_type;
 	return NULL;
 }
 
 
 void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	expr_call_ast->callee->visit(this);
-	if (!(checked_type.t==Type::Types::FN)) {
-		unit->error_handler.error("callee must be a fn",0,0,0,0);
+	if (!(m_checked_type.m_type==Type::Types::FN)) {
+		m_unit->m_error_handler.error("callee must be a fn",0,0,0,0);
 		return NULL;
 	}
-	Type return_type = checked_type.fn_signature.operation_types.at(0);
-	checked_type = return_type;
+	Type return_type = m_checked_type.m_fn_signature.m_operation_types.at(0);
+	m_checked_type = return_type;
 	return NULL;
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	if (sym_table.contains_symbol(expr_var_ast->identifier.value)) {
-		checked_type_ptr = (Type*)sym_table.get_symbol(expr_var_ast->identifier.value).type;
-		checked_type = *checked_type_ptr;
+	if (m_sym_table.contains_symbol(expr_var_ast->identifier.m_value)) {
+		m_checked_type_ptr = (Type*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).type;
+		m_checked_type = *m_checked_type_ptr;
 		return NULL;
 	}
 	kng_assert(false, "sym doesn't exist :(");
@@ -286,19 +286,19 @@ void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 
 void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) { 
 
-	switch (expr_un_ast->op.type) {
+	switch (expr_un_ast->op.m_type) {
 	case Token::Type::POINTER:{
 		// first get the type of the group
 		expr_un_ast->ast->visit(this);
 		// then reduce the ptr indirection
-		checked_type.ptr_indirection--;
+		m_checked_type.m_ptr_indirection--;
 		break;
 	}
 	case Token::Type::BAND: {
 		// first get the type of the group
 		expr_un_ast->ast->visit(this);
 		// then reduce the ptr indirection
-		checked_type.ptr_indirection++;
+		m_checked_type.m_ptr_indirection++;
 		break;
 	}
 	}
@@ -312,8 +312,8 @@ void* TypeChecker::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 
 void* TypeChecker::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) { 
 
-    checked_type = expr_literal_ast->t;
-	checked_type_ptr = &expr_literal_ast->t;
+    m_checked_type = expr_literal_ast->t;
+	m_checked_type_ptr = &expr_literal_ast->t;
 	//return (void*)&expr_literal_ast->t;
 	return NULL;
 }
@@ -325,7 +325,7 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	u8 type_set = 0;
 	for (const auto& ast : expr_literal_array_ast->values) {
 		ast->visit(this);
-		Type t = checked_type;
+		Type t = m_checked_type;
 		if (!type_set)
 			contained_type = t;
 		else {
@@ -338,12 +338,12 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 
 	expr_literal_array_ast->contained_type = contained_type;
 	Type array_type = contained_type;
-	array_type.is_arr = 1;
-	array_type.arr_length = expr_literal_array_ast->size;
+	array_type.m_is_arr = 1;
+	array_type.m_arr_length = expr_literal_array_ast->size;
 	expr_literal_array_ast->array_type = array_type;
 
-	checked_type_ptr = &expr_literal_array_ast->array_type;
-	checked_type = expr_literal_array_ast->array_type;
+	m_checked_type_ptr = &expr_literal_array_ast->array_type;
+	m_checked_type = expr_literal_array_ast->array_type;
 	return NULL;
 	//return (void*)&expr_literal_array_ast->array_type;
 }

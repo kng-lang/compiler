@@ -13,13 +13,13 @@ James Clarke - 2021
 struct CompilationUnit;
 
 struct TypeChecker : public ASTVisitor {
-	CompilationUnit* unit;
-	SymTable<std::shared_ptr<Type>> sym_table;
-	Type checked_type;
-	Type* checked_type_ptr;
+	CompilationUnit* m_unit;
+	SymTable<std::shared_ptr<Type>> m_sym_table;
+	Type m_checked_type;
+	Type* m_checked_type_ptr;
 
 	TypeChecker() {}
-	TypeChecker(std::shared_ptr<AST> ast, CompilationUnit* unit) : ASTVisitor(ast), unit(unit) {}
+	TypeChecker(std::shared_ptr<AST> ast, CompilationUnit* unit) : ASTVisitor(ast), m_unit(unit) {}
 
 	
 	// cast any ast (must be an expression) to a given type

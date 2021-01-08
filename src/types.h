@@ -14,13 +14,13 @@ struct AST;
 
 // the signature of an interface is made up of the type of its members
 struct InterfaceSignature{
-	std::vector<Type> members;
+	std::vector<Type> m_members;
 };
 
 struct FnSignature {
-	std::string anonymous_identifier;
-	std::vector<Type> operation_types;
-	u8 has_return = 0;
+	std::string m_anonymous_identifier;
+	std::vector<Type> m_operation_types;
+	u8 m_has_return = 0;
 };
 
 struct Pattern {
@@ -57,35 +57,35 @@ struct Type {
 		INTERFACE,
 		PATTERN,		// sequence of types
 	};
-	Types t = Types::UNKNOWN;
+	Types m_type = Types::UNKNOWN;
 	
 	// if this type is a generic in a fn e.g. (x : $generic){}, here x would have type generic.
 	// the compiler will then resolve this generic type at compile time
-	u8 is_generic = 0;
+	u8 m_is_generic = 0;
 
-	u8 constant = 0;
+	u8 m_constant = 0;
 	// e.g. ^^^u8
-	u8 ptr_indirection = 0;
+	u8 m_ptr_indirection = 0;
 	// e.g. u8[5]
-	u8 is_arr = 0;
-	u8 pattern = 0;
-	u8 is_constant_str; // for when we have ""?
-	u32 arr_length = 0;
+	u8 m_is_arr = 0;
+	u8 m_is_pattern = 0;
+	u8 m_is_constant_str; // for when we have ""?
+	u32 m_arr_length = 0;
 
 
-	u8 is_constant = 0;
-	u8 is_global = 0;
+	u8 m_is_constant = 0;
+	u8 m_is_global = 0;
 
-	std::vector<Type> patterns;
-	InterfaceSignature interface_signature;
-	FnSignature fn_signature;
+	std::vector<Type> m_patterns;
+	InterfaceSignature m_interface_signature;
+	FnSignature m_fn_signature;
 
 	Type(){}
-	Type(Types t) : t(t){}
-	Type(Types t, u8 ptr_indirection) : t(t), ptr_indirection(ptr_indirection){}
-	Type(Types t, u8 is_arr, u32 arr_length) : t(t), is_arr(is_arr), arr_length(arr_length) {}
-	Type(Types t, u8 pattern, std::vector<Type> types) : t(t), pattern(pattern), patterns(patterns) {}
-	Type(Types t, FnSignature fn_sig) : t(t), fn_signature(fn_sig) {}
+	Type(Types t) : m_type(t){}
+	Type(Types t, u8 ptr_indirection) : m_type(t), m_ptr_indirection(ptr_indirection){}
+	Type(Types t, u8 is_arr, u32 arr_length) : m_type(t), m_is_arr(is_arr), m_arr_length(arr_length) {}
+	Type(Types t, u8 pattern, std::vector<Type> types) : m_type(t), m_is_pattern(pattern), m_patterns(m_patterns) {}
+	Type(Types t, FnSignature fn_sig) : m_type(t), m_fn_signature(fn_sig) {}
 
 	std::string to_json();
 
