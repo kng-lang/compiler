@@ -255,6 +255,7 @@ void* LLVMCodeGen::visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_inte
 }
 void* LLVMCodeGen::visit_stmt_return(StmtReturnAST* stmt_return_ast) {
 	stmt_return_ast->value->visit(this);
+	convert_fetched_to_value();
 	llvm_builder->CreateRet(fetched_value);
 	return NULL;
 }
@@ -273,6 +274,7 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 		// convert the condition to a bool
 
 		stmt_if_ast->if_cond->visit(this);
+		convert_fetched_to_value();
 		auto cmp = llvm_builder->CreateICmpEQ(
 			fetched_value,
 			llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), 1),
@@ -311,6 +313,7 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 	else if (infered_type.is_float_type()) {
 		// convert the condition to a bool
 		stmt_if_ast->if_cond->visit(this);
+		convert_fetched_to_value();
 		auto bool_condition = llvm_builder->CreateFCmpONE(
 			fetched_value, llvm::ConstantFP::get(*llvm_context, llvm::APFloat(0.0)), "ifcond");
 	}
@@ -388,6 +391,7 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 	expr_cast_ast->value->visit(this);
+	convert_fetched_to_value();
 	// check if the cast has been niavely_resolved at compile time
 	if (expr_cast_ast->niavely_resolved)
 		return fetched_value;

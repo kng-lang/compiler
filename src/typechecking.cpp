@@ -239,12 +239,13 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 
 	// do niave casting here on the value
-	auto value_type = (Type*)expr_cast_ast->value->visit(this);
-	expr_cast_ast->from_type = *value_type;
+	expr_cast_ast->value->visit(this);
+	auto value_type = checked_type;
+	expr_cast_ast->from_type = value_type;
 	auto l_type = expr_cast_ast->from_type;
 	auto r_type = expr_cast_ast->to_type;
 	if (l_type.can_niave_cast(r_type)){
-		value_type->cast(r_type);
+		checked_type_ptr->cast(r_type);
 		expr_cast_ast->niavely_resolved = 1;
 	}
 
@@ -252,7 +253,6 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 	expr_cast_ast->from_type = infer_type(expr_cast_ast->value);
 	checked_type = expr_cast_ast->to_type;
 	return NULL;
-	//return (void*)&expr_cast_ast->to_type;
 }
 
 
