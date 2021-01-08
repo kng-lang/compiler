@@ -169,6 +169,7 @@ llvm::Value* LLVMCodeGen::convert_fetched_to_value() {
 	switch (fetched_type) {
 		case FetchedType::VARIABLE: {
 			fetched_value = llvm_builder->CreateLoad(fetched_value);
+			fetched_type = FetchedType::VALUE;
 			break;
 		}
 		// if the fetched type is already a value then return
@@ -405,6 +406,7 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 		std::vector<llvm::Value*> args;
 		for (const auto& arg : expr_call_ast->args) {
 			arg->visit(this);
+			convert_fetched_to_value();
 			args.push_back(fetched_value);
 		}
 		//std::vector<llvm::Value*> args = { (llvm::Value*)expr_call_ast->args->visit(this) };
@@ -427,10 +429,12 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 			fetched_type = FetchedType::FN;
 			auto fn_type = (llvm::Function*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
 			fetched_value = fn_type;
+			break;
 		}
 		default: {
 			fetched_type = FetchedType::VARIABLE;
 			fetched_value = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			break;
 		}
 	}
 	return NULL;
@@ -479,7 +483,7 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::CHAR: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
 			fetched_value = llvm_builder->CreateGlobalString(expr_literal_ast->v.as_string());
-			fetched_type = FetchedType::VARIABLE;
+			fetched_type = FetchedType::VALUE;
 			return NULL; 
 		}
 	}
