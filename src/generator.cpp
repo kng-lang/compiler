@@ -425,10 +425,11 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 			return fn_type;
 		}
 		default: {
-			//return (llvm::Value*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			return (llvm::Value*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			// this may work for pointers?
 			//// create a load instruction
-			auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
-			return llvm_builder->CreateLoad(instr);
+			//auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			//return llvm_builder->CreateLoad(instr);
 		}
 	}
 }
@@ -444,13 +445,16 @@ void* LLVMCodeGen::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
 	case Token::Type::POINTER: {
 		//@TODO implement me!
 		// we first need to get the type that the load is of 
+		//auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
 		auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
 		return llvm_builder->CreateLoad(value);
 		break;
 	}
 	case Token::Type::BAND: {
-		auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
-		return llvm_builder->CreateLoad(value);
+		return (llvm::StoreInst*)expr_un_ast->ast->visit(this);
+		//// this is how to deref:
+		//auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
+		//return llvm_builder->CreateLoad(value);
 		break;
 	}
 	}

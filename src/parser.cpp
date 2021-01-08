@@ -73,12 +73,13 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			switch (peek(1).type) {
 				case Token::Type::COLON:
 				case Token::Type::QUICK_ASSIGN: stmt = parse_define(); break;
-				default: stmt = parse_expression(); break;
+				default: stmt = parse_expression_stmt(); break;
 			}
 			break;
 		}; // @TODO how do we know we are doing an assignment or expression?
 		default: {
-			parse_expression_stmt();
+			parse_expression();
+			requiring_delimiter = 1;
 			break;
 		}
 	}
@@ -332,7 +333,6 @@ std::shared_ptr<AST> Parser::parse_define() {
 
 
 std::shared_ptr<AST> Parser::parse_expression_stmt() {
-	requiring_delimiter = 1;
 	return parse_assign();
 }
 
