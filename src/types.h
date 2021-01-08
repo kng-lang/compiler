@@ -34,11 +34,12 @@ struct Type {
 	enum class Types{
 		UNKNOWN,
 		TYPE,    
-		// the difference TYPE & interface is subtle
-		// this is a type alias & only exists at compile time:
-		// x : type = interface { name : u8^ }
-		// this is a literal interface value and exists at runtime
-		// y : interface = interface { name : u8^}
+		// A type is used at compile time as a type alias
+		// e.g. x : f32; y : x = 1.233;
+		// At runtime, the type contains type information (made up by a structure)
+		// e.g. x : type = f32; printf("%s\n", x.name); will print f32
+		// e.g. x : type = f32; printf("%s\n", x.size); will print 32
+		NAMESPACE,
 		U0,
 		U8,
 		S8,
@@ -57,6 +58,11 @@ struct Type {
 		PATTERN,		// sequence of types
 	};
 	Types t = Types::UNKNOWN;
+	
+	// if this type is a generic in a fn e.g. (x : $generic){}, here x would have type generic.
+	// the compiler will then resolve this generic type at compile time
+	u8 is_generic = 0;
+
 	u8 constant = 0;
 	// e.g. ^^^u8
 	u8 ptr_indirection = 0;

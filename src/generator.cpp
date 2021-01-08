@@ -425,10 +425,10 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 			return fn_type;
 		}
 		default: {
-			return (llvm::Value*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			//return (llvm::Value*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
 			//// create a load instruction
-			//auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
-			//return llvm_builder->CreateLoad(instr);
+			auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
+			return llvm_builder->CreateLoad(instr);
 		}
 	}
 }

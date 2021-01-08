@@ -32,7 +32,7 @@ struct ExprCastAST;
 struct ExprCallAST;
 struct ExprVarAST;
 struct ExprPatternAST;
-struct ExprInterfaceGetAST;
+struct ExprInterfaceGetAST; // this is used for interface gets and namespace gets, bc at parse time we can't tell the difference.
 struct ExprBinAST;
 struct ExprUnAST;
 struct ExprGroupAST;

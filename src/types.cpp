@@ -4,6 +4,7 @@
 const char* Type::debug_types[] = {
 	"UNKNOWN",
 	"TYPE",
+	"NAMESPACE",
 	"U0",
 	"U8",
 	"S8",
