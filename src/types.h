@@ -160,6 +160,15 @@ struct SymTable {
 		entries[level][entry_id] = entry;
 	}
 
+	u8 contains_symbol(std::string entry_id) {
+		for (s32 i = level; i >= 0; i--) {
+			if (this->entries[i].count(entry_id) > 0) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+
 	SymTableEntry get_symbol(std::string entry_id) {
 		for (s32 i = level; i >= 0; i--) {
 			if (this->entries[i].count(entry_id) > 0) {

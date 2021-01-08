@@ -268,8 +268,12 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	checked_type_ptr = (Type*)sym_table.get_symbol(expr_var_ast->identifier.value).type;
-	checked_type = *checked_type_ptr;
+	if (sym_table.contains_symbol(expr_var_ast->identifier.value)) {
+		checked_type_ptr = (Type*)sym_table.get_symbol(expr_var_ast->identifier.value).type;
+		checked_type = *checked_type_ptr;
+		return NULL;
+	}
+	kng_assert(false, "sym doesn't exist :(");
 	return NULL;
 }
 

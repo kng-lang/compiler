@@ -51,6 +51,14 @@ struct CodeGen : public ASTVisitor {
 
 struct LLVMCodeGen : public CodeGen {
 
+
+	enum class FetchedType {
+		FN,
+		VARIABLE,
+		VALUE,
+	};
+
+
 	struct LLVMSymEntry {
 		void* llvm_instruction;
 		Type type;
@@ -63,7 +71,10 @@ struct LLVMCodeGen : public CodeGen {
 	std::unique_ptr<llvm::IRBuilder<>> llvm_builder;
 	std::shared_ptr<llvm::Module> llvm_module;
 
-
+	// every time we visit an expression, we need to set this type so we can convert it to a value
+	FetchedType fetched_type;
+	llvm::Value* fetched_value;
+	u8 require_store_instr = 0;
 	// set the exit block when entering a new block
 	llvm::BasicBlock* exit_block;
 
@@ -75,6 +86,9 @@ struct LLVMCodeGen : public CodeGen {
 	void make_runtime();
 	void optimise();
 	llvm::Type* convert_type(Type type);
+	// call this if we need the fetched_value as a value ready to be used.
+	// e.g. convert StoreInstr to LoadInstr to use a variable
+	llvm::Value* convert_fetched_to_value();
 	virtual void* visit_program(ProgramAST* program_ast);
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast);
 	virtual void* visit_stmt_expression(StmtExpressionAST* stmt_expression_ast);

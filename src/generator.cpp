@@ -133,23 +133,8 @@ void LLVMCodeGen::generate() {
 	dest.flush();
 }
 
-void LLVMCodeGen::make_runtime() {
-
-	// first create the main function
-
-	//auto ptr_to_ptr = llvm::PointerType::getUnqual(llvm::Type::getInt32PtrTy(*llvm_context));
-	//
-	//llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(*llvm_context), { llvm::Type::getInt32Ty(*llvm_context), ptr_to_ptr }, false);
-	//llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "main", *llvm_module);
-	//llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvm_context, "main_block", f);
-	//llvm_builder->SetInsertPoint(bb);
-	//llvm_builder->CreateRet(llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), 0));
-	//llvm_builder->ClearInsertionPoint();
-	//llvm::verifyFunction(*f);
-}
-
+void LLVMCodeGen::make_runtime() {}
 void LLVMCodeGen::optimise(){}
-
 
 llvm::Type* LLVMCodeGen::convert_type(Type type) {
 	llvm::Type* tmp_type = NULL;
@@ -178,6 +163,18 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 	}
 	kng_assert(tmp_type, "tmp_type NULL");
 	return tmp_type;
+}
+
+llvm::Value* LLVMCodeGen::convert_fetched_to_value() {
+	switch (fetched_type) {
+		case FetchedType::VARIABLE: {
+			fetched_value = llvm_builder->CreateLoad(fetched_value);
+			break;
+		}
+		// if the fetched type is already a value then return
+		case FetchedType::VALUE: break;
+	}
+	return NULL;
 }
 
 void* LLVMCodeGen::visit_program(ProgramAST* program_ast){
@@ -218,16 +215,18 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// @TODO this works if it isn't a function...
 	if (stmt_define_ast->is_initialised
 		&& stmt_define_ast->define_type.t != Type::Types::FN) {
-		auto val = stmt_define_ast->value->visit(this);
+		stmt_define_ast->value->visit(this);
 		auto is_volative = false;
-		kng_assert(creation_instr != NULL, "creaton_instr was null");
-		llvm_builder->CreateStore((llvm::Value*)val, (llvm::Value*) creation_instr, is_volative);
+		kng_assert(creation_instr != NULL, "creaton_instr was null");	
+		// prepare the value for assignment
+		convert_fetched_to_value();
+		llvm_builder->CreateStore(fetched_value, (llvm::Value*) creation_instr, is_volative);
 	}
 
 	// @TODO jesus fix this pls
 	if (stmt_define_ast->define_type.t == Type::Types::FN) {
-		llvm::Function* fn = (llvm::Function*)stmt_define_ast->value->visit(this);
-		sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry(fn, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+		stmt_define_ast->value->visit(this);
+		sym_table.add_symbol(stmt_define_ast->identifier.value, SymTableEntry((llvm::Function*)fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 	}
 	return NULL;
 }
@@ -235,9 +234,16 @@ void* LLVMCodeGen::visit_stmt_interface_define(StmtInterfaceDefineAST* stmt_inte
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
+
 	// @TODO this assumes the variable decleration e.g. x : s32 was an alloca and not a global or a malloc etc
-	auto val = (llvm::Value*)stmt_assign_ast->value->visit(this);
-	auto ptr = (llvm::Value*)stmt_assign_ast->assignee->visit(this);
+	stmt_assign_ast->value->visit(this);
+	// prepare the value for assignment
+	convert_fetched_to_value();
+	auto val = fetched_value;
+
+	stmt_assign_ast->assignee->visit(this);
+	auto ptr = fetched_value; // what if we are assigning to a deref??? ^x = 1
+
 	//auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value).optional_data;
 	auto is_volative = false;
 	llvm_builder->CreateStore(val, ptr, is_volative);
@@ -247,7 +253,8 @@ void* LLVMCodeGen::visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_inte
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_return(StmtReturnAST* stmt_return_ast) {
-	llvm_builder->CreateRet((llvm::Value*)stmt_return_ast->value->visit(this));
+	stmt_return_ast->value->visit(this);
+	llvm_builder->CreateRet(fetched_value);
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_continue_ast(StmtContinueAST* stmt_continue_ast) {
@@ -264,9 +271,9 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 	if (infered_type.is_integer_type()) {
 		// convert the condition to a bool
 
-
+		stmt_if_ast->if_cond->visit(this);
 		auto cmp = llvm_builder->CreateICmpEQ(
-			(llvm::Value*)stmt_if_ast->if_cond->visit(this),
+			fetched_value,
 			llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), 1),
 			"test_if_block"
 		);
@@ -302,14 +309,13 @@ void* LLVMCodeGen::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 	}
 	else if (infered_type.is_float_type()) {
 		// convert the condition to a bool
-		llvm::Value* cond_value = (llvm::Value*)stmt_if_ast->if_cond->visit(this);
+		stmt_if_ast->if_cond->visit(this);
 		auto bool_condition = llvm_builder->CreateFCmpONE(
-			cond_value, llvm::ConstantFP::get(*llvm_context, llvm::APFloat(0.0)), "ifcond");
+			fetched_value, llvm::ConstantFP::get(*llvm_context, llvm::APFloat(0.0)), "ifcond");
 	}
 	return NULL;
 }
 void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
-	kng_log("generating loop!");
 
 	// first create the start block
 	llvm::BasicBlock* body_block = llvm::BasicBlock::Create(*llvm_context, "then");
@@ -372,35 +378,34 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 	// add the fn type to the symbol table
 	sym_table.add_symbol(expr_fn_ast->full_type.fn_signature.anonymous_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
-	return f;
+	fetched_value = f;
+	return NULL;
 }
 
 
 
 void* LLVMCodeGen::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
-	auto value = (llvm::Value*)expr_cast_ast->value->visit(this);
+	expr_cast_ast->value->visit(this);
+	// check if the cast has been niavely_resolved at compile time
 	if (expr_cast_ast->niavely_resolved)
-		return value;
-
+		return fetched_value;
+	// if it hasn't, then perform a runtime bitcast
 	auto l_type = expr_cast_ast->from_type;
 	auto r_type = expr_cast_ast->to_type;
-	llvm::Instruction::CastOps cast_instr;
-	
-	// check if the cast has been resolved at compile time
-
-	
-	return llvm_builder->CreateCast(llvm::Instruction::CastOps::SIToFP, value, convert_type(r_type));
+	fetched_value = llvm_builder->CreateCast(llvm::Instruction::CastOps::SIToFP, fetched_value, convert_type(r_type));
+	return NULL;
 }
 
 void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
-	auto fn = (llvm::Function*)(expr_call_ast->callee->visit(this));
-
+	expr_call_ast->callee->visit(this);
+	llvm::Function* fn = (llvm::Function*)fetched_value;
 	llvm::ArrayRef<llvm::Value*> arg_array;
 	if (expr_call_ast->has_args) {
 		std::vector<llvm::Value*> args;
 		for (const auto& arg : expr_call_ast->args) {
-			args.push_back((llvm::Value*)arg->visit(this));
+			arg->visit(this);
+			args.push_back(fetched_value);
 		}
 		//std::vector<llvm::Value*> args = { (llvm::Value*)expr_call_ast->args->visit(this) };
 		arg_array = llvm::ArrayRef<llvm::Value*>(args);
@@ -408,30 +413,27 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	else {
 		arg_array = llvm::None;
 	}
-
-
-	return llvm_builder->CreateCall(fn, arg_array);
+	fetched_value = llvm_builder->CreateCall(fn, arg_array);
+	return NULL;
 }
 
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-
 	// the problem here is that a variable can be a load, store etc
 
 	auto var_type = sym_table.get_symbol(expr_var_ast->identifier.value).type;
 
 	switch (var_type->t) {
 		case Type::Types::FN: {
+			fetched_type = FetchedType::FN;
 			auto fn_type = (llvm::Function*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
-			return fn_type;
+			fetched_value = fn_type;
 		}
 		default: {
-			return (llvm::Value*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
-			// this may work for pointers?
-			//// create a load instruction
-			//auto instr = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
-			//return llvm_builder->CreateLoad(instr);
+			fetched_type = FetchedType::VARIABLE;
+			fetched_value = (llvm::StoreInst*)sym_table.get_symbol(expr_var_ast->identifier.value).optional_data;
 		}
 	}
+	return NULL;
 }
 void* LLVMCodeGen::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) {
 	return NULL;
@@ -440,25 +442,24 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
-
 	switch (expr_un_ast->op.type) {
-	case Token::Type::POINTER: {
-		//@TODO implement me!
-		// we first need to get the type that the load is of 
-		//auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
-		auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
-		return llvm_builder->CreateLoad(value);
-		break;
+		case Token::Type::POINTER: {
+			// we first visit the variable expression to set the stored_var_instr.
+			// after, we then load the variable value.
+			expr_un_ast->ast->visit(this);
+			kng_assert(fetched_value, "fetched_value was null, likely attempting to dereference a non pointer");
+			fetched_value = llvm_builder->CreateLoad(fetched_value);
+			fetched_type = FetchedType::VALUE;
+		}
+		case Token::Type::BAND: {
+			// we first visit the variable expression to set the stored_var_instr.
+			// after, we then load the variable value.
+			expr_un_ast->ast->visit(this);
+			kng_assert(fetched_value, "stored_var_insr was null, likely attempting to dereference a non pointer");
+			fetched_value = fetched_value;
+			fetched_type = FetchedType::VALUE;
+		}
 	}
-	case Token::Type::BAND: {
-		return (llvm::StoreInst*)expr_un_ast->ast->visit(this);
-		//// this is how to deref:
-		//auto value = (llvm::StoreInst*)expr_un_ast->ast->visit(this);
-		//return llvm_builder->CreateLoad(value);
-		break;
-	}
-	}
-
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
@@ -466,22 +467,23 @@ void* LLVMCodeGen::visit_expr_group_ast(ExprGroupAST* expr_group_ast) {
 }
 void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 	switch (expr_literal_ast->t.t) {
-	case Type::Types::U8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context),   expr_literal_ast->v.as_u8()); break;
-	case Type::Types::S8: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_s8()); break;
-	case Type::Types::U16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.as_u16()); break;
-	case Type::Types::S16: return llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.as_s16()); break;
-	case Type::Types::U32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.as_u32()); break;
-	case Type::Types::S32: return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.as_s32()); break;
-	case Type::Types::S64: return llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvm_context), expr_literal_ast->v.as_s64()); break;
-	case Type::Types::F32: return llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*llvm_context), expr_literal_ast->v.as_f32()); break;
-	case Type::Types::F64: return llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*llvm_context),expr_literal_ast->v.as_f64()); break;
-	case Type::Types::CHAR: return llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_char()); break;
-	case Type::Types::STRING: {
-		return llvm_builder->CreateGlobalString(expr_literal_ast->v.as_string());
-		//return llvm::ConstantDataArray::getString(*llvm_context, std::get<std::string>(expr_literal_ast->v.values), true);
+		case Type::Types::U8:  { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context),   expr_literal_ast->v.as_u8()); break; }
+		case Type::Types::S8:  { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_s8()); break;   }
+		case Type::Types::U16: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.as_u16()); break; }
+		case Type::Types::S16: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt16Ty(*llvm_context), expr_literal_ast->v.as_s16()); break; }
+		case Type::Types::U32: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.as_u32()); break; }
+		case Type::Types::S32: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*llvm_context), expr_literal_ast->v.as_s32()); break; }
+		case Type::Types::S64: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*llvm_context), expr_literal_ast->v.as_s64()); break; }
+		case Type::Types::F32: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*llvm_context), expr_literal_ast->v.as_f32()); break; }
+		case Type::Types::F64: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*llvm_context),expr_literal_ast->v.as_f64()); break; }
+		case Type::Types::CHAR: { fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*llvm_context), expr_literal_ast->v.as_char()); break;}
+		case Type::Types::STRING: { 
+			fetched_value = llvm_builder->CreateGlobalString(expr_literal_ast->v.as_string());
+			fetched_type = FetchedType::VARIABLE;
+			return NULL; 
+		}
 	}
-	}
-	kng_assert(false, "invalid type");
+	fetched_type = FetchedType::VALUE;
 	return NULL;
 }
 
@@ -493,5 +495,7 @@ void* LLVMCodeGen::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	llvm::ArrayRef<llvm::Constant*> array_ref(constants);
 	llvm::ArrayType* array_type = llvm::ArrayType::get(convert_type(expr_literal_array_ast->contained_type), expr_literal_array_ast->array_type.arr_length);
 	// note we do t.t here as the array type will be u8 array size 123, and we just want u8
-	return llvm::ConstantArray::get(array_type, array_ref);
+	fetched_value = llvm::ConstantArray::get(array_type, array_ref);
+	fetched_type = FetchedType::VALUE;
+	return NULL;
 }
