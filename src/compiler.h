@@ -46,7 +46,7 @@ struct CompileOptions {
 	BuildTarget m_build_target;
 	// which debug information should be emitted during compilation
 	u8 m_debug_flags = 0;
-	u8 m_optimise = 0;
+	u8 m_optimise = 1;
 	// by default only show critical errors
 	u8 m_error_level = 3;
 	// number of threads to use during compilation (1 is the default)
