@@ -71,6 +71,7 @@ struct Type {
 	u8 m_is_pattern = 0;
 	u8 m_is_constant_str; // for when we have ""?
 	u32 m_arr_length = 0;
+	u8 m_is_arg = 0;
 
 
 	u8 m_is_constant = 0;

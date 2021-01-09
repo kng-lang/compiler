@@ -115,11 +115,12 @@ void LLVMCodeGen::generate() {
 		return;
 	}
 	if (m_unit->m_compile_options.m_optimise) {
-		pass.add(llvm::createCodeGenPreparePass());
-		pass.add(llvm::createPromoteMemoryToRegisterPass());
-		pass.add(llvm::createLoopFlattenPass());
-		pass.add(llvm::createDeadCodeEliminationPass());
-		pass.add(llvm::createDeadStoreEliminationPass());
+		// disabled for debugging!
+		//pass.add(llvm::createCodeGenPreparePass());
+		//pass.add(llvm::createPromoteMemoryToRegisterPass());
+		//pass.add(llvm::createLoopFlattenPass());
+		//pass.add(llvm::createDeadCodeEliminationPass());
+		//pass.add(llvm::createDeadStoreEliminationPass());
 	}
 
 	pass.run(*m_module);
@@ -371,6 +372,8 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	u32 i = 0;
 	for (auto arg = f->arg_begin(); arg != f->arg_end(); ++arg) {
 		auto stmt_define_arg = std::static_pointer_cast<StmtDefineAST>(expr_fn_ast->params.at(i));
+		// set the name of the argument & add it to the symbol table
+		arg->setName(stmt_define_arg->identifier.m_value);
 		auto arg_name = stmt_define_arg->identifier.m_value;
 		m_sym_table.add_symbol(arg_name, SymTableEntry(arg, &stmt_define_arg->define_type, 0, 0));
 	}
@@ -432,19 +435,14 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 		arg_array = llvm::None;
 	}
 
-	// debug arg types
-	for (const auto& p : fn->args())
-		kng_log("asdg {}", p.getArgNo());
-
 	m_fetched_value = m_builder->CreateCall(fn, arg_array);
 	return NULL;
 }
 
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// the problem here is that a variable can be a load, store etc
-
+	
 	auto var_type = m_sym_table.get_symbol(expr_var_ast->identifier.m_value).type;
-
 	switch (var_type->m_type) {
 		case Type::Types::FN: {
 			m_fetched_type = FetchedType::FN;
@@ -452,8 +450,15 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 			break;
 		}
 		default: {
-			m_fetched_type = FetchedType::VARIABLE;
-			m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
+			// if the type is an argument, then return it
+			if (var_type->m_is_arg) {
+				m_fetched_type = FetchedType::VALUE;
+				m_fetched_value = (llvm::Value*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
+			}
+			else {
+				m_fetched_type = FetchedType::VARIABLE;
+				m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
+			}
 			break;
 		}
 	}
@@ -504,7 +509,7 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::STRING: { 
 			// @TODO, the problem is, this is an array type and printf wants a pointer type
 			m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
-			m_fetched_type = FetchedType::VALUE; // @TODO this should be VALUE but DEBUG mode doesn't like it :(
+			m_fetched_type = FetchedType::VALUE;
 			return NULL; 
 		}
 	}

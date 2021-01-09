@@ -572,7 +572,9 @@ std::shared_ptr<AST> Parser::parse_single(){
 
 				std::vector<std::shared_ptr<AST>> params;
 				while (!expect(Token::Type::RPAREN)) {
-					params.push_back(parse_define());
+					auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
+					define->define_type.m_is_arg = 1;
+					params.push_back(define);
 					if (!expect(Token::Type::RPAREN))
 						consume(Token::Type::COMMA);
 				}
