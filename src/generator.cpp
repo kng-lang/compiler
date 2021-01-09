@@ -173,6 +173,7 @@ llvm::Value* LLVMCodeGen::convert_fetched_to_value() {
 		}
 		// if the fetched type is already a value then return
 		case FetchedType::VALUE: break;
+		case FetchedType::FN: break;
 	}
 	return NULL;
 }
@@ -351,20 +352,29 @@ void* LLVMCodeGen::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
 void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
-
+	m_sym_table.enter_scope();
 	llvm::Type* return_type = convert_type(expr_fn_ast->full_type.m_fn_signature.m_operation_types.at(0));
 	std::vector<llvm::Type*> param_types;
 
 
 
 
-	for (s32 i = (return_type==NULL) ? 0 : 1; i < expr_fn_ast->full_type.m_fn_signature.m_operation_types.size(); i++)
+	for (s32 i = (return_type == NULL) ? 0 : 1; i < expr_fn_ast->full_type.m_fn_signature.m_operation_types.size(); i++) {
 		param_types.push_back(convert_type(expr_fn_ast->full_type.m_fn_signature.m_operation_types.at(i)));
+	}
 
 
 	llvm::FunctionType* ft = llvm::FunctionType::get(return_type, param_types, false);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier, *m_module);
 	
+	// add the paramater to the sym table
+	u32 i = 0;
+	for (auto arg = f->arg_begin(); arg != f->arg_end(); ++arg) {
+		auto stmt_define_arg = std::static_pointer_cast<StmtDefineAST>(expr_fn_ast->params.at(i));
+		auto arg_name = stmt_define_arg->identifier.m_value;
+		m_sym_table.add_symbol(arg_name, SymTableEntry(arg, &stmt_define_arg->define_type, 0, 0));
+	}
+
 	if (expr_fn_ast->has_body) {
 		llvm::BasicBlock* bb = llvm::BasicBlock::Create(*m_context, "entry_block", f);
 		m_builder->SetInsertPoint(bb);
@@ -375,10 +385,11 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		if (!expr_fn_ast->full_type.m_fn_signature.m_has_return)
 			m_builder->CreateRetVoid();
 
+
 		m_builder->ClearInsertionPoint();
 		llvm::verifyFunction(*f);
 	}
-
+	m_sym_table.pop_scope();
 	// add the fn type to the symbol table
 	m_sym_table.add_symbol(expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
 	m_fetched_value = f;
@@ -405,15 +416,17 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	expr_call_ast->callee->visit(this);
 	llvm::Function* fn = (llvm::Function*)m_fetched_value;
 	llvm::ArrayRef<llvm::Value*> arg_array;
+	std::vector<llvm::Value*> args;
 	if (expr_call_ast->has_args) {
-		std::vector<llvm::Value*> args;
 		for (const auto& arg : expr_call_ast->args) {
 			arg->visit(this);
+			auto test_constant = (llvm::Value*)llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), 222);
 			convert_fetched_to_value();
-			args.push_back(m_fetched_value);
+			args.push_back((llvm::Value*)m_fetched_value);
 		}
 		//std::vector<llvm::Value*> args = { (llvm::Value*)expr_call_ast->args->visit(this) };
 		arg_array = llvm::ArrayRef<llvm::Value*>(args);
+		kng_assert(arg_array.data(), "arg_array data was NULL");
 	}
 	else {
 		arg_array = llvm::None;
@@ -430,8 +443,7 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	switch (var_type->m_type) {
 		case Type::Types::FN: {
 			m_fetched_type = FetchedType::FN;
-			auto fn_type = (llvm::Function*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
-			m_fetched_value = fn_type;
+			m_fetched_value = (llvm::Function*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
 			break;
 		}
 		default: {
@@ -486,7 +498,7 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::CHAR: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
 			m_fetched_value = m_builder->CreateGlobalString(expr_literal_ast->v.as_string());
-			m_fetched_type = FetchedType::VALUE;
+			m_fetched_type = FetchedType::VALUE; // @TODO this should be VALUE but DEBUG mode doesn't like it :(
 			return NULL; 
 		}
 	}
