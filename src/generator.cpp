@@ -62,6 +62,9 @@ void LLVMCodeGen::generate() {
 
 	auto target_triple = sys::getDefaultTargetTriple();
 
+
+	kng_log("target triple: {}", target_triple);
+
 	std::string error;
 	auto target = TargetRegistry::lookupTarget(target_triple, error);
 
