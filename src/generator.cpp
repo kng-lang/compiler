@@ -431,6 +431,11 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	else {
 		arg_array = llvm::None;
 	}
+
+	// debug arg types
+	for (const auto& p : fn->args())
+		kng_log("asdg {}", p.getArgNo());
+
 	m_fetched_value = m_builder->CreateCall(fn, arg_array);
 	return NULL;
 }
@@ -497,7 +502,8 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::F64: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*m_context),expr_literal_ast->v.as_f64()); break; }
 		case Type::Types::CHAR: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
-			m_fetched_value = m_builder->CreateGlobalString(expr_literal_ast->v.as_string());
+			// @TODO, the problem is, this is an array type and printf wants a pointer type
+			m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
 			m_fetched_type = FetchedType::VALUE; // @TODO this should be VALUE but DEBUG mode doesn't like it :(
 			return NULL; 
 		}
