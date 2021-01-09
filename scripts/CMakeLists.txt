@@ -13,8 +13,12 @@ set(EXEC Release)
 ## add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 ## set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 
+
+set(LLVM_DIR "C:/Program Files (x86)/llvm")
+
+
 include_directories(
-	../src/vendor/llvm/include
+	${LLVM_DIR}/include
 	../src/vendor/cxxopts/include
 	../src/vendor/Catch2-2.13.3/include
 	../src/vendor/spdlog-1.8.1/include
@@ -38,7 +42,7 @@ set(ALL_FILES
 
 # link in LLVM libraries
 # the ones commented out below are the ones that specify "no rule to make", will fix in the future
-set(LLVM_LIBRARIES_PATH ${PROJECT_SOURCE_DIR}/../src/vendor/llvm/Release/lib)
+set(LLVM_LIBRARIES_PATH ${LLVM_DIR}/Release/lib)
 set (LLVM_LIBS
     ${LLVM_LIBRARIES_PATH}/DynamicLibraryLib.lib
 	${LLVM_LIBRARIES_PATH}/ExampleIRTransforms.lib
