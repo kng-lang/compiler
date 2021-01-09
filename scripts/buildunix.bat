@@ -2,3 +2,4 @@ cmake -B ../build -G "Unix Makefiles" -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COM
 cd ../build
 make clean
 make -j 16
+cd ../scripts
