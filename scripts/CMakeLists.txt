@@ -13,8 +13,9 @@ set(EXEC Release)
 ## add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 ## set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 
-
-set(LLVM_DIR "C:/Program Files (x86)/llvm")
+if(NOT LLVM_DIR) 
+	message(FATAL_ERROR "LLVM_DIR is required to build KNG")
+endif()
 
 
 include_directories(
