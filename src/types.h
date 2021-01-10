@@ -19,6 +19,7 @@ struct InterfaceSignature{
 
 struct FnSignature {
 	std::string m_anonymous_identifier;
+	// @TODO return type should be the first, but currently it isn't
 	std::vector<Type> m_operation_types;
 	u8 m_has_return = 0;
 };

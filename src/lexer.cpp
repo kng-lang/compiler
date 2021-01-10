@@ -226,6 +226,7 @@ void Lexer::do_word(char start){
 			found_keyword = check_keyword("8", Token::Type::S8);
 			if (!found_keyword) found_keyword = check_keyword("32", Token::Type::S32);
 			if (!found_keyword) found_keyword = check_keyword("65", Token::Type::S64);
+			if (!found_keyword) found_keyword = check_keyword("tring", Token::Type::STRING);
 			break;
 		}
 		case 't': found_keyword = check_keyword("rue", Token::Type::TRU); break;
@@ -276,7 +277,7 @@ void Lexer::do_string(char start) {
 	}
 	// consume past the delimiter
 	next();
-	token(Token::Type::STRING, ss.str());
+	token(Token::Type::STRING_LIT, ss.str());
 }
 
 void Lexer::do_comment(){

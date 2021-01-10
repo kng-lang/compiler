@@ -213,19 +213,16 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier = m_sym_table.latest_entry.first;
 	}
 
-
+	m_sym_table.enter_scope();
 	// first resolve the type of the paramaters
-	for (const auto& param : expr_fn_ast->params) {
+	for (const auto& param : expr_fn_ast->params)
 		param->visit(this);
-		auto t = m_checked_type;
-		expr_fn_ast->full_type.m_fn_signature.m_operation_types.push_back(t);
-	}
-
 	// @TODO if the fn is assigned to a constant, the functions name should be the same
 	// as the constan'ts identifier
 	if(expr_fn_ast->has_body)
 		expr_fn_ast->body->visit(this);
-
+	
+	m_sym_table.pop_scope();
 
 	m_checked_type_ptr = &expr_fn_ast->full_type;
 	m_checked_type = expr_fn_ast->full_type;
@@ -258,11 +255,24 @@ void* TypeChecker::visit_expr_cast_ast(ExprCastAST* expr_cast_ast) {
 
 void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	expr_call_ast->callee->visit(this);
-	if (!(m_checked_type.m_type==Type::Types::FN)) {
+	Type fn_type = m_checked_type;
+	if (!(fn_type.m_type==Type::Types::FN)) {
 		m_unit->m_error_handler.error("callee must be a fn",0,0,0,0);
 		return NULL;
 	}
-	Type return_type = m_checked_type.m_fn_signature.m_operation_types.at(0);
+
+
+	// @TODO // check the args
+	//u32 i = 0;
+	//for (const auto& arg : expr_call_ast->args) {
+	//	arg->visit(this);
+	//	if (m_checked_type.matches_basic(fn_type.m_fn_signature.m_operation_types.at(i + 1))) {
+	//		m_unit->m_error_handler.error("fn arg does not match", 0, 0, 0, 0);
+	//	}
+	//	i++;
+	//}
+
+	Type return_type = fn_type.m_fn_signature.m_operation_types.at(0);
 	m_checked_type = return_type;
 	return NULL;
 }

@@ -161,7 +161,7 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 		for (int i = 0; i < type.m_ptr_indirection; i++)
 			tmp_type = llvm::PointerType::getUnqual(tmp_type);
 	}
-	kng_assert(tmp_type, "tmp_type NULL");
+	kng_assert(tmp_type, "llvm generator conver_type returned NULL");
 	return tmp_type;
 }
 
@@ -353,14 +353,14 @@ void* LLVMCodeGen::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
 void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
-	m_sym_table.enter_scope();
+
 	llvm::Type* return_type = convert_type(expr_fn_ast->full_type.m_fn_signature.m_operation_types.at(0));
 	std::vector<llvm::Type*> param_types;
 
 
 
 
-	for (s32 i = (return_type == NULL) ? 0 : 1; i < expr_fn_ast->full_type.m_fn_signature.m_operation_types.size(); i++) {
+	for (s32 i = 1; i < expr_fn_ast->full_type.m_fn_signature.m_operation_types.size(); i++) {
 		param_types.push_back(convert_type(expr_fn_ast->full_type.m_fn_signature.m_operation_types.at(i)));
 	}
 
@@ -368,30 +368,55 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	llvm::FunctionType* ft = llvm::FunctionType::get(return_type, param_types, false);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier, *m_module);
 	
-	// add the paramater to the sym table
-	u32 i = 0;
-	for (auto arg = f->arg_begin(); arg != f->arg_end(); ++arg) {
-		auto stmt_define_arg = std::static_pointer_cast<StmtDefineAST>(expr_fn_ast->params.at(i));
-		// set the name of the argument & add it to the symbol table
-		arg->setName(stmt_define_arg->identifier.m_value);
-		auto arg_name = stmt_define_arg->identifier.m_value;
-		m_sym_table.add_symbol(arg_name, SymTableEntry(arg, &stmt_define_arg->define_type, 0, 0));
-	}
 
+	
+	m_sym_table.enter_scope();
 	if (expr_fn_ast->has_body) {
 		llvm::BasicBlock* bb = llvm::BasicBlock::Create(*m_context, "entry_block", f);
 		m_builder->SetInsertPoint(bb);
 
+		// add the paramater to the sym table
+		u32 i = 0;
+		for (auto arg = f->arg_begin(); arg != f->arg_end(); arg++) {
+			auto stmt_define_arg = std::static_pointer_cast<StmtDefineAST>(expr_fn_ast->params.at(i));
+			//// set the name of the argument & add it to the symbol table
+			//arg->setName(stmt_define_arg->identifier.m_value);
+			//auto arg_name = stmt_define_arg->identifier.m_value;
+			//m_sym_table.add_symbol(arg_name, SymTableEntry(arg, &stmt_define_arg->define_type, 0, 0));
+
+			/*
+					the above is wrong, if we want to use an arg we should allocate it on the stack
+					for the following:
+
+					x : (a : s32){
+						b := a;
+					}
+
+					0 = allocate s32 // create storage for a
+					store a, 0		 // store a in 0
+					b = allocate s32 // create storage for b
+					1 = load 0		 // load 0 value
+			*/
+
+			// create stack storage for the argument
+			auto arg_name = stmt_define_arg->identifier.m_value;
+			auto alloca_instr = m_builder->CreateAlloca(arg->getType(), NULL, arg_name);
+			// initialise it
+			auto is_volatile = false;
+			m_builder->CreateStore(arg, alloca_instr, is_volatile);
+			m_sym_table.add_symbol(arg_name, SymTableEntry(alloca_instr, &stmt_define_arg->define_type, 0, 0));
+			i++;
+		}
+
 		// code gen the fn body
 		expr_fn_ast->body->visit(this);
-
 		if (!expr_fn_ast->full_type.m_fn_signature.m_has_return)
 			m_builder->CreateRetVoid();
-
-
+	
 		m_builder->ClearInsertionPoint();
-		llvm::verifyFunction(*f);
 	}
+	llvm::verifyFunction(*f);
+
 	m_sym_table.pop_scope();
 	// add the fn type to the symbol table
 	m_sym_table.add_symbol(expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
@@ -423,7 +448,6 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	if (expr_call_ast->has_args) {
 		for (const auto& arg : expr_call_ast->args) {
 			arg->visit(this);
-			auto test_constant = (llvm::Value*)llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), 222);
 			convert_fetched_to_value();
 			args.push_back((llvm::Value*)m_fetched_value);
 		}
@@ -450,15 +474,8 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 			break;
 		}
 		default: {
-			// if the type is an argument, then return it
-			if (var_type->m_is_arg) {
-				m_fetched_type = FetchedType::VALUE;
-				m_fetched_value = (llvm::Value*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
-			}
-			else {
-				m_fetched_type = FetchedType::VARIABLE;
-				m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
-			}
+			m_fetched_type = FetchedType::VARIABLE;
+			m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
 			break;
 		}
 	}

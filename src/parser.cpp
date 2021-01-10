@@ -114,7 +114,7 @@ std::shared_ptr<AST> Parser::parse_directive() {
 			//	return std::make_shared<ErrorAST>();
 			//}
 
-			if (!expect(Token::Type::STRING)) {
+			if (!expect(Token::Type::STRING_LIT)) {
 				m_unit->m_error_handler.error("expected string as filename to include",
 					prev().m_index, prev().m_line, prev().m_index + prev().m_length, prev().m_line);
 				return std::make_shared<ErrorAST>();
@@ -214,6 +214,7 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::F64)
 		|| expect(Token::Type::CHAR)
 		|| expect(Token::Type::IDENTIFIER)
+		|| expect(Token::Type::STRING)
 		|| expect(Token::Type::POINTER);
 }
 
@@ -221,7 +222,7 @@ u8 Parser::expecting_expr(){
 	// an expression can be the following (same as parsing a single!)
 	// string, number, identifier, group, true, false, {
 	return
-		expect(Token::Type::STRING)
+		expect(Token::Type::STRING_LIT)
 		|| expect(Token::Type::NUMBER)
 		|| expect(Token::Type::IDENTIFIER)
 		|| expect(Token::Type::LPAREN)
@@ -255,6 +256,7 @@ Type Parser::parse_type() {
 	case Token::Type::F64: t = Type(Type::Types::F64); break;
 	case Token::Type::CHAR: t = Type(Type::Types::CHAR); break;
 	case Token::Type::IDENTIFIER: t = Type(Type::Types::INTERFACE); break;
+	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
 	}
 	// check if we are dealing with an array
 	if (consume(Token::Type::LBRACKET)){
@@ -516,7 +518,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 			break;
 		}
-		case Token::Type::STRING: {
+		case Token::Type::STRING_LIT: {
 			// @TODO in retrospect, this is a terrible idea. we want the assembly file to have this as a global in .data section
 			// such as .text_const: "hello world"
 			// treat this as an array
@@ -569,24 +571,23 @@ std::shared_ptr<AST> Parser::parse_single(){
 				fn_sig.m_anonymous_identifier = "lambda";
 
 
-
+				fn_sig.m_operation_types.push_back(Type(Type::Types::U0));
 				std::vector<std::shared_ptr<AST>> params;
 				while (!expect(Token::Type::RPAREN)) {
 					auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
 					define->define_type.m_is_arg = 1;
+					fn_sig.m_operation_types.push_back(define->define_type);
 					params.push_back(define);
 					if (!expect(Token::Type::RPAREN))
 						consume(Token::Type::COMMA);
 				}
 				consume(Token::Type::RPAREN);
 				fn_ast.params = params;
-
+				// TODO move return type to the start
 				if (expecting_type()) {
-					fn_sig.m_operation_types.push_back(parse_type());
+					fn_sig.m_operation_types.at(0) = parse_type();
 					fn_sig.m_has_return = 1;
 				}
-				else
-					fn_sig.m_operation_types.push_back(Type(Type::Types::U0));
 				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
 				// we need to check if the fn has a body
 				if (!expect(Token::Type::SEMI_COLON)) {

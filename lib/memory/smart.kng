@@ -1,0 +1,50 @@
+/*
+
+James Clarke 2021
+
+smart pointers
+*/
+
+
+shared_counter : type interface {
+
+    counter : u32;
+
+    reset : (this:^shared_counter) this.counter = 0;
+
+    increment : (this:^shared_counter) this.counter++;
+
+    decrement : (this:^shared_counter) this.counter--;
+}
+
+/*
+
+usage:
+
+// allocate and initialise an f32 shared pointer
+x : shared_ptr.get(1.234);
+
+*/
+
+shared_ptr : type interface {
+    
+    // the shared_ptr has a raw pointer to a generic type
+    raw_ptr : ^$raw_ptr_type;
+    shared_counter : ^shared_counter;
+
+    get : (data : $raw_ptr_type) ^shared_ptr{
+        data_ptr := memory.allocate(data);
+        shared : shared_ptr(data_ptr);
+        return shared;
+    }
+
+    construct shared_ptr : (this : ^shared_ptr, raw_ptr : ^$raw_ptr_type){
+        this.raw_ptr = raw_ptr;
+    }
+
+    destruct shared_ptr : (this : ^shared_ptr){
+
+    }
+
+    
+}

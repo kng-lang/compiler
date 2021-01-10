@@ -1,0 +1,51 @@
+/*
+
+James Clarke 2021
+
+*/
+
+
+memory : @import "memory"
+
+
+
+
+
+
+/*
+
+usage:
+
+// allocate & initialise a string vector
+v : vector({"string", "vector"});
+// allocate but don't initialise a string vector
+v : vector<string>;
+
+*/
+vector : type {
+    
+    arr : $type;
+    size : u32;
+    allocated : u32;
+
+    construct vector : (this : ^vector, arr : $type[]){
+        this.arr = arr;
+        this.size = memory.arr_length(arr);
+        this.allocated = size;
+    }
+
+    push_back : (this : ^vector, data : $type) ^vector {
+        // if we have ran out of memory, realloc
+        if(this.size==allocated){
+            this.arr = memory.realloc(this.arr, this.allocated*2);
+            this.allocated*=2;
+        }
+        this.arr[this.size++]=data;
+        return this;
+    }
+
+    get : (this : ^vector, index : u32) $type {
+        return this.arr[index];
+    }
+
+}

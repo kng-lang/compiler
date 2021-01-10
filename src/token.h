@@ -36,7 +36,7 @@ struct Token{
 
 		IDENTIFIER,
 
-		STRING,
+		STRING_LIT,
 		NUMBER,
 		TRU,
 		FLSE,
@@ -53,6 +53,7 @@ struct Token{
 		F32,
 		F64,
 		CHAR,
+		STRING,
 
 		POINTER,
 		DOT,
