@@ -180,7 +180,12 @@ struct SymTable {
 		return SymTableEntry();
 	}
 	void enter_scope() { level++; };
-	void pop_scope() { level--; }
+	void pop_scope() { 
+		// @TODO this doesn't actually clear the symbols at the current scope and causes
+		// a "sym already defined" error, to fix clear the scope
+		entries[level].clear();
+		level--; 
+	}
 };
 
 extern Type infer_type(std::shared_ptr<AST> ast);

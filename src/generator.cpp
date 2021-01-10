@@ -524,7 +524,16 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::F64: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*m_context),expr_literal_ast->v.as_f64()); break; }
 		case Type::Types::CHAR: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
-			// @TODO, the problem is, this is an array type and printf wants a pointer type
+			m_fetched_type = FetchedType::VALUE;
+			//// @TODO if we have the same string multiple times we shouldn't create multiple... this should be added to the sym table
+			//if (!m_sym_table.contains_symbol(expr_literal_ast->v.as_string())) {
+			//	m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
+			//	m_sym_table.add_symbol(expr_literal_ast->v.as_string(), SymTableEntry(m_fetched_value, NULL, 1, 1));
+			//	return NULL;
+			//}
+			//else {
+			//	return m_sym_table.get_symbol(expr_literal_ast->v.as_string()).optional_data;
+			//}
 			m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
 			m_fetched_type = FetchedType::VALUE;
 			return NULL; 
