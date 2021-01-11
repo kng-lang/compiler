@@ -3,6 +3,12 @@ project (kng)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
+if(NOT LLVM_PATH)
+	message(FATAL_ERROR "LLVM_PATH is required")
+endif()
+
+
 set(EXEC Release)
 
 find_package(LLVM REQUIRED CONFIG)
@@ -15,8 +21,11 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 # you will need to enable C++11 support
 # for your compiler.
 
+message("llvm dir:")
+message("${LLVM_PATH}/include")
+
 include_directories(
-    "C:/Program Files (x86)/llvm/include"
+    "${LLVM_PATH}/include"
 	../src/vendor/cxxopts/include
 	../src/vendor/Catch2-2.13.3/include
 	../src/vendor/spdlog-1.8.1/include
@@ -24,7 +33,6 @@ include_directories(
 )
 
 add_definitions(${LLVM_DEFINITIONS})
-
 
 set(ALL_FILES 
 	../src/ast.cpp
@@ -41,7 +49,7 @@ set(ALL_FILES
 	../src/types.cpp
 	)
 
-link_directories("C:/Program Files (x86)/llvm/Release/lib")
+link_directories("${LLVM_PATH}/Release/lib")
 
 # Now build our tools
 add_executable(${EXEC} ${ALL_FILES})
