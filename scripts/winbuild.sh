@@ -2,3 +2,4 @@ cmake -B ../build -G "Visual Studio 16" -DLLVM_PATH="C:/Program Files (x86)/llvm
 cd ../build
 msbuild Release.vcxproj -maxCpuCount:16 /property:Configuration=Release
 cd ../scripts
+$SHELL

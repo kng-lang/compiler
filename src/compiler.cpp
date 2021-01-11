@@ -31,7 +31,7 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	this->m_options = options;
 
-	kng_log("kng compiler v0_1");
+	kng_log("kng {} ", KNG_VERSION);
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 

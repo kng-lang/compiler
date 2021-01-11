@@ -3,3 +3,4 @@ cd ../build
 make clean
 make -j 16
 cd ../scripts
+$SHELL

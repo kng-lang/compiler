@@ -7,6 +7,7 @@ James Clarke - 2021
 
 #include <spdlog/spdlog.h>
 
+#define KNG_VERSION "a_0_2"
 #define kng_log(...) {spdlog::info(__VA_ARGS__);}
 #define kng_warn(...) {spdlog::warn(__VA_ARGS__);}
 #define kng_errr(...) {spdlog::error(__VA_ARGS__);}

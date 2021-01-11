@@ -13,6 +13,7 @@ James Clarke - 2021
 #include "exporter.h"
 
 int main(int argc, char** argv) {
+
     Exporter e;
     SymTable<Type> s;
     e.export_globals(s);
