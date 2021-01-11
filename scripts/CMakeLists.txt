@@ -1,30 +1,30 @@
-cmake_minimum_required (VERSION 3.5)
-project (kng.compiler)
+cmake_minimum_required(VERSION 3.5)
+project (kng)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# stops ZERO_BUILD from being generated
-set(CMAKE_SUPPRESS_REGENERATION true)
-
 set(EXEC Release)
 
-# these only work for release 
-# for debug set iterator level to 0 and the flags to /MT?
-## add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
-## set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+find_package(LLVM REQUIRED CONFIG)
 
-if(NOT LLVM_DIR) 
-	message(FATAL_ERROR "LLVM_DIR is required to build KNG")
-endif()
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
+# Set your project compile flags.
+# E.g. if using the C++ header files
+# you will need to enable C++11 support
+# for your compiler.
 
 include_directories(
-	${LLVM_DIR}/include
+    "C:/Program Files (x86)/llvm/include"
 	../src/vendor/cxxopts/include
 	../src/vendor/Catch2-2.13.3/include
 	../src/vendor/spdlog-1.8.1/include
 	../src
 )
+
+add_definitions(${LLVM_DEFINITIONS})
+
 
 set(ALL_FILES 
 	../src/ast.cpp
@@ -41,180 +41,187 @@ set(ALL_FILES
 	../src/types.cpp
 	)
 
-# link in LLVM libraries
-# the ones commented out below are the ones that specify "no rule to make", will fix in the future
-set(LLVM_LIBRARIES_PATH ${LLVM_DIR}/Release/lib)
-set (LLVM_LIBS
-    ${LLVM_LIBRARIES_PATH}/DynamicLibraryLib.lib
-	${LLVM_LIBRARIES_PATH}/ExampleIRTransforms.lib
-	${LLVM_LIBRARIES_PATH}/gtest.lib
-	${LLVM_LIBRARIES_PATH}/gtest_main.lib
-	${LLVM_LIBRARIES_PATH}/Kaleidoscope-Ch4.lib
-	${LLVM_LIBRARIES_PATH}/Kaleidoscope-Ch5.lib
-	${LLVM_LIBRARIES_PATH}/Kaleidoscope-Ch6.lib
-	${LLVM_LIBRARIES_PATH}/Kaleidoscope-Ch7.lib
-	${LLVM_LIBRARIES_PATH}/Kaleidoscope-Ch8.lib
-	${LLVM_LIBRARIES_PATH}/Kaleidoscope-Ch9.lib
-	${LLVM_LIBRARIES_PATH}/LLVM-C.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAArch64AsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAArch64CodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAArch64Desc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAArch64Disassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAArch64Info.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAArch64Utils.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAggressiveInstCombine.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAMDGPUAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAMDGPUCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAMDGPUDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAMDGPUDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAMDGPUInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAMDGPUUtils.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAnalysis.lib
-	${LLVM_LIBRARIES_PATH}/LLVMARMAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMARMCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMARMDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMARMDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMARMInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMARMUtils.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAsmPrinter.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAVRAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAVRCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAVRDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAVRDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMAVRInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBinaryFormat.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBitReader.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBitstreamReader.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBitWriter.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBPFAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBPFCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBPFDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBPFDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMBPFInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMCFGuard.lib
-	${LLVM_LIBRARIES_PATH}/LLVMCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMCore.lib
-	${LLVM_LIBRARIES_PATH}/LLVMCoroutines.lib
-	${LLVM_LIBRARIES_PATH}/LLVMCoverage.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDebugInfoCodeView.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDebugInfoDWARF.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDebugInfoGSYM.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDebugInfoMSF.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDebugInfoPDB.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDemangle.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDlltoolDriver.lib
-	${LLVM_LIBRARIES_PATH}/LLVMDWARFLinker.lib
-	${LLVM_LIBRARIES_PATH}/LLVMExecutionEngine.lib
-	${LLVM_LIBRARIES_PATH}/LLVMExtensions.lib
-	${LLVM_LIBRARIES_PATH}/LLVMFileCheck.lib
-	${LLVM_LIBRARIES_PATH}/LLVMFrontendOpenACC.lib
-	${LLVM_LIBRARIES_PATH}/LLVMFrontendOpenMP.lib
-	${LLVM_LIBRARIES_PATH}/LLVMFuzzMutate.lib
-	${LLVM_LIBRARIES_PATH}/LLVMGlobalISel.lib
-	${LLVM_LIBRARIES_PATH}/LLVMHelloNew.lib
-	${LLVM_LIBRARIES_PATH}/LLVMHexagonAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMHexagonCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMHexagonDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMHexagonDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMHexagonInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMInstCombine.lib
-	${LLVM_LIBRARIES_PATH}/LLVMInstrumentation.lib
-	${LLVM_LIBRARIES_PATH}/LLVMInterfaceStub.lib
-	${LLVM_LIBRARIES_PATH}/LLVMInterpreter.lib
-	${LLVM_LIBRARIES_PATH}/LLVMipo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMIRReader.lib
-	${LLVM_LIBRARIES_PATH}/LLVMJITLink.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLanaiAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLanaiCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLanaiDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLanaiDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLanaiInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLibDriver.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLineEditor.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLinker.lib
-	${LLVM_LIBRARIES_PATH}/LLVMLTO.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMC.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMCA.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMCDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMCJIT.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMCParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMipsAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMipsCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMipsDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMipsDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMipsInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMIRParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMSP430AsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMSP430CodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMSP430Desc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMSP430Disassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMMSP430Info.lib
-	${LLVM_LIBRARIES_PATH}/LLVMNVPTXCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMNVPTXDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMNVPTXInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMObjCARCOpts.lib
-	${LLVM_LIBRARIES_PATH}/LLVMObject.lib
-	${LLVM_LIBRARIES_PATH}/LLVMObjectYAML.lib
-	${LLVM_LIBRARIES_PATH}/LLVMOption.lib
-	${LLVM_LIBRARIES_PATH}/LLVMOrcJIT.lib
-	${LLVM_LIBRARIES_PATH}/LLVMOrcShared.lib
-	${LLVM_LIBRARIES_PATH}/LLVMOrcTargetProcess.lib
-	${LLVM_LIBRARIES_PATH}/LLVMPasses.lib
-	${LLVM_LIBRARIES_PATH}/LLVMPowerPCAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMPowerPCCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMPowerPCDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMPowerPCDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMPowerPCInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMProfileData.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRemarks.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRISCVAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRISCVCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRISCVDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRISCVDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRISCVInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRISCVUtils.lib
-	${LLVM_LIBRARIES_PATH}/LLVMRuntimeDyld.lib
-	${LLVM_LIBRARIES_PATH}/LLVMScalarOpts.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSelectionDAG.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSparcAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSparcCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSparcDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSparcDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSparcInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSupport.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSymbolize.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSystemZAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSystemZCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSystemZDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSystemZDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMSystemZInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMTableGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMTableGenGlobalISel.lib
-	${LLVM_LIBRARIES_PATH}/LLVMTarget.lib
-	${LLVM_LIBRARIES_PATH}/LLVMTestingSupport.lib
-	${LLVM_LIBRARIES_PATH}/LLVMTextAPI.lib
-	${LLVM_LIBRARIES_PATH}/LLVMTransformUtils.lib
-	${LLVM_LIBRARIES_PATH}/LLVMVectorize.lib
-	${LLVM_LIBRARIES_PATH}/LLVMWebAssemblyAsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMWebAssemblyCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMWebAssemblyDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMWebAssemblyDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMWebAssemblyInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMWindowsManifest.lib
-	${LLVM_LIBRARIES_PATH}/LLVMX86AsmParser.lib
-	${LLVM_LIBRARIES_PATH}/LLVMX86CodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMX86Desc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMX86Disassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMX86Info.lib
-	${LLVM_LIBRARIES_PATH}/LLVMXCoreCodeGen.lib
-	${LLVM_LIBRARIES_PATH}/LLVMXCoreDesc.lib
-	${LLVM_LIBRARIES_PATH}/LLVMXCoreDisassembler.lib
-	${LLVM_LIBRARIES_PATH}/LLVMXCoreInfo.lib
-	${LLVM_LIBRARIES_PATH}/LLVMXRay.lib
-	${LLVM_LIBRARIES_PATH}/LTO.lib
-	${LLVM_LIBRARIES_PATH}/Remarks.lib
+link_directories("C:/Program Files (x86)/llvm/Release/lib")
+
+# Now build our tools
+add_executable(${EXEC} ${ALL_FILES})
+
+set(llvm_libraries	
+	DynamicLibraryLib.lib
+	ExampleIRTransforms.lib
+	gtest.lib
+	gtest_main.lib
+	Kaleidoscope-Ch4.lib
+	Kaleidoscope-Ch5.lib
+	Kaleidoscope-Ch6.lib
+	Kaleidoscope-Ch7.lib
+	Kaleidoscope-Ch8.lib
+	Kaleidoscope-Ch9.lib
+	LLVMAArch64AsmParser.lib
+	LLVMAArch64CodeGen.lib
+	LLVMAArch64Desc.lib
+	LLVMAArch64Disassembler.lib
+	LLVMAArch64Info.lib
+	LLVMAArch64Utils.lib
+	LLVMAggressiveInstCombine.lib
+	LLVMAMDGPUAsmParser.lib
+	LLVMAMDGPUCodeGen.lib
+	LLVMAMDGPUDesc.lib
+	LLVMAMDGPUDisassembler.lib
+	LLVMAMDGPUInfo.lib
+	LLVMAMDGPUUtils.lib
+	LLVMAnalysis.lib
+	LLVMARMAsmParser.lib
+	LLVMARMCodeGen.lib
+	LLVMARMDesc.lib
+	LLVMARMDisassembler.lib
+	LLVMARMInfo.lib
+	LLVMARMUtils.lib
+	LLVMAsmParser.lib
+	LLVMAsmPrinter.lib
+	LLVMAVRAsmParser.lib
+	LLVMAVRCodeGen.lib
+	LLVMAVRDesc.lib
+	LLVMAVRDisassembler.lib
+	LLVMAVRInfo.lib
+	LLVMBinaryFormat.lib
+	LLVMBitReader.lib
+	LLVMBitstreamReader.lib
+	LLVMBitWriter.lib
+	LLVMBPFAsmParser.lib
+	LLVMBPFCodeGen.lib
+	LLVMBPFDesc.lib
+	LLVMBPFDisassembler.lib
+	LLVMBPFInfo.lib
+	LLVMCFGuard.lib
+	LLVMCodeGen.lib
+	LLVMCore.lib
+	LLVMCoroutines.lib
+	LLVMCoverage.lib
+	LLVMDebugInfoCodeView.lib
+	LLVMDebugInfoDWARF.lib
+	LLVMDebugInfoGSYM.lib
+	LLVMDebugInfoMSF.lib
+	LLVMDebugInfoPDB.lib
+	LLVMDemangle.lib
+	LLVMDlltoolDriver.lib
+	LLVMDWARFLinker.lib
+	LLVMExecutionEngine.lib
+	LLVMExtensions.lib
+	LLVMFileCheck.lib
+	LLVMFrontendOpenACC.lib
+	LLVMFrontendOpenMP.lib
+	LLVMFuzzMutate.lib
+	LLVMGlobalISel.lib
+	LLVMHelloNew.lib
+	LLVMHexagonAsmParser.lib
+	LLVMHexagonCodeGen.lib
+	LLVMHexagonDesc.lib
+	LLVMHexagonDisassembler.lib
+	LLVMHexagonInfo.lib
+	LLVMInstCombine.lib
+	LLVMInstrumentation.lib
+	LLVMInterfaceStub.lib
+	LLVMInterpreter.lib
+	LLVMipo.lib
+	LLVMIRReader.lib
+	LLVMJITLink.lib
+	LLVMLanaiAsmParser.lib
+	LLVMLanaiCodeGen.lib
+	LLVMLanaiDesc.lib
+	LLVMLanaiDisassembler.lib
+	LLVMLanaiInfo.lib
+	LLVMLibDriver.lib
+	LLVMLineEditor.lib
+	LLVMLinker.lib
+	LLVMLTO.lib
+	LLVMMC.lib
+	LLVMMCA.lib
+	LLVMMCDisassembler.lib
+	LLVMMCJIT.lib
+	LLVMMCParser.lib
+	LLVMMipsAsmParser.lib
+	LLVMMipsCodeGen.lib
+	LLVMMipsDesc.lib
+	LLVMMipsDisassembler.lib
+	LLVMMipsInfo.lib
+	LLVMMIRParser.lib
+	LLVMMSP430AsmParser.lib
+	LLVMMSP430CodeGen.lib
+	LLVMMSP430Desc.lib
+	LLVMMSP430Disassembler.lib
+	LLVMMSP430Info.lib
+	LLVMNVPTXCodeGen.lib
+	LLVMNVPTXDesc.lib
+	LLVMNVPTXInfo.lib
+	LLVMObjCARCOpts.lib
+	LLVMObject.lib
+	LLVMObjectYAML.lib
+	LLVMOption.lib
+	LLVMOrcJIT.lib
+	LLVMOrcShared.lib
+	LLVMOrcTargetProcess.lib
+	LLVMPasses.lib
+	LLVMPowerPCAsmParser.lib
+	LLVMPowerPCCodeGen.lib
+	LLVMPowerPCDesc.lib
+	LLVMPowerPCDisassembler.lib
+	LLVMPowerPCInfo.lib
+	LLVMProfileData.lib
+	LLVMRemarks.lib
+	LLVMRISCVAsmParser.lib
+	LLVMRISCVCodeGen.lib
+	LLVMRISCVDesc.lib
+	LLVMRISCVDisassembler.lib
+	LLVMRISCVInfo.lib
+	LLVMRISCVUtils.lib
+	LLVMRuntimeDyld.lib
+	LLVMScalarOpts.lib
+	LLVMSelectionDAG.lib
+	LLVMSparcAsmParser.lib
+	LLVMSparcCodeGen.lib
+	LLVMSparcDesc.lib
+	LLVMSparcDisassembler.lib
+	LLVMSparcInfo.lib
+	LLVMSupport.lib
+	LLVMSymbolize.lib
+	LLVMSystemZAsmParser.lib
+	LLVMSystemZCodeGen.lib
+	LLVMSystemZDesc.lib
+	LLVMSystemZDisassembler.lib
+	LLVMSystemZInfo.lib
+	LLVMTableGen.lib
+	LLVMTableGenGlobalISel.lib
+	LLVMTarget.lib
+	LLVMTestingSupport.lib
+	LLVMTextAPI.lib
+	LLVMTransformUtils.lib
+	LLVMVectorize.lib
+	LLVMWebAssemblyAsmParser.lib
+	LLVMWebAssemblyCodeGen.lib
+	LLVMWebAssemblyDesc.lib
+	LLVMWebAssemblyDisassembler.lib
+	LLVMWebAssemblyInfo.lib
+	LLVMWindowsManifest.lib
+	LLVMX86AsmParser.lib
+	LLVMX86CodeGen.lib
+	LLVMX86Desc.lib
+	LLVMX86Disassembler.lib
+	LLVMX86Info.lib
+	LLVMXCoreCodeGen.lib
+	LLVMXCoreDesc.lib
+	LLVMXCoreDisassembler.lib
+	LLVMXCoreInfo.lib
+	LLVMXRay.lib
+	LTO.lib
+	Remarks.lib
 )
 
-add_executable(${EXEC} ${ALL_FILES})
-target_link_libraries(${EXEC} ${LLVM_LIBS})
+# Link against LLVM libraries
+target_link_libraries(${EXEC} ${llvm_libraries})	
+
+
+
+#https://stackoverflow.com/questions/33253664/cmake-set-visualstudion2010-parameters-additional-library-directories
+#https://stackoverflow.com/questions/28597351/how-do-i-add-a-library-path-in-cmake
+#https://stackoverflow.com/questions/30867712/add-llvm-to-project-using-cmake
