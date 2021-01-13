@@ -513,7 +513,10 @@ std::shared_ptr<AST> Parser::parse_single(){
 		}
 		case Token::Type::NUMBER: {
 			ExprLiteralAST lit_ast;
-			lit_ast.t = Type(Type::Types::S32, 0);
+			if(t.m_value.find('.') != std::string::npos)
+				lit_ast.t = Type(Type::Types::F32, 0);
+			else
+				lit_ast.t = Type(Type::Types::S32, 0);
 			lit_ast.v.value = t.m_value;
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 			break;

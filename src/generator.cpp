@@ -496,8 +496,7 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 			expr_bin_ast->rhs->visit(this);
 			convert_fetched_to_value();
 			auto rhs_value = m_fetched_value;
-
-
+			//!@TODO check for operator overloading
 			auto pls_instr = m_builder->CreateAdd(lhs_value, rhs_value);
 			m_fetched_value = pls_instr;
 			return NULL;
@@ -551,8 +550,8 @@ void* LLVMCodeGen::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::U32: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), expr_literal_ast->v.as_u32()); break; }
 		case Type::Types::S32: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), expr_literal_ast->v.as_s32()); break; }
 		case Type::Types::S64: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt64Ty(*m_context), expr_literal_ast->v.as_s64()); break; }
-		case Type::Types::F32: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getFloatTy(*m_context), expr_literal_ast->v.as_f32()); break; }
-		case Type::Types::F64: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getDoubleTy(*m_context),expr_literal_ast->v.as_f64()); break; }
+		case Type::Types::F32: { m_fetched_value = llvm::ConstantFP::get(llvm::Type::getFloatTy(*m_context), expr_literal_ast->v.as_f32()); break; }
+		case Type::Types::F64: { m_fetched_value = llvm::ConstantFP::get(llvm::Type::getDoubleTy(*m_context),expr_literal_ast->v.as_f64()); break; }
 		case Type::Types::CHAR: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
 			m_fetched_type = FetchedType::VALUE;
