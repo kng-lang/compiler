@@ -300,8 +300,10 @@ void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 	switch(expr_bin_ast->op.m_type){
 		case Token::Type::PLUS:
 		{
+			auto cast_result = niavely_cast_to_master_type(lhs_type_ptr, rhs_type_ptr);
+			expr_bin_ast->m_value_type = cast_result.m_type;
 			// attempt to niavely cast the types to the correct type
-			if(!niavely_cast_to_master_type(lhs_type_ptr, rhs_type_ptr)){
+			if(cast_result.m_type==Type::Types::UNKNOWN){
 				kng_log("couldn't cast the types :(");
 			}else{
 				kng_log("successfully casted the types in bin op!");

@@ -106,7 +106,8 @@ u8 Type::matches_deep(Type other){
 
 
 
-u8 niavely_cast_to_master_type(Type* lhs, Type* rhs){
+Type niavely_cast_to_master_type(Type* lhs, Type* rhs){
+	//!@TODO add error handling here
 	Type highest_type = *lhs;
 	// for cases where we have a f32 and an s8 for example, we need to cast the s8 to an f32
 	u8 highest_type_value = (u8) lhs->m_type;
@@ -117,12 +118,13 @@ u8 niavely_cast_to_master_type(Type* lhs, Type* rhs){
 	}
 	// now cast the types to the highest type
 	if(((u8)lhs->m_type)<highest_type_value){
-		if(lhs->can_niave_cast(highest_type))
-			return 0;
+		if (!lhs->can_niave_cast(highest_type))
+			return Type(Type::Types::UNKNOWN);
 		lhs->cast(highest_type);
 	}else if(((u8)rhs->m_type)<highest_type_value){
-		if(rhs->can_niave_cast(highest_type))
-			return 0;
+		if (!rhs->can_niave_cast(highest_type))
+			return Type(Type::Types::UNKNOWN);
 		rhs->cast(highest_type);
 	}
+	return highest_type;
 }

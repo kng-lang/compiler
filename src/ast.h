@@ -294,6 +294,8 @@ struct ExprBinAST : public ExpressionAST {
 	std::shared_ptr<AST> lhs;
 	std::shared_ptr<AST> rhs;
 	Token op;
+	// the types of the operation that is performed (signed, floating point, interface)
+	Type::Types m_value_type;
 	ExprBinAST(){}
 	ExprBinAST(std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, Token op) : lhs(lhs), rhs(rhs), op(op){}
 	virtual std::string to_json();

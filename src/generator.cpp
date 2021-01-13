@@ -496,9 +496,16 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 			expr_bin_ast->rhs->visit(this);
 			convert_fetched_to_value();
 			auto rhs_value = m_fetched_value;
-			//!@TODO check for operator overloading
-			auto pls_instr = m_builder->CreateAdd(lhs_value, rhs_value);
-			m_fetched_value = pls_instr;
+
+			llvm::Value* add_instr;
+			if(expr_bin_ast->m_value_type==Type::Types::F32 
+				|| expr_bin_ast->m_value_type == Type::Types::F64){
+				add_instr = m_builder->CreateFAdd(lhs_value, rhs_value);
+			}
+			else {
+				add_instr = m_builder->CreateAdd(lhs_value, rhs_value);
+			}
+			m_fetched_value = add_instr;
 			return NULL;
 
 			

@@ -33,6 +33,7 @@ struct Type {
 	const static char* debug_types[];
 
 
+
 	enum class Types : u8{
 		UNKNOWN,
 		TYPE,    
@@ -190,4 +191,4 @@ struct SymTable {
 };
 
 extern Type infer_type(std::shared_ptr<AST> ast);
-extern u8 niavely_cast_to_master_type(Type* lhs, Type* rhs);
+extern Type niavely_cast_to_master_type(Type* lhs, Type* rhs);
