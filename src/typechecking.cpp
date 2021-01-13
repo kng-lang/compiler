@@ -290,7 +290,25 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 void* TypeChecker::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) { return NULL; }
 
 void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { 
+	// get the types of both sides
+	expr_bin_ast->lhs->visit(this);
+	Type* lhs_type_ptr = m_checked_type_ptr;
+	expr_bin_ast->rhs->visit(this);
+	Type* rhs_type_ptr = m_checked_type_ptr;
 
+	// check what operation is happening
+	switch(expr_bin_ast->op.m_type){
+		case Token::Type::PLUS:
+		{
+			// attempt to niavely cast the types to the correct type
+			if(!niavely_cast_to_master_type(lhs_type_ptr, rhs_type_ptr)){
+				kng_log("couldn't cast the types :(");
+			}else{
+				kng_log("successfully casted the types in bin op!");
+			}
+			break;
+		}
+	}
 	return NULL; 
 }
 

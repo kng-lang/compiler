@@ -485,6 +485,37 @@ void* LLVMCodeGen::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interf
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
+
+	//!@TODO these should be in different functions
+	switch(expr_bin_ast->op.m_type){
+		case Token::Type::PLUS: {
+			// we cannot assume that the lhs & the rhs are the same type
+			expr_bin_ast->lhs->visit(this);
+			convert_fetched_to_value();
+			auto lhs_value = m_fetched_value;
+			expr_bin_ast->rhs->visit(this);
+			convert_fetched_to_value();
+			auto rhs_value = m_fetched_value;
+
+
+			auto pls_instr = m_builder->CreateAdd(lhs_value, rhs_value);
+			m_fetched_value = pls_instr;
+			return NULL;
+
+			
+			//!@TODO we should wrap values in this
+			// https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
+			
+			break;
+		};
+		case Token::Type::MINUS: break;
+		case Token::Type::STAR: break;
+		case Token::Type::DIV: break;
+			// 
+	}
+
+
+
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_un_ast(ExprUnAST* expr_un_ast) {

@@ -32,7 +32,8 @@ struct Type {
 
 	const static char* debug_types[];
 
-	enum class Types{
+
+	enum class Types : u8{
 		UNKNOWN,
 		TYPE,    
 		// A type is used at compile time as a type alias
@@ -189,3 +190,4 @@ struct SymTable {
 };
 
 extern Type infer_type(std::shared_ptr<AST> ast);
+extern u8 niavely_cast_to_master_type(Type* lhs, Type* rhs);

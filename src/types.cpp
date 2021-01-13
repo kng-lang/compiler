@@ -97,8 +97,32 @@ u8 Type::matches_basic(Type other){
 }
 
 u8 Type::matches_deep(Type other){
+
 	return this->m_type == other.m_type
 		&& this->m_is_arr == other.m_is_arr
 		&& this->m_arr_length == other.m_arr_length;
 		// && this->interface_signature.matches(other.interface_signature);
+}
+
+
+
+u8 niavely_cast_to_master_type(Type* lhs, Type* rhs){
+	Type highest_type = *lhs;
+	// for cases where we have a f32 and an s8 for example, we need to cast the s8 to an f32
+	u8 highest_type_value = (u8) lhs->m_type;
+	// we can do this as the Type::Types enum is an integer
+	if(((u8)rhs->m_type)>highest_type_value){
+		highest_type_value=(u8)rhs->m_type;
+		highest_type = *rhs;
+	}
+	// now cast the types to the highest type
+	if(((u8)lhs->m_type)<highest_type_value){
+		if(lhs->can_niave_cast(highest_type))
+			return 0;
+		lhs->cast(highest_type);
+	}else if(((u8)rhs->m_type)<highest_type_value){
+		if(rhs->can_niave_cast(highest_type))
+			return 0;
+		rhs->cast(highest_type);
+	}
 }
