@@ -293,6 +293,9 @@ void Lexer::do_comment(){
 			goto start;
 		}
 	}
+	else {
+		token(Token::Type::DIV);
+	}
 }
 
 void Lexer::do_documentation(){

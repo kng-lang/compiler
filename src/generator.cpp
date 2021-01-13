@@ -486,37 +486,60 @@ void* LLVMCodeGen::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interf
 }
 void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 
+	// we cannot assume that the lhs & the rhs are the same type
+	expr_bin_ast->lhs->visit(this);
+	convert_fetched_to_value();
+	auto lhs_value = m_fetched_value;
+	expr_bin_ast->rhs->visit(this);
+	convert_fetched_to_value();
+	auto rhs_value = m_fetched_value;
+
 	//!@TODO these should be in different functions
 	switch(expr_bin_ast->op.m_type){
 		case Token::Type::PLUS: {
-			// we cannot assume that the lhs & the rhs are the same type
-			expr_bin_ast->lhs->visit(this);
-			convert_fetched_to_value();
-			auto lhs_value = m_fetched_value;
-			expr_bin_ast->rhs->visit(this);
-			convert_fetched_to_value();
-			auto rhs_value = m_fetched_value;
-
 			llvm::Value* add_instr;
 			if(expr_bin_ast->m_value_type==Type::Types::F32 
 				|| expr_bin_ast->m_value_type == Type::Types::F64){
 				add_instr = m_builder->CreateFAdd(lhs_value, rhs_value);
-			}
-			else {
+			} else {
 				add_instr = m_builder->CreateAdd(lhs_value, rhs_value);
 			}
 			m_fetched_value = add_instr;
 			return NULL;
-
-			
-			//!@TODO we should wrap values in this
-			// https://stackoverflow.com/questions/17793298/c-class-wrapper-around-fundamental-types
-			
-			break;
 		};
-		case Token::Type::MINUS: break;
-		case Token::Type::STAR: break;
-		case Token::Type::DIV: break;
+		case Token::Type::MINUS: {
+			llvm::Value* add_instr;
+			if (expr_bin_ast->m_value_type == Type::Types::F32
+				|| expr_bin_ast->m_value_type == Type::Types::F64) {
+				add_instr = m_builder->CreateFSub(lhs_value, rhs_value);
+			} else {
+				add_instr = m_builder->CreateSub(lhs_value, rhs_value);
+			}
+			m_fetched_value = add_instr;
+			return NULL;
+		};
+		case Token::Type::STAR: {
+			llvm::Value* add_instr;
+			if (expr_bin_ast->m_value_type == Type::Types::F32
+				|| expr_bin_ast->m_value_type == Type::Types::F64) {
+				add_instr = m_builder->CreateFMul(lhs_value, rhs_value);
+			} else {
+				add_instr = m_builder->CreateMul(lhs_value, rhs_value);
+			}
+			m_fetched_value = add_instr; 
+			return NULL;
+		};
+		case Token::Type::DIV: {
+			llvm::Value* add_instr;
+			if (expr_bin_ast->m_value_type == Type::Types::F32
+				|| expr_bin_ast->m_value_type == Type::Types::F64) {
+				add_instr = m_builder->CreateFDiv(lhs_value, rhs_value);
+			} else {
+				add_instr = m_builder->CreateFDiv(lhs_value, rhs_value);
+			}
+			m_fetched_value = add_instr;
+			return NULL;
+		};
 			// 
 	}
 
