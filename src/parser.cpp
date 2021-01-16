@@ -25,6 +25,7 @@ std::shared_ptr<AST> Parser::parse() {
 }
 
 std::shared_ptr<AST> Parser::parse_stmt(){
+
 	// consume empty newlines
 	m_requiring_delimiter = 0; // e.g. if 1 {} doesn't require a delimiter
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>();
@@ -86,10 +87,29 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 	// @TODO it doesnt work if we dont have a newline at the end
 	// we use ; when we want multiple statements on one line
 	if (m_requiring_delimiter && !(consume(Token::Type::SEMI_COLON) || consume(Token::Type::END))) {
-		// @TODO this prev() stuff should probably be done with a function
-		m_unit->m_error_handler.error("expected ; as statement delimiter",
-			prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
+		//// @TODO this prev() stuff should probably be done with a function
+		//m_unit->m_error_handler.error("expected ; as statement delimiter",
+		//	prev().m_index + prev().m_length + 1, prev().m_line, prev().m_index + prev().m_length + 1, prev().m_line);
+		//return std::make_shared<ErrorAST>();
+
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::MISSING_DELIMITER,
+			"expected ; at the end of the statment",
+			"add ; to the end of the statement",
+			Error::ErrorPosition(
+				prev().m_index-1,
+				prev().m_index + prev().m_length-1,
+				prev().m_line,
+				prev().m_line),
+			Error::ErrorPosition(
+				prev().m_index - 1,
+				prev().m_index + prev().m_length - 1,
+				prev().m_line,
+				prev().m_line)
+		);
 		return std::make_shared<ErrorAST>();
+
 	}
 	return stmt;
 }

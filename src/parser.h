@@ -16,9 +16,6 @@ struct Compiler;
 
 struct Parser : public TokenConsumer{
 	CompilationUnit* m_unit;
-
-	//u32 current = 0;
-	ErrorHandler* m_err_handler;
 	std::shared_ptr<AST> m_root_ast;
 	std::shared_ptr<SymTable<Type>> m_sym_table;
 	u8 m_parsing_constant_assignment = 0;

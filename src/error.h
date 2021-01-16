@@ -17,6 +17,17 @@ struct Compiler;
 struct CompilationUnit;
 
 struct Error{
+
+	struct ErrorPosition {
+		u32 m_index_start;
+		u32 m_index_end;
+		u32 m_line_start;
+		u32 m_line_end;
+		ErrorPosition(){}
+		ErrorPosition(u32 index_start, u32 index_end, u32 line_start, u32 line_end) 
+			: m_index_start(index_start), m_index_end(index_end), m_line_start(line_start), m_line_end(line_end) {}
+	};
+
 	// these are the possible levels
 	enum class Level{
 		RECOVERABLE, // errors that the compiler can fix
@@ -34,6 +45,13 @@ struct Error{
 
 	Level m_level;
 	Type m_type;
+	u8 m_has_solution = 0;
+	ErrorPosition m_problem_position;
+	ErrorPosition m_solution_position;
+	//!@TODO these can be put in a message table, however this wouldn't support dynamic error reporting?
+	std::string m_problem_msg;
+	std::string m_solution_msg;
+
 
 	Error(){}
 	Error(Level level, Type type) : m_level(level), m_type(type){}
@@ -50,8 +68,8 @@ struct ErrorHandler {
 	u8 report_level = 0;
 	CompilationUnit* unit = NULL;
 
-	std::stack<Error> errors_occured;
-	u32 how_many = 0;
+	std::stack<Error> m_error_stack;
+	u32 m_how_many = 0;
 
 	ErrorHandler(){}
 	ErrorHandler(CompilationUnit* unit) : unit(unit) {}
@@ -59,12 +77,36 @@ struct ErrorHandler {
 
 	// @TODO report how to fix the error with colour coding e.g. the original in white and the fix in red
 	virtual void error(
-		const std::string problem, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line
+		const std::string problem, 
+		u32 p_start_index, 
+		u32 p_start_line,
+		u32 p_end_index, 
+		u32 p_end_line
 	);
+
+	// Used for errors that the compiler cannot determine the solution to
+	virtual void error(
+		Error::Level level,
+		Error::Type type,
+		const std::string problem,
+		Error::ErrorPosition problem_position
+		);
+
+	// used for errors that the compiler can determine the solutionto
+	virtual void error(
+		Error::Level level,
+		Error::Type type,
+		const std::string problem,
+		const std::string solution,
+		Error::ErrorPosition problem_position,
+		Error::ErrorPosition solution_position
+	);
+
+	virtual void print_error(Error& error);
+	virtual std::string pretty_format_str(Error::ErrorPosition& pos, std::string& colour);
 };
 
 extern std::string get_src_at_line(const std::string& src, u32 line);
 extern std::vector<std::string> split_string_by_newline(const std::string& str);
 extern std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line);
-extern std::string select_area(std::string& original, u32 to, u32 from);
 extern std::string build_pointer(u32 start, u32 end);

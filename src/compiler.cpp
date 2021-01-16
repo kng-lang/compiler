@@ -86,7 +86,7 @@ std::shared_ptr<AST> CompilationUnit::compile_to_ast() {
 
 void CompilationUnit::compile_to_bin() {
 	auto ast = compile_to_ast();
-	if (m_error_handler.how_many>0)
+	if (m_error_handler.m_how_many>0)
 		return;
 	auto t1 = std::chrono::high_resolution_clock::now();
 	LLVMCodeGen generator(ast, this);
