@@ -90,7 +90,8 @@ void ErrorHandler::error(
 	print_error(error);
 }
 
-// used for errors that the compiler can determine the solutionto
+// used for errors that the compiler can determine the solution to
+// !@TODO make tokens have a Position member struct so we can directly pass that
 void ErrorHandler::error(
 	Error::Level level,
 	Error::Type type,
@@ -113,16 +114,23 @@ void ErrorHandler::error(
 
 void ErrorHandler::print_error(Error& error) {
 
-
 	std::string red = "\u001b[31m";
 	std::string green = "\u001b[32m";
 	std::string reset = "\u001b[0m";
+	std::cout << "error in " <<
+		unit->m_compile_file.m_file_path << ":"
+		<< error.m_problem_position.m_line_start << ":"
+		<< error.m_problem_position.m_index_start << std::endl;
 
+	// print the problem along with the problem line
 	std::cout << error.m_problem_msg << std::endl;
 	std::cout << pretty_format_str(error.m_problem_position, red) << std::endl;
+	std::cout << build_pointer(error.m_problem_position.m_index_start, error.m_problem_position.m_index_end) << std::endl;
+	// print the solution, along with the solution line
 	if (error.m_has_solution) {
 		std::cout << error.m_solution_msg << std::endl;
 		std::cout << pretty_format_str(error.m_solution_position, green) << std::endl;
+		std::cout << build_pointer(error.m_solution_position.m_index_start, error.m_solution_position.m_index_end) << std::endl;
 	}
 }
 
@@ -139,18 +147,20 @@ std::string ErrorHandler::pretty_format_str(Error::ErrorPosition& pos, std::stri
 #endif // !ANSI_SUPPORT
 
 	std::string& before = problem_string.substr(0, pos.m_index_start);
-	std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
+	// we substract -1 because technically 1,1, is the first char of the first line
+	std::string& during = problem_string.substr(pos.m_index_start-1, pos.m_index_end - pos.m_index_start-1);
 	std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
 	
-	//kng_log("original: {}", problem_string);
-	//kng_log("line len: {}", problem_string.length());
-	//kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
-	//kng_log("before: {}:)", before);
-	//kng_log("during: {}:)", during);
-	//kng_log("after: {}:)", after);
+	kng_log("original: {}", problem_string);
+	kng_log("line len: {}", problem_string.length());
+	kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
+	kng_log("before: {}:)", before);
+	kng_log("during: {}:)", during);
+	kng_log("after: {}:)", after);
 
 	std::stringstream ss;
-	ss << before << during << reset << after;
+	ss << before << colour << during << reset << after;
+
 
 	return ss.str();
 }

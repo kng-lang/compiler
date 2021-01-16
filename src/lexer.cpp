@@ -30,7 +30,7 @@ TokenList Lexer::scan() {
 			case ']': token(Token::Type::RBRACKET); break;
 			case '{': token(Token::Type::LCURLY); break;
 			case '}': token(Token::Type::RCURLY); break;
-			case '_': token(Token::Type::UNDERSCORE); break;
+			//case '_': token(Token::Type::UNDERSCORE); break;
 			case ';': token(Token::Type::SEMI_COLON); break;
 			case '^': token(Token::Type::POINTER); break;
 			case ',': token(Token::Type::COMMA); break;
@@ -48,7 +48,7 @@ TokenList Lexer::scan() {
 			case '/': do_comment(); break;
 
 			default: {
-				if (is_letter(current)) {
+				if (is_letter(current) || current=='_') {
 					do_word(current);
 				}
 				else if (is_digit(current)) {

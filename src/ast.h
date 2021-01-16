@@ -127,6 +127,7 @@ struct StmtDefineAST : public StatementAST {
 	u8 is_constant = 0;
 	u8 is_initialised = 0;
 	u8 requires_type_inference = 0;
+	u8 m_is_underscore = 0;
 	Token identifier;
 	Type define_type;
 	std::shared_ptr<AST> value;

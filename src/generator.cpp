@@ -197,20 +197,23 @@ void* LLVMCodeGen::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast)
 void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	void* creation_instr = NULL; // either AllocaInst or Constant*
-	//llvm::AllocaInst* alloca_instr = NULL;
-	if (!stmt_define_ast->is_global){
-		// do alloca
-		if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
-			creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
-			m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+	if (!stmt_define_ast->m_is_underscore) {
+		//llvm::AllocaInst* alloca_instr = NULL;
+		if (!stmt_define_ast->is_global) {
+			// do alloca
+			if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
+				creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
+				m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+			}
 		}
-	}
-	else {
-		if(stmt_define_ast->define_type.m_type!=Type::Types::FN){
-			creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), convert_type(stmt_define_ast->define_type));
-			m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
-		}else {
-			
+		else {
+			if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
+				creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), convert_type(stmt_define_ast->define_type));
+				m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+			}
+			else {
+
+			}
 		}
 	}
 	
@@ -218,11 +221,13 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (stmt_define_ast->is_initialised
 		&& stmt_define_ast->define_type.m_type != Type::Types::FN) {
 		stmt_define_ast->value->visit(this);
-		auto is_volative = false;
-		kng_assert(creation_instr != NULL, "creaton_instr was null");	
-		// prepare the value for assignment
-		convert_fetched_to_value();
-		m_builder->CreateStore(m_fetched_value, (llvm::Value*) creation_instr, is_volative);
+		if (!stmt_define_ast->m_is_underscore) {
+			auto is_volative = false;
+			kng_assert(creation_instr != NULL, "creaton_instr was null");	
+			// prepare the value for assignment
+			convert_fetched_to_value();
+			m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, is_volative);
+		}
 	}
 
 	// @TODO jesus fix this pls

@@ -306,6 +306,9 @@ Type Parser::parse_type() {
 std::shared_ptr<AST> Parser::parse_define() {
 	StmtDefineAST define_ast;
 	define_ast.identifier = next();
+	if (define_ast.identifier.m_value.compare("_") == 0) {
+		define_ast.m_is_underscore = 1;
+	}
 	if(consume(Token::Type::QUICK_ASSIGN)){
 		m_parsing_variable_assignment = 1;
 		// at this point, we are expecting to parse an expression as without an expression the syntax is invalid

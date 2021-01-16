@@ -55,14 +55,28 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// wait do we ?   x : fn { y : x } -> that isn't valid is it???
 
 	// first check that in this scope the variable isn't already defined
-	if (m_sym_table.entries.size()>0 
+	if (m_sym_table.entries.size()>0
+		&& stmt_define_ast->identifier.m_value.compare("_")!=0
 		&& m_sym_table.entries[m_sym_table.level].count(stmt_define_ast->identifier.m_value)>0) {
-		m_unit->m_error_handler.error("symbol already defined!",
-			stmt_define_ast->identifier.m_index,
-			stmt_define_ast->identifier.m_line,
-			stmt_define_ast->identifier.m_index+stmt_define_ast->identifier.m_length,
-			stmt_define_ast->identifier.m_line
-			);
+		
+		
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::SYMBOL_ALREADY_DEFINED,
+			"symbol is already defined",
+			Error::ErrorPosition(
+				stmt_define_ast->identifier.m_index,
+				stmt_define_ast->identifier.m_index + stmt_define_ast->identifier.m_length,
+				stmt_define_ast->identifier.m_line,
+				stmt_define_ast->identifier.m_line
+			)
+		);
+		//m_unit->m_error_handler.error("symbol already defined!",
+		//	stmt_define_ast->identifier.m_index,
+		//	stmt_define_ast->identifier.m_line,
+		//	stmt_define_ast->identifier.m_index+stmt_define_ast->identifier.m_length,
+		//	stmt_define_ast->identifier.m_line
+		//	);
 		return NULL;
 	}
 
