@@ -61,10 +61,8 @@ int main(int argc, char** argv) {
         if (result.count("debug")) {
             if(result["debug"].as<std::string>().compare("l")==0)
                 options.m_debug_flags |= EMIT_TOKEN_DEBUG;
-
             else if (result["debug"].as<std::string>().compare("p") == 0)
                 options.m_debug_flags |= EMIT_AST_DEBUG;
-
             else if (result["debug"].as<std::string>().compare("g") == 0)
                 options.m_debug_flags |= EMIT_IR_DEBUG;
         }

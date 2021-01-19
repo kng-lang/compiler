@@ -25,9 +25,10 @@ std::string Token::to_json() {
 const char* Token::debug_types[] = {
 		"END",
 		"COMMENT",
-		"DOC",
+		"DOC", // documentation
 		"UNDERSCORE",
 		"NEWLINE",
+
 		"HASH",
 		"DIRECTIVE",
 
@@ -40,12 +41,13 @@ const char* Token::debug_types[] = {
 		"EXPORT",
 		"ASM",
 
+
 		"IDENTIFIER",
 
-		"STRING",
+		"STRING_LIT",
 		"NUMBER",
-		"TRUE",
-		"FALSE",
+		"TRU",
+		"FLSE",
 
 		"U0",
 		"U8",
@@ -59,11 +61,13 @@ const char* Token::debug_types[] = {
 		"F32",
 		"F64",
 		"CHAR",
+		"STRING",
 
 		"POINTER",
 		"DOT",
 		"DOUBLEDOT",
 		"TRIPLEDOT",
+
 
 		"SEMI_COLON", // inserted automatically
 		"COLON",
@@ -106,7 +110,7 @@ const char* Token::debug_types[] = {
 		"INTERFACE",
 		"IF",
 		"ELSE",
-		"IN",
+		"INN",
 		"FOR",
 		"RETURN",
 		"BREAK",

@@ -70,8 +70,9 @@ void Lexer::token(Token::Type type) {
 
 void Lexer::token(Token::Type type, std::string value) {
 	Token tok;
-	tok.m_index = this->m_index_save_point;
-	tok.m_line = this->m_line_save_point;
+	// we subtract 1 because 1,1, is actually index 0 and line 0
+	tok.m_index = this->m_index_save_point-1;
+	tok.m_line = this->m_line_save_point-1;
 	tok.m_length = this->m_index - this->m_index_save_point;
 	tok.m_type = type;
 	tok.m_value = value;

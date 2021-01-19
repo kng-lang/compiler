@@ -486,7 +486,7 @@ void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	}
 	return NULL;
 }
-void* LLVMCodeGen::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) {
+void* LLVMCodeGen::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) {
 	return NULL;
 }
 void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {

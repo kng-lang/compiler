@@ -79,7 +79,7 @@ void ErrorHandler::error(
 	Error::Level level,
 	Error::Type type,
 	const std::string problem,
-	Error::ErrorPosition problem_position
+	Token::Position problem_position
 ){
 	Error error = Error(level, type);
 	error.m_problem_msg = problem;
@@ -97,8 +97,8 @@ void ErrorHandler::error(
 	Error::Type type,
 	const std::string problem,
 	const std::string solution,
-	Error::ErrorPosition problem_position,
-	Error::ErrorPosition solution_position
+	Token::Position problem_position,
+	Token::Position solution_position
 ) {
 	Error error = Error(level, type);
 	error.m_problem_msg = problem;
@@ -135,32 +135,42 @@ void ErrorHandler::print_error(Error& error) {
 }
 
 
-std::string ErrorHandler::pretty_format_str(Error::ErrorPosition& pos, std::string& colour) {
+std::string ErrorHandler::pretty_format_str(Token::Position& pos, std::string& colour) {
 	std::string reset = "\u001b[0m";
 	//!@TODO for now only support single line
 	//! 
 	
 	std::string& problem_string = get_src_at_line(unit->m_compile_file.m_file_contents, pos.m_line_start);
+	//problem_string.erase(std::remove(problem_string.begin(), problem_string.end(), '\t'), problem_string.end());
 	// if we don't support ANSI terminals then return the standard string
 #ifndef ANSI_SUPPORT
 	return problem_string;
 #endif // !ANSI_SUPPORT
-
 	std::string& before = problem_string.substr(0, pos.m_index_start);
+	
 	// we substract -1 because technically 1,1, is the first char of the first line
-	std::string& during = problem_string.substr(pos.m_index_start-1, pos.m_index_end - pos.m_index_start-1);
+	std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
 	std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
 	
-	kng_log("original: {}", problem_string);
-	kng_log("line len: {}", problem_string.length());
-	kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
-	kng_log("before: {}:)", before);
-	kng_log("during: {}:)", during);
-	kng_log("after: {}:)", after);
+	//kng_log("original: {}", problem_string);
+	//kng_log("line len: {}", problem_string.length());
+	//kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
+	//kng_log("before: {}:)", before);
+	//kng_log("during: {}:)", during);
+	//kng_log("after: {}:)", after);
 
 	std::stringstream ss;
 	ss << before << colour << during << reset << after;
 
 
-	return ss.str();
+	return remove_leading_chars(ss.str());
+}
+
+
+
+std::string remove_leading_chars(std::string& s) {
+	const char* whitespace = " \t\v\r\n";
+	std::size_t start = s.find_first_not_of(whitespace);
+	std::size_t end = s.find_last_not_of(whitespace);
+	return start == end ? std::string() : s.substr(start, end - start + 1);
 }

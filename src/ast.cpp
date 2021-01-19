@@ -218,11 +218,11 @@ void* ExprPatternAST::visit(ASTVisitor* visitor) {
 	return NULL;
 }
 
-std::string ExprInterfaceGetAST::to_json() {
+std::string ExprGetAST::to_json() {
 	return "{ExprInterfaceGetAST}";
 }
 
-void* ExprInterfaceGetAST::visit(ASTVisitor* visitor) {
+void* ExprGetAST::visit(ASTVisitor* visitor) {
 	return visitor->visit_expr_interface_get_ast(this);
 }
 

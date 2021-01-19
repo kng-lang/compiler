@@ -32,7 +32,7 @@ struct ExprCastAST;
 struct ExprCallAST;
 struct ExprVarAST;
 struct ExprPatternAST;
-struct ExprInterfaceGetAST; // this is used for interface gets and namespace gets, bc at parse time we can't tell the difference.
+struct ExprGetAST; // this is used for interface gets and namespace gets, bc at parse time we can't tell the difference.
 struct ExprBinAST;
 struct ExprUnAST;
 struct ExprGroupAST;
@@ -63,7 +63,7 @@ struct AST {
 		EXPR_CALL,
 		EXPR_VAR,
 		EXPR_PATTERN,
-		EXPR_INTER_GET,
+		EXPR_GET,
 		EXPR_BIN,
 		EXPR_UN,
 		EXPR_GROUP,
@@ -282,11 +282,20 @@ struct ExprPatternAST : public ExpressionAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
-struct ExprInterfaceGetAST : public ExpressionAST {
+struct ExprGetAST : public ExpressionAST {
+
+	// this represents what the lhs is
+	enum class GetType {
+		INTERFACE,
+		FILE,
+		MODULE
+	};
+
+	GetType get_type;
 	std::shared_ptr<AST> value;
 	Token member;
 	virtual std::string to_json();
-	virtual ASTType  type() { return ASTType::EXPR_INTER_GET; }
+	virtual ASTType  type() { return ASTType::EXPR_GET; }
 	virtual void* visit(ASTVisitor* visitor);
 };
 
@@ -393,7 +402,7 @@ struct ASTVisitor {
 	virtual void* visit_expr_cast_ast(ExprCastAST* expr_cast_ast) = 0;
 	virtual void* visit_expr_call_ast(ExprCallAST* expr_call_ast) = 0;
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
-	virtual void* visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) = 0;
+	virtual void* visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) = 0;
 	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast) = 0;
 	virtual void* visit_expr_un_ast(ExprUnAST* expr_un_ast) = 0;
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast) = 0;

@@ -97,14 +97,14 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			Error::Type::MISSING_DELIMITER,
 			"expected ; at the end of the statment",
 			"add ; to the end of the statement",
-			Error::ErrorPosition(
-				prev().m_index-1,
+			Token::Position(
+				prev().m_index,
 				prev().m_index + prev().m_length-1,
 				prev().m_line,
 				prev().m_line),
-			Error::ErrorPosition(
-				prev().m_index - 1,
-				prev().m_index + prev().m_length - 1,
+			Token::Position(
+				prev().m_index,
+				prev().m_index + prev().m_length-1,
 				prev().m_line,
 				prev().m_line)
 		);
@@ -372,8 +372,8 @@ std::shared_ptr<AST> Parser::parse_assign() {
 		auto assign_value = parse_expression();
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
-			case AST::ASTType::EXPR_INTER_GET: {
-				auto member_get = std::dynamic_pointer_cast<ExprInterfaceGetAST>(higher_precedence);
+			case AST::ASTType::EXPR_GET: {
+				auto member_get = std::dynamic_pointer_cast<ExprGetAST>(higher_precedence);
 				auto interface_value = member_get->value;
 				auto member_token = member_get->member;
 				return std::make_shared<StmtInterfaceAssignAST>(interface_value, member_token, assign_value);

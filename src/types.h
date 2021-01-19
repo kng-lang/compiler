@@ -22,6 +22,8 @@ struct FnSignature {
 	// @TODO return type should be the first, but currently it isn't
 	std::vector<Type> m_operation_types;
 	u8 m_has_return = 0;
+
+	std::string get_mangled_identifier() { return m_anonymous_identifier; }
 };
 
 struct Pattern {

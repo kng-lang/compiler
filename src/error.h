@@ -11,22 +11,13 @@ James Clarke - 2021
 #include <stack>
 #include <sstream>
 #include "common.h"
+#include "token.h"
 
 
 struct Compiler;
 struct CompilationUnit;
 
 struct Error{
-
-	struct ErrorPosition {
-		u32 m_index_start;
-		u32 m_index_end;
-		u32 m_line_start;
-		u32 m_line_end;
-		ErrorPosition(){}
-		ErrorPosition(u32 index_start, u32 index_end, u32 line_start, u32 line_end) 
-			: m_index_start(index_start), m_index_end(index_end), m_line_start(line_start), m_line_end(line_end) {}
-	};
 
 	// these are the possible levels
 	enum class Level{
@@ -47,8 +38,8 @@ struct Error{
 	Level m_level;
 	Type m_type;
 	u8 m_has_solution = 0;
-	ErrorPosition m_problem_position;
-	ErrorPosition m_solution_position;
+	Token::Position m_problem_position;
+	Token::Position m_solution_position;
 	//!@TODO these can be put in a message table, however this wouldn't support dynamic error reporting?
 	std::string m_problem_msg;
 	std::string m_solution_msg;
@@ -90,7 +81,7 @@ struct ErrorHandler {
 		Error::Level level,
 		Error::Type type,
 		const std::string problem,
-		Error::ErrorPosition problem_position
+		Token::Position problem_position
 		);
 
 	// used for errors that the compiler can determine the solutionto
@@ -99,15 +90,16 @@ struct ErrorHandler {
 		Error::Type type,
 		const std::string problem,
 		const std::string solution,
-		Error::ErrorPosition problem_position,
-		Error::ErrorPosition solution_position
+		Token::Position problem_position,
+		Token::Position solution_position
 	);
 
 	virtual void print_error(Error& error);
-	virtual std::string pretty_format_str(Error::ErrorPosition& pos, std::string& colour);
+	virtual std::string pretty_format_str(Token::Position& pos, std::string& colour);
 };
 
 extern std::string get_src_at_line(const std::string& src, u32 line);
 extern std::vector<std::string> split_string_by_newline(const std::string& str);
 extern std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line);
 extern std::string build_pointer(u32 start, u32 end);
+extern std::string remove_leading_chars(std::string& s);

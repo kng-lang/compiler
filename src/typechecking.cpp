@@ -64,7 +64,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			Error::Level::CRITICAL,
 			Error::Type::SYMBOL_ALREADY_DEFINED,
 			"symbol is already defined",
-			Error::ErrorPosition(
+			Token::Position(
 				stmt_define_ast->identifier.m_index,
 				stmt_define_ast->identifier.m_index + stmt_define_ast->identifier.m_length,
 				stmt_define_ast->identifier.m_line,
@@ -301,7 +301,7 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	return NULL;
 }
 
-void* TypeChecker::visit_expr_interface_get_ast(ExprInterfaceGetAST* expr_interface_get_ast) { return NULL; }
+void* TypeChecker::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) { return NULL; }
 
 void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { 
 	// get the types of both sides

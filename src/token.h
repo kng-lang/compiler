@@ -11,6 +11,16 @@ James Clarke - 2021
 
 struct Token{
 
+	struct Position {
+		u32 m_index_start;
+		u32 m_index_end;
+		u32 m_line_start;
+		u32 m_line_end;
+		Position() {}
+		Position(u32 index_start, u32 index_end, u32 line_start, u32 line_end)
+			: m_index_start(index_start), m_index_end(index_end), m_line_start(line_start), m_line_end(line_end) {}
+	};
+
 	const static char* debug_types[];
 
 	enum Type : u32 {
