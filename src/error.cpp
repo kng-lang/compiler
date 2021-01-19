@@ -14,7 +14,7 @@ James Clarke - 2021
 
 std::string get_src_at_line(const std::string& src, u32 line) {
 	auto src_lines = split_string_by_newline(src);
-	return src_lines.at(line - 1);
+	return src_lines.at(line);
 }
 
 std::vector<std::string> split_string_by_newline(const std::string& str){
@@ -152,12 +152,12 @@ std::string ErrorHandler::pretty_format_str(Token::Position& pos, std::string& c
 	std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
 	std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
 	
-	//kng_log("original: {}", problem_string);
-	//kng_log("line len: {}", problem_string.length());
-	//kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
-	//kng_log("before: {}:)", before);
-	//kng_log("during: {}:)", during);
-	//kng_log("after: {}:)", after);
+	kng_log("original: {}", problem_string);
+	kng_log("line len: {}", problem_string.length());
+	kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
+	kng_log("before: {}:)", before);
+	kng_log("during: {}:)", during);
+	kng_log("after: {}:)", after);
 
 	std::stringstream ss;
 	ss << before << colour << during << reset << after;
