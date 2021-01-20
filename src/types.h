@@ -64,7 +64,6 @@ struct Type {
 		PATTERN,		// sequence of types
 	};
 	Types m_type = Types::UNKNOWN;
-	
 	// if this type is a generic in a fn e.g. (x : $generic){}, here x would have type generic.
 	// the compiler will then resolve this generic type at compile time
 	u8 m_is_generic = 0;

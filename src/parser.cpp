@@ -272,7 +272,11 @@ Type Parser::parse_type() {
 	case Token::Type::F64: t = Type(Type::Types::F64); break;
 	case Token::Type::CHAR: t = Type(Type::Types::CHAR); break;
 	case Token::Type::INTERFACE: t = Type(Type::Types::INTERFACE); break;
-	case Token::Type::IDENTIFIER: t = Type(Type::Types::INTERFACE); break;
+	case Token::Type::IDENTIFIER: {
+		t = Type(Type::Types::INTERFACE);
+		t.m_interface_signature.m_anonymous_identifier = prev();
+		break;
+	}
 	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
 	case Token::Type::TYPE: t = Type(Type::Types::TYPE); break;
 	}

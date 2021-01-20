@@ -220,6 +220,7 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			if (
 				stmt_define_ast->define_type.m_type != Type::Types::FN
 				&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
+				&& stmt_define_ast->define_type.m_type != Type::Types::TYPE
 				) {
 				creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
 				m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
@@ -229,6 +230,7 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			if (
 				stmt_define_ast->define_type.m_type != Type::Types::FN
 				&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
+				&& stmt_define_ast->define_type.m_type != Type::Types::TYPE
 				) {
 				creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), convert_type(stmt_define_ast->define_type));
 				m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
@@ -242,11 +244,12 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// @TODO this works if it isn't a function...
 	if (stmt_define_ast->is_initialised
 		&& stmt_define_ast->define_type.m_type != Type::Types::FN
-		&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE) {
+		&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
+		&& stmt_define_ast->define_type.m_type != Type::Types::TYPE) {
 		stmt_define_ast->value->visit(this);
 		if (!stmt_define_ast->m_is_underscore) {
 			auto is_volative = false;
-			kng_assert(creation_instr != NULL, "creaton_instr was null");	
+			kng_assert(creation_instr != NULL, "creation_instr was null");	
 			// prepare the value for assignment
 			convert_fetched_to_value();
 			m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, is_volative);
@@ -258,16 +261,26 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		stmt_define_ast->value->visit(this);
 		m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::Function*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 	}
+
+
+	// @TODO for now this only supports interface define types e.g. vec : type = interface {};
+	if(stmt_define_ast->define_type.m_type==Type::Types::TYPE){
+		stmt_define_ast->value->visit(this);
+		//	m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::StructType*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+	}
+
+
+
 	if (stmt_define_ast->define_type.m_type == Type::Types::INTERFACE) {
 
 		// first get the llvm::StructType* from the define type e.g. x : vec
-		llvm::Type* type = (llvm::Type*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_signature.m_anonymous_identifier).optional_data;
+		llvm::StructType* type = (llvm::StructType*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_signature.m_anonymous_identifier).optional_data;
 		auto creation_instr = m_builder->CreateAlloca(type);
-		if (stmt_define_ast->is_initialised) {
-			stmt_define_ast->value->visit(this);
-			convert_fetched_to_value();
-			m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, false);
-		}
+		//if (stmt_define_ast->is_initialised) {
+		//	stmt_define_ast->value->visit(this);
+		//	convert_fetched_to_value();
+		//	m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, false);
+		//}
 
 		//stmt_define_ast->value->visit(this);
 		//m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::StructType*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
@@ -386,15 +399,27 @@ void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 
 
 void* LLVMCodeGen::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
+
+
+	// when we visit an interface ast, we are defining the interface
+	// e.g. interaface {
+	//			xyz : f32;
+	//		}
+
+
+
 	// create the struct and the virtual table for the struct
 	auto name = llvm::StringRef(expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier.m_value);
 	auto interface_type = llvm::StructType::create(*m_context, name);
+	interface_type->setBody(llvm::ArrayRef<llvm::Type*>({ }));
 	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier.m_value));
 	
 	m_sym_table.add_symbol(
 		expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier,
 		SymTableEntry(interface_type, &expr_interface_ast->m_full_type, 0, 0)
 	);
+
+	//m_fetched_value = interface_type;
 	
 	return NULL;
 }
