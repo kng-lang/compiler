@@ -58,7 +58,7 @@ TokenList CompilationUnit::compile_to_tokens() {
 	auto tokens = l.scan();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	if (true || m_compile_options.m_debug_flags & EMIT_TOKEN_DEBUG) {
+	if (m_compile_options.m_debug_flags & EMIT_TOKEN_DEBUG) {
 		kng_log("lexer debug {}:\n{}", m_compile_file.m_file_path, tokens.to_json());
 		kng_log("lexed in {} ms.", time);
 	}

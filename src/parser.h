@@ -15,6 +15,15 @@ James Clarke - 2021
 struct Compiler;
 
 struct Parser : public TokenConsumer{
+
+
+	enum class ParseResult {
+		SUCCESS,
+		FAIL,
+	};
+
+	ParseResult m_result;
+
 	CompilationUnit* m_unit;
 	std::shared_ptr<AST> m_root_ast;
 	std::shared_ptr<SymTable<Type>> m_sym_table;

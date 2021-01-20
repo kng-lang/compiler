@@ -17,16 +17,22 @@ struct Compiler;
 struct Lexer {
 
 
+	enum class LexResult {
+		SUCCESS,
+		FAIL,
+	};
+
+	LexResult m_result;
 	CompilationUnit* m_unit;
 	// the actual source file
 	std::string m_src; // @TODO this should be a ref
 	// current char being scanned
 	u32 m_current = 0;
 	// index and line along with offsets used for error handling
-	u32 m_index = 1;
-	u32 m_line = 1;
-	u32 m_index_save_point = 1;
-	u32 m_line_save_point = 1;
+	u32 m_index = 0;
+	u32 m_line = 0;
+	u32 m_index_save_point = 0;
+	u32 m_line_save_point = 0;
 
 	std::vector<Token> m_tokens;
 

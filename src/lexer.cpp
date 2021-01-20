@@ -17,8 +17,8 @@ TokenList Lexer::scan() {
 		auto current = next();
 		switch (current) {
 			// @TODO these are sequential i.e. \r\n is a newline
-			case '\n': m_index = 1; m_line++; resetSavePoint(); break;
-			case '\r': m_index = 1; m_line++; resetSavePoint(); break;
+			case '\n': m_index = 0; m_line++; resetSavePoint(); break;
+			case '\r': m_index = 0; m_line++; resetSavePoint(); break;
 			case '#': token(Token::Type::HASH); break;
 			case '@': token(Token::Type::DIRECTIVE); break;
 			case '+': token(Token::Type::PLUS); break;
@@ -71,11 +71,21 @@ void Lexer::token(Token::Type type) {
 void Lexer::token(Token::Type type, std::string value) {
 	Token tok;
 	// we subtract 1 because 1,1, is actually index 0 and line 0
-	tok.m_index = this->m_index_save_point-1;
-	tok.m_line = this->m_line_save_point-1;
+	tok.m_index = this->m_index_save_point;
+	tok.m_line = this->m_line_save_point;
 	tok.m_length = this->m_index - this->m_index_save_point;
 	tok.m_type = type;
 	tok.m_value = value;
+
+
+	auto pos = Token::Position(
+		m_index_save_point,
+		m_index,
+		m_line_save_point,
+		m_line);
+
+	tok.m_position = pos;
+
 	m_tokens.push_back(tok);
 	resetSavePoint();
 }

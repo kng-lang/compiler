@@ -7,10 +7,13 @@ James Clarke - 2021
 #include <iostream>
 
 
-#ifndef  ANSI_SUPPORT
+#ifndef ANSI_SUPPORT
 	#define ANSI_SUPPORT
 #endif // ! ANSI_SUPPORT
 
+std::string red = "\u001b[31m";
+std::string green = "\u001b[32m";
+std::string reset = "\u001b[0m";
 
 std::string get_src_at_line(const std::string& src, u32 line) {
 	auto src_lines = split_string_by_newline(src);
@@ -39,12 +42,18 @@ std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_
 	return ss.str();
 }
 
-std::string build_pointer(u32 start, u32 end){
+std::string build_pointer(u32 start, u32 end, std::string& colour){
 	std::stringstream ss;
 	for (u32 i = 1; i < start; i++)
 		ss << " ";
+#ifdef ANSI_SUPPORT
+	ss << colour;
+#endif
 	for (u32 i = start-1; i < end-1; i++)
 		ss << "^";
+#ifdef ANSI_SUPPORT
+	ss << reset;
+#endif
 	return ss.str();
 }
 
@@ -64,7 +73,7 @@ void ErrorHandler::error(
 	kng_log("~~~ error in {}:{}:{}", unit->m_compile_file.m_file_path, p_start_line, p_start_index);
 	kng_log("~~~ ");
 	kng_log("~~~ {}", problem_string);
-	kng_log("~~~ {}", build_pointer(p_start_index, p_end_index));
+	kng_log("~~~ {}", build_pointer(p_start_index, p_end_index, red));
 	kng_log("~~~ ");
 	kng_log("~~~ {}", problem);
 
@@ -114,24 +123,42 @@ void ErrorHandler::error(
 
 void ErrorHandler::print_error(Error& error) {
 
-	std::string red = "\u001b[31m";
-	std::string green = "\u001b[32m";
-	std::string reset = "\u001b[0m";
-	std::cout << "error in " <<
-		unit->m_compile_file.m_file_path << ":"
-		<< error.m_problem_position.m_line_start << ":"
-		<< error.m_problem_position.m_index_start << std::endl;
+	// this is what we wan't
+	// https://doc.rust-lang.org/edition-guide/rust-2018/the-compiler/improved-error-messages.html
 
-	// print the problem along with the problem line
-	std::cout << error.m_problem_msg << std::endl;
+	// first print what wen't wrong
+	std::cout << "error (err code here) : " << error.m_problem_msg << std::endl;
+
+	// then print why it wen't wrong
+	std::stringstream ss;
+	ss << unit->m_compile_file.m_file_path << ":"
+		<< error.m_problem_position.m_line_start << ":"
+		<< error.m_problem_position.m_index_start;
+
+
+	std::cout << ss.str() << std::endl;
 	std::cout << pretty_format_str(error.m_problem_position, red) << std::endl;
-	std::cout << build_pointer(error.m_problem_position.m_index_start, error.m_problem_position.m_index_end) << std::endl;
-	// print the solution, along with the solution line
+	std::cout << build_pointer(error.m_problem_position.m_index_start, error.m_problem_position.m_index_end, red) << std::endl;
+
 	if (error.m_has_solution) {
 		std::cout << error.m_solution_msg << std::endl;
-		std::cout << pretty_format_str(error.m_solution_position, green) << std::endl;
-		std::cout << build_pointer(error.m_solution_position.m_index_start, error.m_solution_position.m_index_end) << std::endl;
 	}
+
+	//std::cout << "error (error code here) " <<
+	//	unit->m_compile_file.m_file_path << ":"
+	//	<< error.m_problem_position.m_line_start << ":"
+	//	<< error.m_problem_position.m_index_start << std::endl;
+	//
+	//// print the problem along with the problem line
+	//std::cout << error.m_problem_msg << std::endl;
+	//std::cout << pretty_format_str(error.m_problem_position, red) << std::endl;
+	//std::cout << build_pointer(error.m_problem_position.m_index_start, error.m_problem_position.m_index_end, red) << std::endl;
+	//// print the solution, along with the solution line
+	//if (error.m_has_solution) {
+	//	std::cout << error.m_solution_msg << std::endl;
+	//	std::cout << pretty_format_str(error.m_solution_position, green) << std::endl;
+	//	std::cout << build_pointer(error.m_solution_position.m_index_start, error.m_solution_position.m_index_end, green) << std::endl;
+	//}
 }
 
 
@@ -152,12 +179,12 @@ std::string ErrorHandler::pretty_format_str(Token::Position& pos, std::string& c
 	std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
 	std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
 	
-	kng_log("original: {}", problem_string);
-	kng_log("line len: {}", problem_string.length());
-	kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
-	kng_log("before: {}:)", before);
-	kng_log("during: {}:)", during);
-	kng_log("after: {}:)", after);
+	//kng_log("original: {}", problem_string);
+	//kng_log("line len: {}", problem_string.length());
+	//kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
+	//kng_log("before: {}:)", before);
+	//kng_log("during: {}:)", during);
+	//kng_log("after: {}:)", after);
 
 	std::stringstream ss;
 	ss << before << colour << during << reset << after;

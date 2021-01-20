@@ -13,6 +13,14 @@ struct CompilationUnit;
 
 struct CodeGen : public ASTVisitor {
 
+
+	enum class GeneratorResult {
+		SUCCESS,
+		FAIL,
+	};
+
+	GeneratorResult m_result;
+
 	virtual void generate() = 0;
 	virtual void* visit_program(ProgramAST* program_ast) = 0;
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast) = 0;

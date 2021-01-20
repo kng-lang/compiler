@@ -271,7 +271,12 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	expr_call_ast->callee->visit(this);
 	Type fn_type = m_checked_type;
 	if (!(fn_type.m_type==Type::Types::FN)) {
-		m_unit->m_error_handler.error("callee must be a fn",0,0,0,0);
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::MISSING_DELIMITER,
+			"callee must be a fn",
+			expr_call_ast->callee->m_position
+		);
 		return NULL;
 	}
 
@@ -297,7 +302,13 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 		m_checked_type = *m_checked_type_ptr;
 		return NULL;
 	}
-	kng_assert(false, "sym doesn't exist :(");
+	// !@TODO check for similar symbols
+	m_unit->m_error_handler.error(
+		Error::Level::CRITICAL,
+		Error::Type::MISSING_DELIMITER,
+		"symbol doesn't exist",
+		expr_var_ast->m_position
+	);
 	return NULL;
 }
 

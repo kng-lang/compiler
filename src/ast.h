@@ -71,11 +71,12 @@ struct AST {
 		EXPR_LIT_ARRAY
 	};
 	
-	u32 index;
-	u32 line;
-	u32 end_index;
-	u32 end_line;
 
+	AST(){}
+	AST(Token::Position position) : m_position(position){}
+
+	// this is so we can perform error handling whenever there is no token in the context
+	Token::Position m_position;
 	virtual void debug();
 	virtual std::string to_json();
 	virtual ASTType type() { return ASTType::BASE; }
@@ -84,18 +85,24 @@ struct AST {
 
 
 struct StatementAST : public AST {
+	StatementAST() {}
+	StatementAST(Token::Position position) : AST(position) {}
 	virtual std::string to_json();
 	virtual ASTType type() { return ASTType::STMT; }
 	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ExpressionAST : public AST {
+	ExpressionAST(){}
+	ExpressionAST(Token::Position position) : AST(position){}
 	virtual ASTType type() { return ASTType::EXPR; }
 	virtual void* visit(ASTVisitor* visitor);
 };
 
 struct ErrorAST : public StatementAST {
 	std::string error_msg;
+	ErrorAST(){}
+	ErrorAST(Token::Position position) { m_position = position; }
 	virtual std::string to_json();
 	virtual ASTType type() { return ASTType::ERR; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -141,7 +148,7 @@ struct StmtAssignAST : public StatementAST {
 	std::shared_ptr<AST> assignee;
 	std::shared_ptr<AST> value;
 
-	StmtAssignAST(std::shared_ptr<AST> assignee, std::shared_ptr<AST> value) : assignee(assignee), value(value){}
+	StmtAssignAST(Token::Position position, std::shared_ptr<AST> assignee, std::shared_ptr<AST> value) : StatementAST(position), assignee(assignee), value(value){}
 
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_ASSIGN; }
@@ -153,10 +160,12 @@ struct StmtInterfaceAssignAST : public StatementAST {
 	Token member;				   // the interface member
 	std::shared_ptr<AST> value;    // the value to assign
 
-	StmtInterfaceAssignAST(std::shared_ptr<AST> variable,
+	StmtInterfaceAssignAST(
+						Token::Position position,
+						   std::shared_ptr<AST> variable,
 						   Token member,
 						   std::shared_ptr<AST> value
-		) : variable(variable), member(member), value(value) {}
+		) : StatementAST(position), variable(variable), member(member), value(value) {}
 
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::STMT_INTER_ASSIGN; }
@@ -266,7 +275,7 @@ struct ExprCallAST : public ExpressionAST {
 
 struct ExprVarAST : public ExpressionAST {
 	Token identifier;
-	ExprVarAST(Token identifier) : identifier(identifier){}
+	ExprVarAST(Token::Position position, Token identifier) : ExpressionAST(position), identifier(identifier){}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_VAR; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -307,7 +316,7 @@ struct ExprBinAST : public ExpressionAST {
 	// the types of the operation that is performed (signed, floating point, interface)
 	Type::Types m_value_type;
 	ExprBinAST(){}
-	ExprBinAST(std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, Token op) : lhs(lhs), rhs(rhs), op(op){}
+	ExprBinAST(Token::Position position, std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, Token op) : ExpressionAST(position), lhs(lhs), rhs(rhs), op(op){}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_BIN; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -325,7 +334,7 @@ struct ExprUnAST : public ExpressionAST {
 	Side side;
 
 	ExprUnAST(){}
-	ExprUnAST(Token op, std::shared_ptr<AST> ast, Side side) : op(op), ast(ast), side(side){}
+	ExprUnAST(Token::Position position, Token op, std::shared_ptr<AST> ast, Side side) : ExpressionAST(position), op(op), ast(ast), side(side){}
 
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_UN; }
@@ -335,7 +344,7 @@ struct ExprUnAST : public ExpressionAST {
 struct ExprGroupAST : public ExpressionAST {
 	std::shared_ptr<AST> expression;
 	ExprGroupAST(){}
-	ExprGroupAST(std::shared_ptr<AST> expression) : expression(expression) {}
+	ExprGroupAST(Token::Position position, std::shared_ptr<AST> expression) : ExpressionAST(position), expression(expression) {}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_GROUP; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -360,7 +369,7 @@ struct ExprLiteralAST : public ExpressionAST {
 	};
 	Value v;
 	ExprLiteralAST(){}
-	ExprLiteralAST(Type t, Value v) : t(t) { this->v = v; }
+	ExprLiteralAST(Token::Position position, Type t, Value v) : ExpressionAST(position), t(t) { this->v = v; }
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_LIT; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -372,8 +381,8 @@ struct ExprLiteralArrayAST : public ExpressionAST {
 	u32 size;
 	std::vector<std::shared_ptr<AST>> values;
 	ExprLiteralArrayAST() {}
-	ExprLiteralArrayAST(Type array_type, Type contained_type, u32 size, std::vector<std::shared_ptr<AST>> values) 
-		: array_type(array_type), contained_type(contained_type), size(size), values(values) {}
+	ExprLiteralArrayAST(Token::Position position, Type array_type, Type contained_type, u32 size, std::vector<std::shared_ptr<AST>> values) 
+		: ExpressionAST(position), array_type(array_type), contained_type(contained_type), size(size), values(values) {}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_LIT_ARRAY; }
 	virtual void* visit(ASTVisitor* visitor);

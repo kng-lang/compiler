@@ -19,6 +19,29 @@ struct Token{
 		Position() {}
 		Position(u32 index_start, u32 index_end, u32 line_start, u32 line_end)
 			: m_index_start(index_start), m_index_end(index_end), m_line_start(line_start), m_line_end(line_end) {}
+
+
+
+
+		Position add_index_start(u32 offset) {
+			m_index_start += offset;
+			return *this;
+		}
+
+		Position add_index_end(u32 offset) {
+			m_index_end += offset;
+			return *this;
+		}
+
+		Position add_line_start(u32 offset) {
+			m_line_start += offset;
+			return *this;
+		}
+
+		Position add_line_end(u32 offset) {
+			m_line_end += offset;
+			return *this;
+		}
 	};
 
 	const static char* debug_types[];
@@ -127,6 +150,7 @@ struct Token{
 	u32 m_index  = 0;
 	u32 m_line   = 0;
 	u32 m_length = 0;
+	Position m_position;
 
 	std::string m_value;
 
