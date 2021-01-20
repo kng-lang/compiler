@@ -43,6 +43,7 @@ struct CodeGen : public ASTVisitor {
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast) = 0;
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) = 0;
 	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) = 0;
+	virtual void* visit_expr_type_ast(ExprTypeAST* expr_type_ast) = 0;
 
 };
 
@@ -119,6 +120,7 @@ struct LLVMCodeGen : public CodeGen {
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast);
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast);
 	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast);
+	virtual void* visit_expr_type_ast(ExprTypeAST* expr_type_ast);
 };
 
 /*

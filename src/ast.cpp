@@ -157,7 +157,7 @@ void* StmtLoopAST::visit(ASTVisitor* visitor) {
 
 std::string ExprInterfaceAST::to_json() {
 	std::stringstream ss;
-	ss << "{\n\"type\":\"ExprInterfaceAST\",\n\"anonymous_name\":" << this->anonymous_name << "}\n";
+	ss << "{\n\"type\":\"ExprInterfaceAST\",\n\"m_anonymous_identifier\":" << this->m_full_type.m_interface_signature.m_anonymous_identifier.m_value << "}\n";
 	return ss.str();
 }
 void* ExprInterfaceAST::visit(ASTVisitor* visitor) {
@@ -275,6 +275,17 @@ std::string ExprLiteralArrayAST::to_json() {
 void* ExprLiteralArrayAST::visit(ASTVisitor* visitor) {
 	return visitor->visit_expr_literal_array_ast(this);
 }
+
+std::string ExprTypeAST::to_json() {
+	std::stringstream ss;
+	ss << "{\n\"type\": \"ExprTypeAST\",\n\"type\":" << this->m_type.to_json() << "\n}\n";
+	return ss.str();
+}
+
+void* ExprTypeAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_type_ast(this);
+}
+
 
 void* ExpressionAST::visit(ASTVisitor* visitor)
 {

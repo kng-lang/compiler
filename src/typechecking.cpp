@@ -211,7 +211,27 @@ void* TypeChecker::visit_stmt_if_ast(StmtIfAST* stmt_if_ast) {
 void* TypeChecker::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) { return NULL; }
 
 
-void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { return NULL; }
+void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) { 
+
+	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
+	if (!expr_interface_ast->m_is_lambda) {
+		expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier = m_sym_table.latest_entry.first;
+	}
+
+	m_sym_table.enter_scope();
+	
+	for (const auto& def : expr_interface_ast->m_definitions) {
+		def->visit(this);
+	}
+	
+	m_sym_table.pop_scope();
+
+	m_checked_type_ptr = &expr_interface_ast->m_full_type;
+	m_checked_type = expr_interface_ast->m_full_type;
+
+	return NULL; 
+
+}
 
 void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
@@ -418,4 +438,12 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	m_checked_type = expr_literal_array_ast->array_type;
 	return NULL;
 	//return (void*)&expr_literal_array_ast->array_type;
+}
+
+
+
+void* TypeChecker::visit_expr_type_ast(ExprTypeAST* expr_type_ast) {
+	m_checked_type = expr_type_ast->m_type;
+	m_checked_type_ptr = &expr_type_ast->m_type;
+	return NULL;
 }

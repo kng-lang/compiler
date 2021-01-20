@@ -49,6 +49,7 @@ const char* Token::debug_types[] = {
 		"TRU",
 		"FLSE",
 
+		"TYPE",
 		"U0",
 		"U8",
 		"S8",

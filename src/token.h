@@ -74,6 +74,7 @@ struct Token{
 		NUMBER,
 		TRU,
 		FLSE,
+		TYPE,
 
 		U0,
 		U8,

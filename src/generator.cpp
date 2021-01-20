@@ -133,8 +133,23 @@ void LLVMCodeGen::generate() {
 	dest.flush();
 }
 
-void LLVMCodeGen::make_runtime() {}
+void LLVMCodeGen::make_runtime() {
+	// setup the type structure
+	llvm::StructType* type_type = llvm::StructType::create(*m_context, "type_t");
+	type_type->setBody(llvm::ArrayRef<llvm::Type*>({ llvm::Type::getInt8PtrTy(*m_context) }));
+}
+
+
 void LLVMCodeGen::optimise(){}
+
+
+
+llvm::Value* cast_to_type(llvm::Value* value, llvm::Type* type) {
+	return NULL;
+}
+
+
+
 
 llvm::Type* LLVMCodeGen::convert_type(Type type) {
 	llvm::Type* tmp_type = NULL;
@@ -151,6 +166,7 @@ llvm::Type* LLVMCodeGen::convert_type(Type type) {
 		case Type::Types::F64:    tmp_type = llvm::Type::getDoubleTy(*m_context); break;
 		case Type::Types::CHAR:   tmp_type = llvm::Type::getInt8Ty(*m_context); break; // ASCII FOR NOW?
 		case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)m_sym_table.get_symbol(type.m_fn_signature.m_anonymous_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
+		case Type::Types::INTERFACE: tmp_type = (llvm::StructType*)(m_sym_table.get_symbol(type.m_interface_signature.m_anonymous_identifier).optional_data);
 		case Type::Types::STRING: tmp_type = llvm::Type::getInt8PtrTy(*m_context); break; // @TODO return a reference to the string interface using the symbol table
 
 	}
@@ -201,13 +217,19 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		//llvm::AllocaInst* alloca_instr = NULL;
 		if (!stmt_define_ast->is_global) {
 			// do alloca
-			if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
+			if (
+				stmt_define_ast->define_type.m_type != Type::Types::FN
+				&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
+				) {
 				creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
 				m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 			}
 		}
 		else {
-			if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
+			if (
+				stmt_define_ast->define_type.m_type != Type::Types::FN
+				&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
+				) {
 				creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), convert_type(stmt_define_ast->define_type));
 				m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 			}
@@ -219,7 +241,8 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	
 	// @TODO this works if it isn't a function...
 	if (stmt_define_ast->is_initialised
-		&& stmt_define_ast->define_type.m_type != Type::Types::FN) {
+		&& stmt_define_ast->define_type.m_type != Type::Types::FN
+		&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE) {
 		stmt_define_ast->value->visit(this);
 		if (!stmt_define_ast->m_is_underscore) {
 			auto is_volative = false;
@@ -234,6 +257,20 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (stmt_define_ast->define_type.m_type == Type::Types::FN) {
 		stmt_define_ast->value->visit(this);
 		m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::Function*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+	}
+	if (stmt_define_ast->define_type.m_type == Type::Types::INTERFACE) {
+
+		// first get the llvm::StructType* from the define type e.g. x : vec
+		llvm::Type* type = (llvm::Type*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_signature.m_anonymous_identifier).optional_data;
+		auto creation_instr = m_builder->CreateAlloca(type);
+		if (stmt_define_ast->is_initialised) {
+			stmt_define_ast->value->visit(this);
+			convert_fetched_to_value();
+			m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, false);
+		}
+
+		//stmt_define_ast->value->visit(this);
+		//m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::StructType*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 	}
 	return NULL;
 }
@@ -350,15 +387,21 @@ void* LLVMCodeGen::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 
 void* LLVMCodeGen::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 	// create the struct and the virtual table for the struct
-	auto name = llvm::StringRef(expr_interface_ast->anonymous_name);
+	auto name = llvm::StringRef(expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier.m_value);
 	auto interface_type = llvm::StructType::create(*m_context, name);
-	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->anonymous_name));
+	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier.m_value));
+	
+	m_sym_table.add_symbol(
+		expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier,
+		SymTableEntry(interface_type, &expr_interface_ast->m_full_type, 0, 0)
+	);
+	
 	return NULL;
 }
 
 void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
-
+	auto prev_insert_point = m_builder->GetInsertBlock();
 	llvm::Type* return_type = convert_type(expr_fn_ast->full_type.m_fn_signature.m_operation_types.at(0));
 	std::vector<llvm::Type*> param_types;
 
@@ -418,7 +461,8 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		if (!expr_fn_ast->full_type.m_fn_signature.m_has_return)
 			m_builder->CreateRetVoid();
 	
-		m_builder->ClearInsertionPoint();
+		//m_builder->ClearInsertionPoint();
+		m_builder->SetInsertPoint(prev_insert_point);
 	}
 	llvm::verifyFunction(*f);
 
@@ -641,5 +685,11 @@ void* LLVMCodeGen::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 	// note we do t.t here as the array type will be u8 array size 123, and we just want u8
 	m_fetched_value = llvm::ConstantArray::get(array_type, array_ref);
 	m_fetched_type = FetchedType::VALUE;
+	return NULL;
+}
+
+
+void* LLVMCodeGen::visit_expr_type_ast(ExprTypeAST* expr_type_ast) {
+	// create a type structure here
 	return NULL;
 }

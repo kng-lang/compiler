@@ -17,6 +17,9 @@ struct TypeChecker : public ASTVisitor {
 	SymTable<std::shared_ptr<Type>> m_sym_table;
 	Type m_checked_type;
 	Type* m_checked_type_ptr;
+	// these are used as identifiers for anonymous types
+	u32 m_anon_fn_counter = 0;
+	u32 m_anon_inter_counter = 0;
 
 	TypeChecker() {}
 	TypeChecker(std::shared_ptr<AST> ast, CompilationUnit* unit) : ASTVisitor(ast), m_unit(unit) {}
@@ -51,4 +54,5 @@ struct TypeChecker : public ASTVisitor {
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast);
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast);
 	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast);
+	virtual void* visit_expr_type_ast(ExprTypeAST* expr_type_ast);
 };

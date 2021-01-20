@@ -90,10 +90,15 @@ void SymTable<T>::pop_scope() {
 
 
 u8 Type::matches_basic(Type other){
-	return this->m_type == other.m_type
+
+	return 
+		// the reason if this is set, then we match is because x : type = u32, x : type = f32 etc, any are valid
+		this->m_type == Type::Types::TYPE ||
+		
+		(this->m_type == other.m_type
 		&& this->m_is_arr == other.m_is_arr
 		&& this->m_arr_length == other.m_arr_length
-		&& this->m_ptr_indirection == other.m_ptr_indirection;
+		&& this->m_ptr_indirection == other.m_ptr_indirection);
 }
 
 u8 Type::matches_deep(Type other){

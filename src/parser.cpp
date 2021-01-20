@@ -226,9 +226,11 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::F32)
 		|| expect(Token::Type::F64)
 		|| expect(Token::Type::CHAR)
+	//	|| expect(Token::Type::INTERFACE)
 		|| expect(Token::Type::IDENTIFIER)
 		|| expect(Token::Type::STRING)
-		|| expect(Token::Type::POINTER);
+		|| expect(Token::Type::POINTER)
+		|| expect(Token::Type::TYPE);
 }
 
 u8 Parser::expecting_expr(){
@@ -236,6 +238,7 @@ u8 Parser::expecting_expr(){
 	// string, number, identifier, group, true, false, {
 	return
 		expect(Token::Type::STRING_LIT)
+		|| expect(Token::Type::TYPE)
 		|| expect(Token::Type::NUMBER)
 		|| expect(Token::Type::IDENTIFIER)
 		|| expect(Token::Type::LPAREN)
@@ -268,8 +271,10 @@ Type Parser::parse_type() {
 	case Token::Type::F32: t = Type(Type::Types::F32); break;
 	case Token::Type::F64: t = Type(Type::Types::F64); break;
 	case Token::Type::CHAR: t = Type(Type::Types::CHAR); break;
+	case Token::Type::INTERFACE: t = Type(Type::Types::INTERFACE); break;
 	case Token::Type::IDENTIFIER: t = Type(Type::Types::INTERFACE); break;
 	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
+	case Token::Type::TYPE: t = Type(Type::Types::TYPE); break;
 	}
 	// check if we are dealing with an array
 	if (consume(Token::Type::LBRACKET)){
@@ -562,9 +567,17 @@ std::shared_ptr<AST> Parser::parse_call() {
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_single(){ 
+
+	//@TODO this breaks because if you do y := x(); it thinks x is a type because x could be the name of an interface
+	//if (expecting_type()){
+	//	auto t = parse_type();
+	//	return std::make_shared<ExprTypeAST>(prev().m_position, t);
+	//}
+
 	// @TODO implement casts
 	// @TODO implement groups e.g. (1+2) + (1+3)
 	auto t = next();
+
 
 	switch (t.m_type) {
 		// array literal for now
@@ -690,6 +703,9 @@ std::shared_ptr<AST> Parser::parse_single(){
 			}
 		}
 		//case Token::Type::LBRACKET: return parse_interface();
+		case Token::Type::INTERFACE: {
+			return parse_interface();
+		}
 	}
 	m_unit->m_error_handler.error(
 		Error::Level::CRITICAL,
@@ -707,17 +723,26 @@ std::shared_ptr<AST> Parser::parse_fn(){
 
 std::shared_ptr<AST> Parser::parse_interface() {
 
+	kng_log("parsing interface");
+
+
+
 
 	ExprInterfaceAST expr_interface;
+	expr_interface.m_position = prev().m_position;
 
-	expr_interface.anonymous_name = "tmp_anon_interface_name";
+	InterfaceSignature interface_signature;
 
 	consume(Token::LCURLY);
 
 	// a list of definition
 	while (!consume(Token::RCURLY)) {
-		parse_stmt();
+		auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
+		interface_signature.m_members.push_back(define->define_type);
+		expr_interface.m_definitions.push_back(define);
 	}
+
+	expr_interface.m_full_type = Type(Type::Types::INTERFACE, interface_signature);
 	return std::make_shared<ExprInterfaceAST>(expr_interface);
 }
 

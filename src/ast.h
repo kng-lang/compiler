@@ -37,6 +37,8 @@ struct ExprBinAST;
 struct ExprUnAST;
 struct ExprGroupAST;
 struct ExprLiteralAST;
+struct ExprLiteralArrayAST;
+struct ExprTypeAST; // e.g. x := u32;
 
 
 struct AST {
@@ -68,7 +70,8 @@ struct AST {
 		EXPR_UN,
 		EXPR_GROUP,
 		EXPR_LIT,
-		EXPR_LIT_ARRAY
+		EXPR_LIT_ARRAY,
+		EXPR_LIT_TYPE
 	};
 	
 
@@ -219,10 +222,11 @@ struct StmtLoopAST : public StatementAST {
 
 // e.g. x : interface = { y : s32 }
 struct ExprInterfaceAST : public ExpressionAST {
-	// even though they are first class, they still need a name
-	std::string anonymous_name;
+	std::vector<std::shared_ptr<AST>> m_definitions;
+	u8 m_is_lambda = 0; // this is used for name resolution
+	Type m_full_type;
 	ExprInterfaceAST(){}
-	ExprInterfaceAST(std::string anonymous_name) : anonymous_name(anonymous_name) {}
+	ExprInterfaceAST(Token::Position position) : ExpressionAST(position) {}
 	virtual std::string to_json();
 	virtual ASTType type() { return ASTType::EXPR_INTER; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -388,6 +392,15 @@ struct ExprLiteralArrayAST : public ExpressionAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+struct ExprTypeAST : public ExpressionAST {
+	Type m_type;
+	ExprTypeAST(){}
+	ExprTypeAST(Token::Position position, Type type) : ExpressionAST(position), m_type(type){}
+	virtual std::string to_json();
+	virtual ASTType  type() { return ASTType::EXPR_LIT_TYPE; }
+	virtual void* visit(ASTVisitor* visitor);
+};
+
 struct ASTVisitor {
 	std::shared_ptr<AST> m_ast;
 
@@ -417,4 +430,5 @@ struct ASTVisitor {
 	virtual void* visit_expr_group_ast(ExprGroupAST* expr_group_ast) = 0;
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) = 0;
 	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) = 0;
+	virtual void* visit_expr_type_ast(ExprTypeAST* expr_type_ast) = 0;
 };

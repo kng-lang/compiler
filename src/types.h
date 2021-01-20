@@ -15,6 +15,7 @@ struct AST;
 
 // the signature of an interface is made up of the type of its members
 struct InterfaceSignature{
+	Token m_anonymous_identifier;
 	std::vector<Type> m_members;
 };
 
@@ -23,7 +24,6 @@ struct FnSignature {
 	// @TODO return type should be the first, but currently it isn't
 	std::vector<Type> m_operation_types;
 	u8 m_has_return = 0;
-
 	Token get_mangled_identifier() { return m_anonymous_identifier; }
 };
 
@@ -93,6 +93,7 @@ struct Type {
 	Type(Types t, u8 is_arr, u32 arr_length) : m_type(t), m_is_arr(is_arr), m_arr_length(arr_length) {}
 	Type(Types t, u8 pattern, std::vector<Type> types) : m_type(t), m_is_pattern(pattern), m_patterns(m_patterns) {}
 	Type(Types t, FnSignature fn_sig) : m_type(t), m_fn_signature(fn_sig) {}
+	Type(Types t, InterfaceSignature interface_sig) : m_type(t), m_interface_signature(interface_sig) {}
 
 	std::string to_json();
 

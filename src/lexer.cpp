@@ -240,7 +240,11 @@ void Lexer::do_word(char start){
 			if (!found_keyword) found_keyword = check_keyword("tring", Token::Type::STRING);
 			break;
 		}
-		case 't': found_keyword = check_keyword("rue", Token::Type::TRU); break;
+		case 't': {
+			found_keyword = check_keyword("rue", Token::Type::TRU);
+			if (!found_keyword) found_keyword = check_keyword("ype", Token::Type::TYPE);
+			break;
+		}
 		case 'u': {
 			found_keyword = check_keyword("8", Token::Type::U8);
 			if (!found_keyword) found_keyword = check_keyword("16", Token::Type::U16);
