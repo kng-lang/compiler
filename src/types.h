@@ -8,6 +8,7 @@ James Clarke - 2021
 #include <memory>
 #include <map>
 #include "common.h"
+#include "token.h"
 
 struct Type;
 struct AST;
@@ -18,12 +19,12 @@ struct InterfaceSignature{
 };
 
 struct FnSignature {
-	std::string m_anonymous_identifier;
+	Token m_anonymous_identifier;
 	// @TODO return type should be the first, but currently it isn't
 	std::vector<Type> m_operation_types;
 	u8 m_has_return = 0;
 
-	std::string get_mangled_identifier() { return m_anonymous_identifier; }
+	Token get_mangled_identifier() { return m_anonymous_identifier; }
 };
 
 struct Pattern {
@@ -140,8 +141,8 @@ struct SymTableEntry {
 template<typename T>
 struct SymTable {
 	// keep track of the latest entry
-	std::pair<std::string, SymTableEntry> latest_entry;
-	std::map<s32, std::map<std::string, SymTableEntry>> entries;
+	std::pair<Token, SymTableEntry> latest_entry;
+	std::map<s32, std::map<Token, SymTableEntry>> entries;
 	s32 level = 0;
 
 	SymTable(){}
@@ -156,17 +157,17 @@ struct SymTable {
 			}
 		}
 	}
-	void add_symbol(std::string entry_id, SymTableEntry entry = SymTableEntry()) {
-		latest_entry = std::pair<std::string, SymTableEntry>(entry_id, entry);
+	void add_symbol(Token entry_id, SymTableEntry entry = SymTableEntry()) {
+		latest_entry = std::pair<Token, SymTableEntry>(entry_id, entry);
 		entries[level][entry_id] = entry;
 	}
 
-	void set_symbol(std::string entry_id, SymTableEntry entry) {
-		latest_entry = std::pair<std::string, SymTableEntry>(entry_id, entry);
+	void set_symbol(Token entry_id, SymTableEntry entry) {
+		latest_entry = std::pair<Token, SymTableEntry>(entry_id, entry);
 		entries[level][entry_id] = entry;
 	}
 
-	u8 contains_symbol(std::string entry_id) {
+	u8 contains_symbol(Token entry_id) {
 		for (s32 i = level; i >= 0; i--) {
 			if (this->entries[i].count(entry_id) > 0) {
 				return 1;
@@ -175,7 +176,7 @@ struct SymTable {
 		return 0;
 	}
 
-	SymTableEntry get_symbol(std::string entry_id) {
+	SymTableEntry get_symbol(Token entry_id) {
 		for (s32 i = level; i >= 0; i--) {
 			if (this->entries[i].count(entry_id) > 0) {
 				return entries[i][entry_id];

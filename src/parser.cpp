@@ -616,7 +616,8 @@ std::shared_ptr<AST> Parser::parse_single(){
 				// the fn can only be a lambda if it isn't being assigned to a constant
 				// e.g. x : (){} is the only way a fn can be a lambda
 				fn_ast.is_lambda = !m_parsing_constant_assignment;
-				fn_sig.m_anonymous_identifier = "lambda";
+				// !@TODO this needs to be resolved to a token
+				fn_sig.m_anonymous_identifier.m_value = "lambda";
 
 
 				fn_sig.m_operation_types.push_back(Type(Type::Types::U0));

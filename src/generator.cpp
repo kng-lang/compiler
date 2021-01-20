@@ -203,13 +203,13 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			// do alloca
 			if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
 				creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
-				m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+				m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 			}
 		}
 		else {
 			if (stmt_define_ast->define_type.m_type != Type::Types::FN) {
 				creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), convert_type(stmt_define_ast->define_type));
-				m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+				m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 			}
 			else {
 
@@ -233,7 +233,7 @@ void* LLVMCodeGen::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// @TODO jesus fix this pls
 	if (stmt_define_ast->define_type.m_type == Type::Types::FN) {
 		stmt_define_ast->value->visit(this);
-		m_sym_table.add_symbol(stmt_define_ast->identifier.m_value, SymTableEntry((llvm::Function*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+		m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::Function*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 	}
 	return NULL;
 }
@@ -371,7 +371,7 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 
 	llvm::FunctionType* ft = llvm::FunctionType::get(return_type, param_types, false);
-	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier, *m_module);
+	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier.m_value, *m_module);
 	
 
 	
@@ -404,8 +404,8 @@ void* LLVMCodeGen::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 			*/
 
 			// create stack storage for the argument
-			auto arg_name = stmt_define_arg->identifier.m_value;
-			auto alloca_instr = m_builder->CreateAlloca(arg->getType(), NULL, arg_name);
+			auto arg_name = stmt_define_arg->identifier;
+			auto alloca_instr = m_builder->CreateAlloca(arg->getType(), NULL, arg_name.m_value);
 			// initialise it
 			auto is_volatile = false;
 			m_builder->CreateStore(arg, alloca_instr, is_volatile);
@@ -471,16 +471,16 @@ void* LLVMCodeGen::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 void* LLVMCodeGen::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// the problem here is that a variable can be a load, store etc
 	
-	auto var_type = m_sym_table.get_symbol(expr_var_ast->identifier.m_value).type;
+	auto var_type = m_sym_table.get_symbol(expr_var_ast->identifier).type;
 	switch (var_type->m_type) {
 		case Type::Types::FN: {
 			m_fetched_type = FetchedType::FN;
-			m_fetched_value = (llvm::Function*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
+			m_fetched_value = (llvm::Function*)m_sym_table.get_symbol(expr_var_ast->identifier).optional_data;
 			break;
 		}
 		default: {
 			m_fetched_type = FetchedType::VARIABLE;
-			m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).optional_data;
+			m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier).optional_data;
 			break;
 		}
 	}

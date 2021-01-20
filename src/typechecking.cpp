@@ -4,7 +4,7 @@ James Clarke - 2021
 
 #include "typechecking.h"
 #include "compiler.h"
-
+#include "stringutils.h"
 
 // cast any ast (must be an expression) to a given type
 void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
@@ -57,7 +57,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// first check that in this scope the variable isn't already defined
 	if (m_sym_table.entries.size()>0
 		&& stmt_define_ast->identifier.m_value.compare("_")!=0
-		&& m_sym_table.entries[m_sym_table.level].count(stmt_define_ast->identifier.m_value)>0) {
+		&& m_sym_table.entries[m_sym_table.level].count(stmt_define_ast->identifier)>0) {
 		
 		
 		m_unit->m_error_handler.error(
@@ -82,7 +82,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
 	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.m_type == Type::Types::FN))
-		m_sym_table.add_symbol(stmt_define_ast->identifier.m_value);
+		m_sym_table.add_symbol(stmt_define_ast->identifier);
 
 	Type l_type = stmt_define_ast->define_type;
 	Type r_type;
@@ -129,7 +129,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		return NULL;
 	}
 
-	m_sym_table.set_symbol(stmt_define_ast->identifier.m_value,
+	m_sym_table.set_symbol(stmt_define_ast->identifier,
 		SymTableEntry(
 			nullptr,
 			&stmt_define_ast->define_type,
@@ -297,12 +297,38 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	if (m_sym_table.contains_symbol(expr_var_ast->identifier.m_value)) {
-		m_checked_type_ptr = (Type*)m_sym_table.get_symbol(expr_var_ast->identifier.m_value).type;
+	if (m_sym_table.contains_symbol(expr_var_ast->identifier)) {
+		m_checked_type_ptr = (Type*)m_sym_table.get_symbol(expr_var_ast->identifier).type;
 		m_checked_type = *m_checked_type_ptr;
 		return NULL;
 	}
-	// !@TODO check for similar symbols
+
+
+
+	
+	for (int level = m_sym_table.level; level > 0; level--) {
+		auto& entries = m_sym_table.entries[level];
+		for(const auto& [identifier, entry] : entries){
+			auto h_dist = hamming_distance(identifier.m_value, expr_var_ast->identifier.m_value);
+			kng_log("hamming distance: {} {} {}", h_dist, identifier, expr_var_ast->identifier.m_value);
+			if (h_dist <= 1) {
+	
+	
+				// find the position of that token
+	
+	
+				m_unit->m_error_handler.error(
+					Error::Level::CRITICAL,
+					Error::Type::MISSING_DELIMITER,
+					"symbol doesn't exist",
+					std::string("did you mean ").append(identifier.m_value),
+					expr_var_ast->m_position,
+					identifier.m_position
+				);
+				return NULL;
+			}
+		}
+	}
 	m_unit->m_error_handler.error(
 		Error::Level::CRITICAL,
 		Error::Type::MISSING_DELIMITER,
