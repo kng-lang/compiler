@@ -502,10 +502,16 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 	//!@TODO these should be in different functions
 	switch(expr_bin_ast->op.m_type){
 		case Token::Type::LOR: {
-			m_fetched_value = m_builder->CreateOr(lhs_value, rhs_value);
 			return NULL;
 		}
 		case Token::Type::LAND: {
+			return NULL;
+		}
+		case Token::Type::BOR: {
+			m_fetched_value = m_builder->CreateOr(lhs_value, rhs_value);
+			return NULL;
+		}
+		case Token::Type::BAND: {
 			m_fetched_value = m_builder->CreateAnd(lhs_value, rhs_value);
 			return NULL;
 		}

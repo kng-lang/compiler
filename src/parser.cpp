@@ -439,10 +439,22 @@ std::shared_ptr<AST> Parser::parse_land() {
 }
 std::shared_ptr<AST> Parser::parse_bor() {
 	auto higher_precedence = parse_band();
+	if (expect(Token::Type::BOR)) {
+		auto op = next();
+		auto rhs = parse_bor();
+		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(pm);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_band() {
 	auto higher_precedence = parse_eq();
+	if (expect(Token::Type::BAND)) {
+		auto op = next();
+		auto rhs = parse_band();
+		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(pm);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_eq() {
