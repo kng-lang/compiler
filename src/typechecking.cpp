@@ -306,26 +306,16 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 
 
 	
+	Token dist_token;
+	u32 max_dist = _UI32_MAX;
 	for (int level = m_sym_table.level; level > 0; level--) {
 		auto& entries = m_sym_table.entries[level];
 		for(const auto& [identifier, entry] : entries){
-			auto h_dist = hamming_distance(identifier.m_value, expr_var_ast->identifier.m_value);
-			kng_log("hamming distance: {} {} {}", h_dist, identifier, expr_var_ast->identifier.m_value);
-			if (h_dist <= 1) {
-	
-	
-				// find the position of that token
-	
-	
-				m_unit->m_error_handler.error(
-					Error::Level::CRITICAL,
-					Error::Type::MISSING_DELIMITER,
-					"symbol doesn't exist",
-					std::string("did you mean ").append(identifier.m_value),
-					expr_var_ast->m_position,
-					identifier.m_position
-				);
-				return NULL;
+			auto dist = levenshtein_distance(identifier.m_value, expr_var_ast->identifier.m_value);
+			kng_log("levenshtein_distance: {} {} {}", dist, identifier.m_value, expr_var_ast->identifier.m_value);
+			if (dist < max_dist) {
+				max_dist = dist;
+				dist_token = identifier;
 			}
 		}
 	}
@@ -333,7 +323,9 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 		Error::Level::CRITICAL,
 		Error::Type::MISSING_DELIMITER,
 		"symbol doesn't exist",
-		expr_var_ast->m_position
+		std::string("did you mean '").append(dist_token.m_value).append("'?"),
+		expr_var_ast->m_position,
+		dist_token.m_position
 	);
 	return NULL;
 }

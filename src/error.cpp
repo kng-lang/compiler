@@ -142,6 +142,8 @@ void ErrorHandler::print_error(Error& error) {
 
 	if (error.m_has_solution) {
 		std::cout << error.m_solution_msg << std::endl;
+		std::cout << pretty_format_str(error.m_solution_position, green) << std::endl;
+		std::cout << build_pointer(error.m_solution_position.m_index_start, error.m_solution_position.m_index_end, green) << std::endl;
 	}
 
 	//std::cout << "error (error code here) " <<

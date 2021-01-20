@@ -11,6 +11,7 @@ James Clarke - 2021
 
 struct Token{
 
+
 	struct Position {
 		u32 m_index_start;
 		u32 m_index_end;
@@ -155,6 +156,10 @@ struct Token{
 	std::string m_value;
 
 	std::string to_json();
+
+	bool operator<(const Token& o)  const {
+		return m_value < o.m_value;
+	}
 
 	void debug() {
 		kng_log("token: {}", debug_types[m_type]);
