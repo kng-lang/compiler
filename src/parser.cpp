@@ -443,6 +443,12 @@ std::shared_ptr<AST> Parser::parse_comp() {
 }
 std::shared_ptr<AST> Parser::parse_shift() {
 	auto higher_precedence = parse_pm();
+	if (expect(Token::Type::LSHIFT) || expect(Token::Type::RSHIFT)) {
+		auto op = next();
+		auto rhs = parse_shift();
+		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(pm);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_pm() {

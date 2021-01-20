@@ -545,6 +545,15 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 			m_fetched_value = add_instr;
 			return NULL;
 		};
+		case Token::Type::LSHIFT: {
+			m_fetched_value = m_builder->CreateShl(lhs_value, rhs_value);;
+			return NULL;
+		};
+
+		case Token::Type::RSHIFT: {
+			m_fetched_value = m_builder->CreateLShr(lhs_value, rhs_value);
+			return NULL;
+		};
 			// 
 	}
 

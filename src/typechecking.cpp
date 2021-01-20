@@ -312,7 +312,6 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 		auto& entries = m_sym_table.entries[level];
 		for(const auto& [identifier, entry] : entries){
 			auto dist = levenshtein_distance(identifier.m_value, expr_var_ast->identifier.m_value);
-			kng_log("levenshtein_distance: {} {} {}", dist, identifier.m_value, expr_var_ast->identifier.m_value);
 			if (dist < max_dist) {
 				max_dist = dist;
 				dist_token = identifier;
