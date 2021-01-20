@@ -501,6 +501,14 @@ void* LLVMCodeGen::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 
 	//!@TODO these should be in different functions
 	switch(expr_bin_ast->op.m_type){
+		case Token::Type::LOR: {
+			m_fetched_value = m_builder->CreateOr(lhs_value, rhs_value);
+			return NULL;
+		}
+		case Token::Type::LAND: {
+			m_fetched_value = m_builder->CreateAnd(lhs_value, rhs_value);
+			return NULL;
+		}
 		case Token::Type::PLUS: {
 			llvm::Value* add_instr;
 			if(expr_bin_ast->m_value_type==Type::Types::F32 

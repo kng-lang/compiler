@@ -419,10 +419,22 @@ std::shared_ptr<AST> Parser::parse_pattern() {
 
 std::shared_ptr<AST> Parser::parse_lor() { 
 	auto higher_precedence = parse_land();
+	if (expect(Token::Type::LOR)) {
+		auto op = next();
+		auto rhs = parse_lor();
+		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(pm);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_land() {
 	auto higher_precedence = parse_bor();
+	if (expect(Token::Type::LAND)) {
+		auto op = next();
+		auto rhs = parse_land();
+		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		return std::make_shared<ExprBinAST>(pm);
+	}
 	return higher_precedence;
 }
 std::shared_ptr<AST> Parser::parse_bor() {
