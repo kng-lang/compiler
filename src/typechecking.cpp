@@ -103,7 +103,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 	if (stmt_define_ast->is_initialised) {
-		if (!l_type.matches_basic(r_type)) {
+		if (!l_type.matches(r_type)) {
 			// @TODO the problem here is that if we are dealing with an array, we need to cast each element individually
 			if(r_type_ptr->can_niave_cast(l_type)) {
 				niave_cast_ast(l_type, stmt_define_ast->value);
@@ -174,7 +174,7 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	stmt_assign_ast->value->visit(this);
 	auto r_type = m_checked_type;
 	auto r_type_ptr = m_checked_type_ptr;
-	if (!l_type.matches_basic(r_type)) {
+	if (!l_type.matches(r_type)) {
 
 		// see if we can cast
 		if (l_type.can_niave_cast(r_type)) {
@@ -215,7 +215,7 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_interface_ast->m_is_lambda) {
-		expr_interface_ast->m_full_type.m_interface_signature.m_anonymous_identifier = m_sym_table.latest_entry.first;
+		expr_interface_ast->m_full_type.m_interface_anonymous_identifier = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
@@ -244,7 +244,7 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_fn_ast->is_lambda) {
-		expr_fn_ast->full_type.m_fn_signature.m_anonymous_identifier = m_sym_table.latest_entry.first;
+		expr_fn_ast->full_type.m_fn_anonymous_identifier = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
@@ -311,7 +311,7 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 	//	i++;
 	//}
 
-	Type return_type = fn_type.m_fn_signature.m_operation_types.at(0);
+	Type return_type = fn_type.m_fn_operation_types.at(0);
 	m_checked_type = return_type;
 	return NULL;
 }
@@ -421,7 +421,7 @@ void* TypeChecker::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_litera
 		if (!type_set)
 			contained_type = t;
 		else {
-			if (!contained_type.matches_basic(t)) {
+			if (!contained_type.matches(t)) {
 				kng_assert(false, "array values do not match!");
 				return NULL;
 			}

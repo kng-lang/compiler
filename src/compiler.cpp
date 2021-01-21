@@ -89,7 +89,7 @@ void CompilationUnit::compile_to_bin() {
 	if (m_error_handler.m_how_many>0)
 		return;
 	auto t1 = std::chrono::high_resolution_clock::now();
-	LLVMCodeGen generator(ast, this);
+	LLVMGenerator generator(ast, this);
 	generator.generate();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();

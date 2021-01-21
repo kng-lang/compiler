@@ -12,7 +12,7 @@
 #include "llvm/Transforms/Utils.h"
 #include "llvm/IR/BasicBlock.h"
 
-struct LLVMCodeGen : public Generator {
+struct LLVMGenerator : public Generator {
 
 
 	enum class FetchedType {
@@ -42,8 +42,8 @@ struct LLVMCodeGen : public Generator {
 
 	// used for types and instructions
 	SymTable<LLVMSymEntry> m_sym_table;
-	LLVMCodeGen() {}
-	LLVMCodeGen(std::shared_ptr<AST> ast, CompilationUnit* unit) : m_ast(ast), m_unit(unit) {}
+	LLVMGenerator() {}
+	LLVMGenerator(std::shared_ptr<AST> ast, CompilationUnit* unit) : m_ast(ast), m_unit(unit) {}
 	virtual void generate();
 	void make_runtime();
 	void optimise();

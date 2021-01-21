@@ -5,6 +5,18 @@
 
 struct x86Generator : public Generator {
 
+	enum class Register{
+		// x86_64 registers
+		// 8 bit registers
+		AH,	AL,	CH,	CL,	DH,	DL,	BH,	BL,	SPL, BPL, SIL, DIL,
+		// 16 bit registers
+		AX, CX, DX, BX, SP,	BP,	SI,	DI, 
+		// 32 bit registers
+		EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI,
+		// 64 bit registers
+		RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI
+	};
+
 
 	std::shared_ptr<AST> m_ast;
 	CompilationUnit* m_unit;

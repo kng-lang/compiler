@@ -13,28 +13,9 @@ James Clarke - 2021
 struct Type;
 struct AST;
 
-// the signature of an interface is made up of the type of its members
-struct InterfaceSignature{
-	Token m_anonymous_identifier;
-	std::vector<Type> m_members;
-};
-
-struct FnSignature {
-	Token m_anonymous_identifier;
-	// @TODO return type should be the first, but currently it isn't
-	std::vector<Type> m_operation_types;
-	u8 m_has_return = 0;
-	Token get_mangled_identifier() { return m_anonymous_identifier; }
-};
-
-struct Pattern {
-
-};
-
 struct Type {
 
 	const static char* debug_types[];
-
 
 
 	enum class Types : u8{
@@ -61,8 +42,9 @@ struct Type {
 		STRING,
 		FN,
 		INTERFACE,
-		PATTERN,		// sequence of types
+		PATTERN		// sequence of types
 	};
+	
 	Types m_type = Types::UNKNOWN;
 	// if this type is a generic in a fn e.g. (x : $generic){}, here x would have type generic.
 	// the compiler will then resolve this generic type at compile time
@@ -82,25 +64,126 @@ struct Type {
 	u8 m_is_constant = 0;
 	u8 m_is_global = 0;
 
-	std::vector<Type> m_patterns;
-	InterfaceSignature m_interface_signature;
-	FnSignature m_fn_signature;
+
+
+	
+	/*
+	
+	NAMESPACES
+	
+	This exposes all the identifiers in a given namespace.
+	e.g. for a file main.kng with 3 variables: a, b & c.
+	The m_identifiers variable would contain a, b & c
+	*/
+	std::vector<Token> m_namespace_identifiers;
+
+	/*
+	
+	INTERFACES
+	
+	This is used to define what matching behaviour the user is trying to implement.
+
+	say we have 2 interfaces
+
+	a : {
+		x : u8;
+	}
+
+	b : {
+		x : u8;
+		y : u8;
+	}
+
+	if we did a.match(b, LOOSE), this would return true, as b implements all the members of a.
+	however if we did a.match(b, EXACT), this would return false as b implements more members than a.
+
+	*/
+	enum class InterfaceMatchType {
+		LOOSE,
+		EXACT,
+	};
+
+	Token m_interface_anonymous_identifier;
+	std::vector<Type> m_interface_members;
+
+	u8 matches_interface(Type& other, InterfaceMatchType match_type) {
+		if (match_type == InterfaceMatchType::LOOSE) {
+			// iterate through our members and check if the other types implement them
+			for (s32 i = 0; i < m_interface_members.size(); i++) {
+				u8 found = 0;
+				for (s32 j = 0; j < other.m_interface_members.size(); j++)
+					if (m_interface_members.at(0).matches(other.m_interface_members.at(j)))
+						found = 1;
+				// if the other type doesn't implement it then return false
+				if (!found)
+					return 0;
+			}
+		}
+		else if (match_type == InterfaceMatchType::EXACT) {
+			if (other.m_interface_members.size() != m_interface_members.size())
+				return 0;
+			for (s32 i = 0; i < m_interface_members.size(); i++) {
+				if (!m_interface_members.at(i).matches(other.m_interface_members.at(i)))
+					return 0;
+			}
+		}
+		return 1;
+	}
+
+	/*
+	
+	FUNCTION
+
+	*/
+
+	Token m_fn_anonymous_identifier;
+	// index 0 is the return type
+	std::vector<Type> m_fn_operation_types;
+	u8 m_fn_has_return = 0;
+
+
+	// unlike interfaces, functions can only match if they both have the same arguments and return types
+	u8 matches_fn(Type& other) {
+		if (m_fn_operation_types.size() != other.m_fn_operation_types.size())
+			return 0;
+		for (s32 i = 0; i < m_fn_operation_types.size(); i++)
+			if (!m_fn_operation_types.at(i).matches(other.m_fn_operation_types.at(i)))
+				return 0;
+		return 1;
+	}
+
+	/*
+	
+	PATTERN
+
+	*/
+
+	std::vector<Type> m_pattern_types;
+	
+	u8 matches_pattern(Type& other) {
+		if (m_pattern_types.size() != other.m_pattern_types.size())
+			return 0;
+		for (s32 i = 0; i < m_pattern_types.size(); i++)
+			if (!m_pattern_types.at(i).matches(other.m_pattern_types.at(i)))
+				return 0;
+		return 1;
+	}
+
 
 	Type(){}
 	Type(Types t) : m_type(t){}
-	Type(Types t, u8 ptr_indirection) : m_type(t), m_ptr_indirection(ptr_indirection){}
-	Type(Types t, u8 is_arr, u32 arr_length) : m_type(t), m_is_arr(is_arr), m_arr_length(arr_length) {}
-	Type(Types t, u8 pattern, std::vector<Type> types) : m_type(t), m_is_pattern(pattern), m_patterns(m_patterns) {}
-	Type(Types t, FnSignature fn_sig) : m_type(t), m_fn_signature(fn_sig) {}
-	Type(Types t, InterfaceSignature interface_sig) : m_type(t), m_interface_signature(interface_sig) {}
+
+	static Type create_basic(Type::Types t);
+	static Type create_array(Type::Types t, u32 length);
+	static Type create_fn(u8 has_return, std::vector<Type> op_types);
+	static Type create_interface(std::vector<Type> member_types);
+	static Type create_pointer(Type::Types t, u32 ptr_indirection);
+	static Type create_pattern(std::vector<Type> types);
 
 	std::string to_json();
 
 	// matches basic determines whether a type's type (e.g. u8, interface, etc) is the same
-	u8 matches_basic(Type other);
-
-	// matches deep determines whether a type's full type signature matches (e.g. do the members match etc)
-	u8 matches_deep(Type other);
+	u8 matches(Type other);
 
 	// this is for when we have different number types that the compiler tries to cast implicitly
 	// an example is y : u8 = 1, by default integers are s32 and so the compiler tries to cast 1 to u8
@@ -109,6 +192,11 @@ struct Type {
 	u8 is_number_type();
 	u8 is_integer_type();
 	u8 is_float_type();
+	u8 is_interface();
+	u8 is_fn();
+	u8 is_array();
+	u8 is_pattern();
+	u8 is_pointer();
 };
 
 struct Value {

@@ -274,7 +274,7 @@ Type Parser::parse_type() {
 	case Token::Type::INTERFACE: t = Type(Type::Types::INTERFACE); break;
 	case Token::Type::IDENTIFIER: {
 		t = Type(Type::Types::INTERFACE);
-		t.m_interface_signature.m_anonymous_identifier = prev();
+		t.m_interface_anonymous_identifier = prev();
 		break;
 	}
 	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
@@ -593,7 +593,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 					consume(Token::Type::COMMA);
 			}
 			consume(Token::Type::RCURLY);
-			return std::make_shared<ExprLiteralArrayAST>(prev().m_position, Type(Type::Types::UNKNOWN), Type(Type::Types::UNKNOWN), array_values.size(), array_values);
+			return std::make_shared<ExprLiteralArrayAST>(prev().m_position, Type::create_basic(Type::Types::UNKNOWN), Type::create_basic(Type::Types::UNKNOWN), array_values.size(), array_values);
 		}
 		case Token::Type::IDENTIFIER: {
 			return std::make_shared<ExprVarAST>(prev().m_position, t);
@@ -602,9 +602,9 @@ std::shared_ptr<AST> Parser::parse_single(){
 			ExprLiteralAST lit_ast;
 			lit_ast.m_position = prev().m_position;
 			if(t.m_value.find('.') != std::string::npos)
-				lit_ast.t = Type(Type::Types::F32, 0);
+				lit_ast.t = Type::create_basic(Type::Types::F32);
 			else
-				lit_ast.t = Type(Type::Types::S32, 0);
+				lit_ast.t = Type::create_basic(Type::Types::S32);
 			lit_ast.v.value = t.m_value;
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 			break;
@@ -636,14 +636,14 @@ std::shared_ptr<AST> Parser::parse_single(){
 		case Token::Type::TRU: {
 			ExprLiteralAST lit_ast;
 			lit_ast.m_position = prev().m_position;
-			lit_ast.t = Type(Type::Types::U8, 0);
+			lit_ast.t = Type::create_basic(Type::Types::U8);
 			lit_ast.v.value = "1";
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
 		case Token::Type::FLSE: {
 			ExprLiteralAST lit_ast;
 			lit_ast.m_position = prev().m_position;
-			lit_ast.t = Type(Type::Types::U8, 0);
+			lit_ast.t = Type::create_basic(Type::Types::U8);
 			lit_ast.v.value = "0";
 			return std::make_shared<ExprLiteralAST>(lit_ast);
 		}
@@ -658,21 +658,22 @@ std::shared_ptr<AST> Parser::parse_single(){
 				// doing fn
 				ExprFnAST fn_ast;
 				fn_ast.m_position = prev().m_position;
-				FnSignature fn_sig;
+				std::vector<Type> operation_types;
+				u8 has_return = 0;
 				fn_ast.is_lambda = 1;
 				// the fn can only be a lambda if it isn't being assigned to a constant
 				// e.g. x : (){} is the only way a fn can be a lambda
 				fn_ast.is_lambda = !m_parsing_constant_assignment;
 				// !@TODO this needs to be resolved to a token
-				fn_sig.m_anonymous_identifier.m_value = "lambda";
 
 
-				fn_sig.m_operation_types.push_back(Type(Type::Types::U0));
+
+				operation_types.push_back(Type(Type::Types::U0));
 				std::vector<std::shared_ptr<AST>> params;
 				while (!expect(Token::Type::RPAREN)) {
 					auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
 					define->define_type.m_is_arg = 1;
-					fn_sig.m_operation_types.push_back(define->define_type);
+					operation_types.push_back(define->define_type);
 					params.push_back(define);
 					if (!expect(Token::Type::RPAREN))
 						consume(Token::Type::COMMA);
@@ -681,10 +682,10 @@ std::shared_ptr<AST> Parser::parse_single(){
 				fn_ast.params = params;
 				// TODO move return type to the start
 				if (expecting_type()) {
-					fn_sig.m_operation_types.at(0) = parse_type();
-					fn_sig.m_has_return = 1;
+					operation_types.at(0) = parse_type();
+					has_return = 1;
 				}
-				fn_ast.full_type = Type(Type::Types::FN, fn_sig);
+				fn_ast.full_type = Type::create_fn(has_return, operation_types);
 				// we need to check if the fn has a body
 				if (!expect(Token::Type::SEMI_COLON)) {
 					fn_ast.has_body = 1;
@@ -729,24 +730,20 @@ std::shared_ptr<AST> Parser::parse_interface() {
 
 	kng_log("parsing interface");
 
-
-
-
 	ExprInterfaceAST expr_interface;
 	expr_interface.m_position = prev().m_position;
 
-	InterfaceSignature interface_signature;
+	std::vector<Type> members;
 
 	consume(Token::LCURLY);
 
 	// a list of definition
 	while (!consume(Token::RCURLY)) {
 		auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
-		interface_signature.m_members.push_back(define->define_type);
+		members.push_back(define->define_type);
 		expr_interface.m_definitions.push_back(define);
 	}
-
-	expr_interface.m_full_type = Type(Type::Types::INTERFACE, interface_signature);
+	expr_interface.m_full_type = Type::create_interface(members);
 	return std::make_shared<ExprInterfaceAST>(expr_interface);
 }
 

@@ -63,6 +63,24 @@ u8 Type::is_float_type() {
 	return m_type == Types::F32 || m_type == Types::F64;
 }
 
+u8 Type::is_interface(){
+	return m_type == Types::INTERFACE;
+}
+u8 Type::is_fn(){
+	return m_type == Types::FN;
+}
+
+u8 Type::is_array(){
+	return m_is_arr;
+}
+
+u8 Type::is_pattern(){
+	return m_type == Types::PATTERN;
+}
+u8 Type::is_pointer(){
+	return m_ptr_indirection!=0;
+}
+
 /*template <typename T>
 void SymTable<T>::add_symbol(std::string identifier, T entry) {
 	entries[level][identifier] = entry;
@@ -89,26 +107,22 @@ void SymTable<T>::pop_scope() {
 }*/
 
 
-u8 Type::matches_basic(Type other){
-
-	return 
-		// the reason if this is set, then we match is because x : type = u32, x : type = f32 etc, any are valid
-		this->m_type == Type::Types::TYPE ||
-		
-		(this->m_type == other.m_type
-		&& this->m_is_arr == other.m_is_arr
-		&& this->m_arr_length == other.m_arr_length
-		&& this->m_ptr_indirection == other.m_ptr_indirection);
+u8 Type::matches(Type other){
+	switch (m_type) {
+		case Type::Types::FN: return matches_fn(other);
+		case Type::Types::INTERFACE: return matches_interface(other, Type::InterfaceMatchType::EXACT);
+		case Type::Types::PATTERN: return matches_pattern(other);
+		// a type is either x : type = u32; or is x : type = {...};
+		// it's used to type alias a type 
+		case Type::Types::TYPE: return (other.m_type == Types::TYPE || other.m_type == Types::INTERFACE);
+		default:
+			return
+				this->m_type == other.m_type
+				&& this->m_is_arr == other.m_is_arr
+				&& this->m_arr_length == other.m_arr_length
+				&& this->m_ptr_indirection == other.m_ptr_indirection;
+	}
 }
-
-u8 Type::matches_deep(Type other){
-
-	return this->m_type == other.m_type
-		&& this->m_is_arr == other.m_is_arr
-		&& this->m_arr_length == other.m_arr_length;
-		// && this->interface_signature.matches(other.interface_signature);
-}
-
 
 
 Type niavely_cast_to_master_type(Type* lhs, Type* rhs){
@@ -132,4 +146,42 @@ Type niavely_cast_to_master_type(Type* lhs, Type* rhs){
 		rhs->cast(highest_type);
 	}
 	return highest_type;
+}
+
+
+
+Type Type::create_basic(Type::Types t){
+	return Type(t);
+}
+
+Type Type::create_pointer(Type::Types t, u32 ptr_indirection) {
+	auto type = Type(t);
+	type.m_ptr_indirection = ptr_indirection;
+	return type;
+}
+
+Type Type::create_array(Type::Types t, u32 length) {
+	auto type = Type(t);
+	type.m_is_arr = 1;
+	type.m_arr_length = length;
+	return type;
+}
+
+Type Type::create_fn(u8 has_return, std::vector<Type> op_types) {
+	auto type = Type(Type::Types::FN);
+	type.m_fn_operation_types = op_types;
+	type.m_fn_has_return = has_return;
+	return type;
+}
+
+Type Type::create_interface(std::vector<Type> member_types){
+	auto type = Type(Type::Types::INTERFACE);
+	type.m_interface_members = member_types;
+	return type;
+}
+
+Type Type::create_pattern(std::vector<Type> types) {
+	auto type = Type(Type::Types::PATTERN);
+	type.m_pattern_types = types;
+	return type;
 }
