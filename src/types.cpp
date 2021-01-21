@@ -39,9 +39,15 @@ Type infer_type(std::shared_ptr<AST> ast){
 }
 
 u8 Type::can_niave_cast(Type other) {
-	if (is_number_type() && other.is_number_type() 
+	if ((is_number_type() && other.is_number_type() 
 		&& m_arr_length==other.m_arr_length 
-		&& m_ptr_indirection==other.m_ptr_indirection) {
+		&& m_ptr_indirection==other.m_ptr_indirection)
+		
+		
+		|| 
+		
+		// we can cast an interface to a type because we take takes it's type signature
+		(m_type==Types::INTERFACE || other.m_type==Types::TYPE)) {
 		return 1;
 	}
 	return 0;
@@ -108,6 +114,8 @@ void SymTable<T>::pop_scope() {
 
 
 u8 Type::matches(Type other){
+	if (this->m_type != other.m_type)
+		return 0;
 	switch (m_type) {
 		case Type::Types::FN: return matches_fn(other);
 		case Type::Types::INTERFACE: return matches_interface(other, Type::InterfaceMatchType::EXACT);
@@ -117,8 +125,7 @@ u8 Type::matches(Type other){
 		case Type::Types::TYPE: return (other.m_type == Types::TYPE || other.m_type == Types::INTERFACE);
 		default:
 			return
-				this->m_type == other.m_type
-				&& this->m_is_arr == other.m_is_arr
+				this->m_is_arr == other.m_is_arr
 				&& this->m_arr_length == other.m_arr_length
 				&& this->m_ptr_indirection == other.m_ptr_indirection;
 	}

@@ -109,12 +109,12 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				niave_cast_ast(l_type, stmt_define_ast->value);
 			}
 			else {
-				m_unit->m_error_handler.error("types do not match",
-					stmt_define_ast->identifier.m_index,
-					stmt_define_ast->identifier.m_line,
-					stmt_define_ast->identifier.m_index + stmt_define_ast->identifier.m_length,
-					stmt_define_ast->identifier.m_line);
-					return NULL;
+				m_unit->m_error_handler.error(
+					Error::Level::CRITICAL,
+					Error::Type::TYPE_MISMATCH,
+					"types do not match",
+					stmt_define_ast->value->m_position
+				);
 			}
 		}
 	}
