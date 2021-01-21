@@ -220,7 +220,9 @@ struct StmtLoopAST : public StatementAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
-// e.g. x : interface = { y : s32 }
+
+// this is the actual interface definition, not an inline inline interace, array literals are used for that
+// e.g. { y : s32 }
 struct ExprInterfaceAST : public ExpressionAST {
 	std::vector<std::shared_ptr<AST>> m_definitions;
 	u8 m_is_lambda = 0; // this is used for name resolution

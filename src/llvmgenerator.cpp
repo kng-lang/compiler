@@ -164,8 +164,8 @@ llvm::Type* LLVMGenerator::convert_type(Type type) {
 		case Type::Types::F32:    tmp_type = llvm::Type::getFloatTy(*m_context); break;
 		case Type::Types::F64:    tmp_type = llvm::Type::getDoubleTy(*m_context); break;
 		case Type::Types::CHAR:   tmp_type = llvm::Type::getInt8Ty(*m_context); break; // ASCII FOR NOW?
-		case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)m_sym_table.get_symbol(type.m_fn_anonymous_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
-		case Type::Types::INTERFACE: tmp_type = (llvm::StructType*)(m_sym_table.get_symbol(type.m_interface_anonymous_identifier).optional_data);
+		case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)m_sym_table.get_symbol(type.m_fn_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
+		case Type::Types::INTERFACE: tmp_type = (llvm::StructType*)(m_sym_table.get_symbol(type.m_interface_identifier).optional_data);
 		case Type::Types::STRING: tmp_type = llvm::Type::getInt8PtrTy(*m_context); break; // @TODO return a reference to the string interface using the symbol table
 
 	}
@@ -193,6 +193,14 @@ llvm::Value* LLVMGenerator::convert_fetched_to_value() {
 	}
 	return NULL;
 }
+
+llvm::Value* LLVMGenerator::instantiate_struct(llvm::StructType* type) {
+	auto creation_instr = m_builder->CreateAlloca(type);
+	return creation_instr;
+}
+
+
+
 
 void* LLVMGenerator::visit_program(ProgramAST* program_ast){
 	for (const auto& stmt : program_ast->stmts)
@@ -280,7 +288,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (stmt_define_ast->define_type.m_type == Type::Types::INTERFACE) {
 
 		// first get the llvm::StructType* from the define type e.g. x : vec
-		llvm::StructType* type = (llvm::StructType*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_anonymous_identifier).optional_data;
+		llvm::StructType* type = (llvm::StructType*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_identifier).optional_data;
 		auto creation_instr = m_builder->CreateAlloca(type);
 		//if (stmt_define_ast->is_initialised) {
 		//	stmt_define_ast->value->visit(this);
@@ -415,7 +423,7 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
 
 	// create the struct and the virtual table for the struct
-	auto name = llvm::StringRef(expr_interface_ast->m_full_type.m_interface_anonymous_identifier.m_value);
+	auto name = llvm::StringRef(expr_interface_ast->m_full_type.m_interface_identifier.m_value);
 	auto interface_type = llvm::StructType::create(*m_context, name);
 
 	std::vector<llvm::Type*> members;
@@ -424,10 +432,10 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 	}
 
 	interface_type->setBody(llvm::ArrayRef<llvm::Type*>(members));
-	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_full_type.m_interface_anonymous_identifier.m_value));
+	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_full_type.m_interface_identifier.m_value));
 	
 	m_sym_table.add_symbol(
-		expr_interface_ast->m_full_type.m_interface_anonymous_identifier,
+		expr_interface_ast->m_full_type.m_interface_identifier,
 		SymTableEntry(interface_type, &expr_interface_ast->m_full_type, 0, 0)
 	);
 
@@ -451,7 +459,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 
 	llvm::FunctionType* ft = llvm::FunctionType::get(return_type, param_types, false);
-	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_anonymous_identifier.m_value, *m_module);
+	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_identifier.m_value, *m_module);
 	
 
 	
@@ -505,7 +513,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 	m_sym_table.pop_scope();
 	// add the fn type to the symbol table
-	m_sym_table.add_symbol(expr_fn_ast->full_type.m_fn_anonymous_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
+	m_sym_table.add_symbol(expr_fn_ast->full_type.m_fn_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
 	m_fetched_value = f;
 	return NULL;
 }

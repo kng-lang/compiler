@@ -215,7 +215,7 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_interface_ast->m_is_lambda) {
-		expr_interface_ast->m_full_type.m_interface_anonymous_identifier = m_sym_table.latest_entry.first;
+		expr_interface_ast->m_full_type.m_interface_identifier = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
@@ -244,7 +244,7 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_fn_ast->is_lambda) {
-		expr_fn_ast->full_type.m_fn_anonymous_identifier = m_sym_table.latest_entry.first;
+		expr_fn_ast->full_type.m_fn_identifier = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();

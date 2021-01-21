@@ -5,6 +5,7 @@ James Clarke - 2021
 #include "parser.h"
 #include "compiler.h"
 
+
 Parser::Parser(){}
 
 Parser::Parser(TokenList& tokens, CompilationUnit* unit){
@@ -260,21 +261,22 @@ Type Parser::parse_type() {
 	}
 
 	switch (next().m_type) {
-	case Token::Type::U0: t = Type(Type::Types::U0); break;
-	case Token::Type::U8: t = Type(Type::Types::U8); break;
-	case Token::Type::S8: t = Type(Type::Types::S8); break;
-	case Token::Type::U16: t = Type(Type::Types::U16); break;
-	case Token::Type::S16: t = Type(Type::Types::S16); break;
-	case Token::Type::U32: t = Type(Type::Types::U32); break;
-	case Token::Type::S32: t = Type(Type::Types::S32); break;
-	case Token::Type::S64: t = Type(Type::Types::S64); break;
-	case Token::Type::F32: t = Type(Type::Types::F32); break;
-	case Token::Type::F64: t = Type(Type::Types::F64); break;
-	case Token::Type::CHAR: t = Type(Type::Types::CHAR); break;
-	case Token::Type::INTERFACE: t = Type(Type::Types::INTERFACE); break;
+	case Token::Type::U0: t = Type::create_basic(Type::Types::U0); break;
+	case Token::Type::U8: t = Type::create_basic(Type::Types::U8); break;
+	case Token::Type::S8: t = Type::create_basic(Type::Types::S8); break;
+	case Token::Type::U16: t = Type::create_basic(Type::Types::U16); break;
+	case Token::Type::S16: t = Type::create_basic(Type::Types::S16); break;
+	case Token::Type::U32: t = Type::create_basic(Type::Types::U32); break;
+	case Token::Type::S32: t = Type::create_basic(Type::Types::S32); break;
+	case Token::Type::S64: t = Type::create_basic(Type::Types::S64); break;
+	case Token::Type::F32: t = Type::create_basic(Type::Types::F32); break;
+	case Token::Type::F64: t = Type::create_basic(Type::Types::F64); break;
+	case Token::Type::CHAR: t = Type::create_basic(Type::Types::CHAR); break;
+	case Token::Type::INTERFACE: t = Type::create_basic(Type::Types::INTERFACE); break;
 	case Token::Type::IDENTIFIER: {
+		// !@TODO here, we need the typechecker to resolve the full type of the interface
 		t = Type(Type::Types::INTERFACE);
-		t.m_interface_anonymous_identifier = prev();
+		t.m_interface_identifier = prev();
 		break;
 	}
 	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
@@ -381,6 +383,10 @@ std::shared_ptr<AST> Parser::parse_assign() {
 	auto higher_precedence = parse_expression();
 	if (consume(Token::ASSIGN)) {
 		auto assign_value = parse_expression();
+
+		// !@TODO we should be able to assign to any lvalue
+
+
 		// we need to check if we are setting a variable, or an interface member
 		switch (higher_precedence->type()) {
 			case AST::ASTType::EXPR_GET: {
@@ -390,9 +396,7 @@ std::shared_ptr<AST> Parser::parse_assign() {
 				return std::make_shared<StmtInterfaceAssignAST>(prev().m_position, interface_value, member_token, assign_value);
 			}
 			default: {
-
 				return std::make_shared<StmtAssignAST>(prev().m_position, higher_precedence, assign_value);
-
 				//@TODO use AST position information
 				m_unit->m_error_handler.error(
 					Error::Level::CRITICAL,
@@ -586,6 +590,27 @@ std::shared_ptr<AST> Parser::parse_single(){
 	switch (t.m_type) {
 		// array literal for now
 		case Token::Type::LCURLY: {
+
+
+			/*
+			
+			
+			{ can be used for multiple singular expressions
+
+			1. array				    { 1, 2, 3  }
+				note the array can also be used for interface initialisation
+			2. interface definition     { x : u32; }
+
+			
+			
+			*/
+
+
+			// this is an interface definition :)
+			if(expecting_def()){
+				return parse_interface();
+			}
+
 			std::vector<std::shared_ptr<AST>> array_values;
 			while (!expect(Token::Type::RCURLY)) {
 				array_values.push_back(parse_single());
@@ -655,43 +680,7 @@ std::shared_ptr<AST> Parser::parse_single(){
 			// if not then its a group
 
 			if(expect(Token::Type::RPAREN) || expecting_def()){
-				// doing fn
-				ExprFnAST fn_ast;
-				fn_ast.m_position = prev().m_position;
-				std::vector<Type> operation_types;
-				u8 has_return = 0;
-				fn_ast.is_lambda = 1;
-				// the fn can only be a lambda if it isn't being assigned to a constant
-				// e.g. x : (){} is the only way a fn can be a lambda
-				fn_ast.is_lambda = !m_parsing_constant_assignment;
-				// !@TODO this needs to be resolved to a token
-
-
-
-				operation_types.push_back(Type(Type::Types::U0));
-				std::vector<std::shared_ptr<AST>> params;
-				while (!expect(Token::Type::RPAREN)) {
-					auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
-					define->define_type.m_is_arg = 1;
-					operation_types.push_back(define->define_type);
-					params.push_back(define);
-					if (!expect(Token::Type::RPAREN))
-						consume(Token::Type::COMMA);
-				}
-				consume(Token::Type::RPAREN);
-				fn_ast.params = params;
-				// TODO move return type to the start
-				if (expecting_type()) {
-					operation_types.at(0) = parse_type();
-					has_return = 1;
-				}
-				fn_ast.full_type = Type::create_fn(has_return, operation_types);
-				// we need to check if the fn has a body
-				if (!expect(Token::Type::SEMI_COLON)) {
-					fn_ast.has_body = 1;
-					fn_ast.body = parse_stmt();
-				}
-				return std::make_shared<ExprFnAST>(fn_ast);
+				return parse_fn();
 			}else {
 				auto expression = parse_expression();
 				if (!consume(Token::Type::RPAREN)) {
@@ -723,7 +712,43 @@ std::shared_ptr<AST> Parser::parse_single(){
 
 
 std::shared_ptr<AST> Parser::parse_fn(){
-	return NULL;
+	// doing fn
+	ExprFnAST fn_ast;
+	fn_ast.m_position = prev().m_position;
+	std::vector<Type> operation_types;
+	u8 has_return = 0;
+	fn_ast.is_lambda = 1;
+	// the fn can only be a lambda if it isn't being assigned to a constant
+	// e.g. x : (){} is the only way a fn can be a lambda
+	fn_ast.is_lambda = !m_parsing_constant_assignment;
+	// !@TODO this needs to be resolved to a token
+
+
+
+	operation_types.push_back(Type(Type::Types::U0));
+	std::vector<std::shared_ptr<AST>> params;
+	while (!expect(Token::Type::RPAREN)) {
+		auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
+		define->define_type.m_is_arg = 1;
+		operation_types.push_back(define->define_type);
+		params.push_back(define);
+		if (!expect(Token::Type::RPAREN))
+			consume(Token::Type::COMMA);
+	}
+	consume(Token::Type::RPAREN);
+	fn_ast.params = params;
+	// TODO move return type to the start
+	if (expecting_type()) {
+		operation_types.at(0) = parse_type();
+		has_return = 1;
+	}
+	fn_ast.full_type = Type::create_fn(has_return, operation_types);
+	// we need to check if the fn has a body
+	if (!expect(Token::Type::SEMI_COLON)) {
+		fn_ast.has_body = 1;
+		fn_ast.body = parse_stmt();
+	}
+	return std::make_shared<ExprFnAST>(fn_ast);
 }
 
 std::shared_ptr<AST> Parser::parse_interface() {

@@ -51,6 +51,10 @@ struct LLVMGenerator : public Generator {
 	// call this if we need the fetched_value as a value ready to be used.
 	// e.g. convert StoreInstr to LoadInstr to use a variable
 	llvm::Value* convert_fetched_to_value();
+
+	llvm::Value* instantiate_struct(llvm::StructType* type);
+
+
 	virtual void* visit_program(ProgramAST* program_ast);
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast);
 	virtual void* visit_stmt_expression(StmtExpressionAST* stmt_expression_ast);

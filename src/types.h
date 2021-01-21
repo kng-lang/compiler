@@ -103,7 +103,7 @@ struct Type {
 		EXACT,
 	};
 
-	Token m_interface_anonymous_identifier;
+	Token m_interface_identifier;
 	std::vector<Type> m_interface_members;
 
 	u8 matches_interface(Type& other, InterfaceMatchType match_type) {
@@ -136,7 +136,7 @@ struct Type {
 
 	*/
 
-	Token m_fn_anonymous_identifier;
+	Token m_fn_identifier;
 	// index 0 is the return type
 	std::vector<Type> m_fn_operation_types;
 	u8 m_fn_has_return = 0;
