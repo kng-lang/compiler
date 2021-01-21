@@ -9,7 +9,7 @@ James Clarke - 2021
 #include "lexer.h"
 #include "parser.h"
 #include "types.h"
-#include "generator.h"
+#include "llvmgenerator.h"
 #include "typechecking.h"
 
 CompilationUnit::CompilationUnit(CompileFile compile_file, Compiler* compiler)
