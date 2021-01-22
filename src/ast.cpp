@@ -207,7 +207,7 @@ void* ExprVarAST::visit(ASTVisitor* visitor) {
 std::string ExprPatternAST::to_json() {
 	std::stringstream ss;
 	ss << "{\n\"type\": \"ExprPatternAST\",\nasts: [\n";
-	for (const auto& ast : asts) {
+	for (const auto& ast : m_values) {
 		ss << ast->to_json() << ",\n";
 	}
 	ss << "]\n}\n";

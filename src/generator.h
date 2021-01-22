@@ -37,6 +37,7 @@ struct Generator : public ASTVisitor {
 	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast) = 0;
 	virtual void* visit_expr_cast_ast(ExprCastAST* expr_cast_ast) = 0;
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
+	virtual void* visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast) = 0;
 	virtual void* visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) = 0;
 	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast) = 0;
 	virtual void* visit_expr_un_ast(ExprUnAST* expr_un_ast) = 0;

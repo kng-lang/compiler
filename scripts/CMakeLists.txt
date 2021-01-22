@@ -54,7 +54,6 @@ set(ALL_FILES
 	../src/exporter.cpp
 	../src/llvmgenerator.cpp
 	../src/x86generator.cpp
-	../src/generator.cpp
 	../src/lexer.cpp
 	../src/main.cpp
 	../src/parser.cpp

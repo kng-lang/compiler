@@ -349,6 +349,14 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	return NULL;
 }
 
+void* TypeChecker::visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast){
+	for (const auto& value : expr_pattern_ast->m_values)
+		value->visit(this);
+	m_checked_type = expr_pattern_ast->m_type;
+	m_checked_type_ptr = &expr_pattern_ast->m_type;
+	return NULL;
+}
+
 void* TypeChecker::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) { return NULL; }
 
 void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { 

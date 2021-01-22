@@ -575,6 +575,12 @@ void* LLVMGenerator::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	}
 	return NULL;
 }
+
+
+void* LLVMGenerator::visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast){
+	return NULL;
+}
+
 void* LLVMGenerator::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) {
 	return NULL;
 }

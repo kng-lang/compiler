@@ -416,12 +416,12 @@ std::shared_ptr<AST> Parser::parse_assign() {
 std::shared_ptr<AST> Parser::parse_pattern() {
 	auto higher_precedence = parse_lor();
 	// @TODO figure out how to check a pattern when no comma is used
-	if (consume(Token::Type::COMMA)) {
-		std::vector<std::shared_ptr<AST>> asts;
-		asts.push_back(higher_precedence);
-		while(expect(Token::Type::COMMA))
-			asts.push_back(parse_expression());
-		auto pattern = ExprPatternAST(asts);
+	if (expect(Token::Type::COMMA)) {
+		std::vector<std::shared_ptr<AST>> values;
+		values.push_back(higher_precedence);
+		while(consume(Token::Type::COMMA))
+			values.push_back(parse_expression());
+		auto pattern = ExprPatternAST(higher_precedence->m_position, values);
 		return std::make_shared<ExprPatternAST>(pattern);
 	}
 	return higher_precedence;

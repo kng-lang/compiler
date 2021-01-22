@@ -289,9 +289,10 @@ struct ExprVarAST : public ExpressionAST {
 
 
 struct ExprPatternAST : public ExpressionAST {
-	std::vector<std::shared_ptr<AST>> asts;
+	std::vector<std::shared_ptr<AST>> m_values;
+	Type m_type;
 	ExprPatternAST(){}
-	ExprPatternAST(std::vector<std::shared_ptr<AST>> asts) : asts(asts) {}
+	ExprPatternAST(Token::Position position, std::vector<std::shared_ptr<AST>> asts) : ExpressionAST(position), m_values(asts) {}
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_PATTERN; }
 	virtual void* visit(ASTVisitor* visitor);
@@ -426,6 +427,7 @@ struct ASTVisitor {
 	virtual void* visit_expr_cast_ast(ExprCastAST* expr_cast_ast) = 0;
 	virtual void* visit_expr_call_ast(ExprCallAST* expr_call_ast) = 0;
 	virtual void* visit_expr_var_ast(ExprVarAST* expr_var_ast) = 0;
+	virtual void* visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast) = 0;
 	virtual void* visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) = 0;
 	virtual void* visit_expr_bin_ast(ExprBinAST* expr_bin_ast) = 0;
 	virtual void* visit_expr_un_ast(ExprUnAST* expr_un_ast) = 0;
