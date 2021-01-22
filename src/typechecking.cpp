@@ -112,7 +112,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				m_unit->m_error_handler.error(
 					Error::Level::CRITICAL,
 					Error::Type::TYPE_MISMATCH,
-					"types do not match",
+					std::string("types do not match. got ").append(Type::debug_types[(u32)r_type.m_type]).append(", expected ").append(Type::debug_types[(u32)l_type.m_type]),
 					stmt_define_ast->value->m_position
 				);
 			}

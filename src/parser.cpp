@@ -227,7 +227,7 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::F32)
 		|| expect(Token::Type::F64)
 		|| expect(Token::Type::CHAR)
-	//	|| expect(Token::Type::INTERFACE)
+		|| expect(Token::Type::INTERFACE)
 		|| expect(Token::Type::IDENTIFIER)
 		|| expect(Token::Type::STRING)
 		|| expect(Token::Type::POINTER)
@@ -416,17 +416,14 @@ std::shared_ptr<AST> Parser::parse_assign() {
 std::shared_ptr<AST> Parser::parse_pattern() {
 	auto higher_precedence = parse_lor();
 	// @TODO figure out how to check a pattern when no comma is used
-	//if (consume(Token::Type::COMMA)) {
-	//	std::vector<std::shared_ptr<AST>> asts;
-	//	asts.push_back(higher_precedence);
-	//	while (!expect(Token::Type::END)) {
-	//		asts.push_back(parse_lor());
-	//		// consume comma if it exists e.g. a, b, c or a b c
-	//		consume(Token::Type::COMMA);
-	//	}
-	//	auto pattern = ExprPatternAST(asts);
-	//	return std::make_shared<ExprPatternAST>(pattern);
-	//}
+	if (consume(Token::Type::COMMA)) {
+		std::vector<std::shared_ptr<AST>> asts;
+		asts.push_back(higher_precedence);
+		while(expect(Token::Type::COMMA))
+			asts.push_back(parse_expression());
+		auto pattern = ExprPatternAST(asts);
+		return std::make_shared<ExprPatternAST>(pattern);
+	}
 	return higher_precedence;
 }
 

@@ -43,11 +43,10 @@ u8 Type::can_niave_cast(Type other) {
 		&& m_arr_length==other.m_arr_length 
 		&& m_ptr_indirection==other.m_ptr_indirection)
 		
-		
 		|| 
 		
-		// we can cast an interface to a type because we take takes it's type signature
-		(m_type==Types::INTERFACE || other.m_type==Types::TYPE)) {
+		// we can cast anything to a type because we take takes it's type signature
+		other.m_type==Types::TYPE) {
 		return 1;
 	}
 	return 0;

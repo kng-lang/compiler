@@ -237,8 +237,8 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
 			&& stmt_define_ast->define_type.m_type != Type::Types::TYPE
 			) {
-			auto alloca = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
-			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(alloca, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+			creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
+			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
 		}
 	}
 	else {

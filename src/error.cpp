@@ -126,6 +126,8 @@ void ErrorHandler::print_error(Error& error) {
 	// this is what we wan't
 	// https://doc.rust-lang.org/edition-guide/rust-2018/the-compiler/improved-error-messages.html
 
+
+	std::cout << std::endl;
 	// first print what wen't wrong
 	std::cout << "error (err code here) : " << error.m_problem_msg << std::endl;
 
@@ -146,6 +148,7 @@ void ErrorHandler::print_error(Error& error) {
 		std::cout << build_pointer(error.m_solution_position.m_index_start, error.m_solution_position.m_index_end, green) << std::endl;
 	}
 
+	std::cout << std::endl;
 	//std::cout << "error (error code here) " <<
 	//	unit->m_compile_file.m_file_path << ":"
 	//	<< error.m_problem_position.m_line_start << ":"
