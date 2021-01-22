@@ -350,8 +350,15 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 }
 
 void* TypeChecker::visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast){
-	for (const auto& value : expr_pattern_ast->m_values)
+	u32 i = 0;
+	std::vector<Type> pattern_types;
+	// resolve the types of the pattern
+	for (const auto& value : expr_pattern_ast->m_values){
 		value->visit(this);
+		pattern_types.push_back(m_checked_type);
+		i++;
+	}
+	expr_pattern_ast->m_type = Type::create_pattern(pattern_types);
 	m_checked_type = expr_pattern_ast->m_type;
 	m_checked_type_ptr = &expr_pattern_ast->m_type;
 	return NULL;
