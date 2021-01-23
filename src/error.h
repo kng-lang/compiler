@@ -105,4 +105,4 @@ extern std::string get_src_at_line(const std::string& src, u32 line);
 extern std::vector<std::string> split_string_by_newline(const std::string& str);
 extern std::string select_problem_area(std::string& original, u32 p_start_index, u32 p_start_line, u32 p_end_index, u32 p_end_line);
 extern std::string build_pointer(u32 start, u32 end);
-extern std::string remove_leading_chars(std::string& s);
+extern std::string remove_leading_chars(const std::string& s);

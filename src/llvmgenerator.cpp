@@ -316,8 +316,8 @@ void* LLVMGenerator::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	auto ptr = m_fetched_value; // what if we are assigning to a deref??? ^x = 1
 
 	//auto ptr = (llvm::Value*)sym_table.get_symbol(stmt_assign_ast->variable.value).optional_data;
-	auto is_volative = false;
-	m_builder->CreateStore(val, ptr, is_volative);
+	auto is_volatile = false;
+	m_builder->CreateStore(val, ptr, is_volatile);
 	return NULL;
 }
 void* LLVMGenerator::visit_stmt_interface_assign(StmtInterfaceAssignAST* stmt_interface_assign_ast) {

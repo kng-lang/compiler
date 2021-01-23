@@ -243,14 +243,24 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	// we need to have a field in the ExprFnAST that says if it is a lambda or not
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
+	// !@TODO shouldn't this be the job of the code generator and not the type checker...
 	if (!expr_fn_ast->is_lambda) {
 		expr_fn_ast->full_type.m_fn_identifier = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
 	// first resolve the type of the paramaters
-	for (const auto& param : expr_fn_ast->params)
+
+	std::vector<Type> operation_types;
+	//!@TODO figure out param types here	
+	u32 i = 0;
+	for (const auto& param : expr_fn_ast->params){
 		param->visit(this);
+		operation_types.push_back(m_checked_type);
+		i++;
+	}
+
+
 	// @TODO if the fn is assigned to a constant, the functions name should be the same
 	// as the constan'ts identifier
 	if(expr_fn_ast->has_body)

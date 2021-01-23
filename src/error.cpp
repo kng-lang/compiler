@@ -172,17 +172,17 @@ std::string ErrorHandler::pretty_format_str(Token::Position& pos, std::string& c
 	//!@TODO for now only support single line
 	//! 
 	
-	std::string& problem_string = get_src_at_line(unit->m_compile_file.m_file_contents, pos.m_line_start);
+	const std::string& problem_string = get_src_at_line(unit->m_compile_file.m_file_contents, pos.m_line_start);
 	//problem_string.erase(std::remove(problem_string.begin(), problem_string.end(), '\t'), problem_string.end());
 	// if we don't support ANSI terminals then return the standard string
 #ifndef ANSI_SUPPORT
 	return problem_string;
 #endif // !ANSI_SUPPORT
-	std::string& before = problem_string.substr(0, pos.m_index_start);
+	const std::string& before = problem_string.substr(0, pos.m_index_start);
 	
 	// we substract -1 because technically 1,1, is the first char of the first line
-	std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
-	std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
+	const std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
+	const std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
 	
 	//kng_log("original: {}", problem_string);
 	//kng_log("line len: {}", problem_string.length());
@@ -200,7 +200,7 @@ std::string ErrorHandler::pretty_format_str(Token::Position& pos, std::string& c
 
 
 
-std::string remove_leading_chars(std::string& s) {
+std::string remove_leading_chars(const std::string& s) {
 	const char* whitespace = " \t\v\r\n";
 	std::size_t start = s.find_first_not_of(whitespace);
 	std::size_t end = s.find_last_not_of(whitespace);
