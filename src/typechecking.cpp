@@ -8,19 +8,11 @@ James Clarke - 2021
 
 
 u8 TypeChecker::is_l_value(std::shared_ptr<AST> ast) { 
-	switch (ast->type()) {
-	case AST::ASTType::EXPR_VAR: return 1;
-	}
-	return 0;
+	return 1;
 }
 
 u8 TypeChecker::is_r_value(std::shared_ptr<AST> ast) { 
-	switch (ast->type()) {
-	case AST::ASTType::EXPR_LIT:
-	case AST::ASTType::EXPR_FN:
-	case AST::ASTType::EXPR_INTER: return 1;
-	}
-	return 0; 
+	return 1; 
 }
 
 // cast any ast (must be an expression) to a given type
@@ -413,21 +405,40 @@ void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 	expr_bin_ast->rhs->visit(this);
 	Type* rhs_type_ptr = m_checked_type_ptr;
 
-	// check what operation is happening
-	switch(expr_bin_ast->op.m_type){
-		case Token::Type::PLUS:
-		{
+	if (!lhs_type_ptr->matches(*rhs_type_ptr)) {
+		// see if we can cast
+		if (lhs_type_ptr->can_niave_cast(*rhs_type_ptr)) {
 			auto cast_result = niavely_cast_to_master_type(lhs_type_ptr, rhs_type_ptr);
+			// the reason we cant do this, is because if lhs_type_ptr is a variable, then we cant just change the variable
+			//*lhs_type_ptr = cast_result;
+			//*rhs_type_ptr = cast_result;
 			expr_bin_ast->m_value_type = cast_result.m_type;
-			// attempt to niavely cast the types to the correct type
-			if(cast_result.m_type==Type::Types::UNKNOWN){
-				kng_log("couldn't cast the types :(");
-			}else{
-				kng_log("successfully casted the types in bin op!");
-			}
-			break;
+			return NULL;
 		}
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::TYPE_MISMATCH,
+			"types do not match",
+			expr_bin_ast->m_position
+		);
 	}
+
+	//// check what operation is happening
+	//switch(expr_bin_ast->op.m_type){
+	//	case Token::Type::PLUS:
+	//	{
+	//		auto cast_result = niavely_cast_to_master_type(lhs_type_ptr, rhs_type_ptr);
+	//		expr_bin_ast->m_value_type = cast_result.m_type;
+	//		// attempt to niavely cast the types to the correct type
+	//		if(cast_result.m_type==Type::Types::UNKNOWN){
+	//			kng_log("couldn't cast the types :(");
+	//		}else{
+	//			kng_log("successfully casted the types in bin op!");
+	//		}
+	//		break;
+	//	}
+	//}
+
 	return NULL; 
 }
 

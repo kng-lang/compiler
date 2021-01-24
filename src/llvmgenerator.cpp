@@ -234,6 +234,24 @@ void* LLVMGenerator::visit_stmt_expression(StmtExpressionAST* stmt_expression_as
 }
 void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
+	void* creation_instr = NULL;
+
+
+
+	//switch (stmt_define_ast->define_type.m_type) {
+	//case Type::Types::FN: break;
+	//case Type::Types::INTERFACE: break;
+	//default: {
+	//	// do standard stuff here
+	//	creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
+	//	m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->m_is_constant));
+	//}
+	//}
+
+
+
+
+
 
 	if (stmt_define_ast->m_is_underscore
 		&& stmt_define_ast->m_is_initialised) {
@@ -244,7 +262,6 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 
 
-	void* creation_instr = NULL; // either AllocaInst or Constant*
 	if (!stmt_define_ast->is_global) {
 		// do alloca
 		if (
@@ -713,17 +730,15 @@ void* LLVMGenerator::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::CHAR: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
 			m_fetched_type = FetchedType::VALUE;
-			//// @TODO if we have the same string multiple times we shouldn't create multiple... this should be added to the sym table
-			//if (!m_sym_table.contains_symbol(expr_literal_ast->v.as_string())) {
-			//	m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
-			//	m_sym_table.add_symbol(expr_literal_ast->v.as_string(), SymTableEntry(m_fetched_value, NULL, 1, 1));
-			//	return NULL;
-			//}
-			//else {
-			//	return m_sym_table.get_symbol(expr_literal_ast->v.as_string()).optional_data;
-			//}
-			m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
+			if (m_string_constants.count(expr_literal_ast->v.as_string())) {
+				m_fetched_value = m_string_constants[expr_literal_ast->v.as_string()];
+			}
+			else {
+				m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
+				m_string_constants[expr_literal_ast->v.as_string()] = m_fetched_value;
+			}
 			m_fetched_type = FetchedType::VALUE;
+			
 			return NULL; 
 		}
 	}

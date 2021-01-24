@@ -42,6 +42,7 @@ struct LLVMGenerator : public Generator {
 
 	// used for types and instructions
 	SymTable<LLVMSymEntry> m_sym_table;
+	std::map<std::string, llvm::Value*> m_string_constants;
 	LLVMGenerator() {}
 	LLVMGenerator(std::shared_ptr<AST> ast, CompilationUnit* unit) : m_ast(ast), m_unit(unit) {}
 	virtual void generate();

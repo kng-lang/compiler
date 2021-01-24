@@ -49,8 +49,6 @@ struct Type {
 	// if this type is a generic in a fn e.g. (x : $generic){}, here x would have type generic.
 	// the compiler will then resolve this generic type at compile time
 	u8 m_is_generic = 0;
-
-	u8 m_constant = 0;
 	// e.g. ^^^u8
 	u8 m_ptr_indirection = 0;
 	// e.g. u8[5]
