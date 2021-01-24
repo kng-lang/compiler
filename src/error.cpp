@@ -129,7 +129,7 @@ void ErrorHandler::print_error(Error& error) {
 
 	std::cout << std::endl;
 	// first print what wen't wrong
-	std::cout << "error (err code here) : " << error.m_problem_msg << std::endl;
+	std::cout << "error ("<< (u32)error.m_type <<") : " << error.m_problem_msg << std::endl;
 
 	// then print why it wen't wrong
 	std::stringstream ss;

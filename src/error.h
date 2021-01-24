@@ -20,20 +20,22 @@ struct CompilationUnit;
 struct Error{
 
 	// these are the possible levels
-	enum class Level{
+	enum class Level : u32 {
 		RECOVERABLE, // errors that the compiler can fix
 		WARNING,     // errors that the compiler cannot fix but can still complete compilation 
 		CRITICAL,	 // errors that the compiler cannot recover from
 	};
 
-	enum class Type{
+	enum class Type : u32 {
 		MISSING_DELIMITER,	  // e.g. missing newline or ;
 		TYPE_MISMATCH,		  // e.g. x : s32 = "hello world!"
 		UNEXPECTED_CHARACTER, // e.g. x : s32 u32
 		UNEXPECTED_EOF,       // e.g. if x { EOF
 		CYCLIC_DEP,			  // when files include each other
 		SYMBOL_ALREADY_DEFINED,
-		UNKNOWN_TYPE
+		UNKNOWN_TYPE,
+		NOT_L_VALUE,
+		NOT_R_VALUE
 	};
 
 	Level m_level;

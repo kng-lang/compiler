@@ -21,7 +21,15 @@ struct Token{
 		Position(u32 index_start, u32 index_end, u32 line_start, u32 line_end)
 			: m_index_start(index_start), m_index_end(index_end), m_line_start(line_start), m_line_end(line_end) {}
 
-
+		// we merge the positions by taking the lower and upper most values
+		Position merge(Position other) {
+			Position p;
+			p.m_index_start = (other.m_index_start < m_index_start) ? other.m_index_start : m_index_start;
+			p.m_index_end = (other.m_index_end > m_index_end) ? other.m_index_end : m_index_end;
+			p.m_line_start = (other.m_line_start < m_index_start) ? other.m_line_start : m_line_start;
+			p.m_line_end = (other.m_line_end > m_line_end) ? other.m_line_end : m_line_end;
+			return p;
+		}
 
 
 		Position add_index_start(u32 offset) {

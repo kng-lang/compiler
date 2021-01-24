@@ -6,6 +6,23 @@ James Clarke - 2021
 #include "compiler.h"
 #include "stringutils.h"
 
+
+u8 TypeChecker::is_l_value(std::shared_ptr<AST> ast) { 
+	switch (ast->type()) {
+	case AST::ASTType::EXPR_VAR: return 1;
+	}
+	return 0;
+}
+
+u8 TypeChecker::is_r_value(std::shared_ptr<AST> ast) { 
+	switch (ast->type()) {
+	case AST::ASTType::EXPR_LIT:
+	case AST::ASTType::EXPR_FN:
+	case AST::ASTType::EXPR_INTER: return 1;
+	}
+	return 0; 
+}
+
 // cast any ast (must be an expression) to a given type
 void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
 	switch (ast->type()) {
@@ -157,7 +174,20 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	//// @TODO support error when assigning to constant
 	//auto l_type = sym_table.get_symbol(stmt_assign_ast->variable.value);
 
-
+	// first check if the left and right are lvalues
+	if(!is_l_value(stmt_assign_ast->assignee))
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL, Error::Type::NOT_L_VALUE,
+			"lhs is not l-value",
+			stmt_assign_ast->assignee->m_position
+		);
+	// first check if the left and right are lvalues
+	if (!is_r_value(stmt_assign_ast->value))
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL, Error::Type::NOT_R_VALUE,
+			"rhs is not r-value",
+			stmt_assign_ast->value->m_position
+		);
 
 
 
@@ -175,17 +205,17 @@ void* TypeChecker::visit_stmt_assign(StmtAssignAST* stmt_assign_ast) {
 	auto r_type = m_checked_type;
 	auto r_type_ptr = m_checked_type_ptr;
 	if (!l_type.matches(r_type)) {
-
 		// see if we can cast
 		if (l_type.can_niave_cast(r_type)) {
 			r_type_ptr->cast(l_type);
 			return NULL;
 		}
-		m_unit->m_error_handler.error("lhs doesn't match rhs",
-			0,
-			1,
-			0,
-			1);
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::TYPE_MISMATCH,
+			"types do not match",
+			stmt_assign_ast->value->m_position
+		);
 	}
 	return NULL; 
 }

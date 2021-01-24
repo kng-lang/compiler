@@ -463,7 +463,6 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
     //kng_log("visiting fn! {}", expr_fn_ast->full_type.m_fn_identifier.m_value);
 	auto prev_insert_point = m_builder->GetInsertBlock();
 
-
 	llvm::FunctionType* ft = create_fn_type(expr_fn_ast->m_type);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->m_lambda_name.m_value, *m_module);
 

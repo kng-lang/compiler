@@ -472,7 +472,7 @@ std::shared_ptr<AST> Parser::parse_lor() {
 	if (expect(Token::Type::LOR)) {
 		auto op = next();
 		auto rhs = parse_lor();
-		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto pm = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(pm);
 	}
 	return higher_precedence;
@@ -482,7 +482,7 @@ std::shared_ptr<AST> Parser::parse_land() {
 	if (expect(Token::Type::LAND)) {
 		auto op = next();
 		auto rhs = parse_land();
-		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto pm = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(pm);
 	}
 	return higher_precedence;
@@ -492,7 +492,7 @@ std::shared_ptr<AST> Parser::parse_bor() {
 	if (expect(Token::Type::BOR)) {
 		auto op = next();
 		auto rhs = parse_bor();
-		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto pm = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(pm);
 	}
 	return higher_precedence;
@@ -502,7 +502,7 @@ std::shared_ptr<AST> Parser::parse_band() {
 	if (expect(Token::Type::BAND)) {
 		auto op = next();
 		auto rhs = parse_band();
-		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto pm = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(pm);
 	}
 	return higher_precedence;
@@ -520,7 +520,7 @@ std::shared_ptr<AST> Parser::parse_shift() {
 	if (expect(Token::Type::LSHIFT) || expect(Token::Type::RSHIFT)) {
 		auto op = next();
 		auto rhs = parse_shift();
-		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto pm = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(pm);
 	}
 	return higher_precedence;
@@ -530,7 +530,7 @@ std::shared_ptr<AST> Parser::parse_pm() {
 	if(expect(Token::Type::PLUS) || expect(Token::Type::MINUS)){
 		auto op = next();
 		auto rhs = parse_pm();
-		auto pm = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto pm = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(pm);
 	}
 	return higher_precedence;
@@ -541,7 +541,7 @@ std::shared_ptr<AST> Parser::parse_mdmr() {
 	if (expect(Token::Type::STAR) || expect(Token::Type::DIV) || expect(Token::Type::MOD)) {
 		auto op = next();
 		auto rhs = parse_mdmr();
-		auto mdmr = ExprBinAST(prev().m_position, higher_precedence, rhs, op);
+		auto mdmr = ExprBinAST(higher_precedence->m_position.merge(prev().m_position), higher_precedence, rhs, op);
 		return std::make_shared<ExprBinAST>(mdmr);
 	}
 	return higher_precedence;
@@ -574,7 +574,7 @@ std::shared_ptr<AST> Parser::parse_cast() {
 			return std::make_shared<ErrorAST>(prev().m_position);
 		}
 		ExprCastAST c;
-		c.m_position = prev().m_position;
+		c.m_position = higher_precedence->m_position.merge(prev().m_position);
 		c.to_type = parse_type();
 		c.value = higher_precedence;
 		return std::make_shared<ExprCastAST>(c);
@@ -607,6 +607,7 @@ std::shared_ptr<AST> Parser::parse_call() {
 				return std::make_shared<ErrorAST>(prev().m_position);
 			}
 		}
+		call.m_position = call.m_position.merge(prev().m_position);
 		return std::make_shared<ExprCallAST>(call);
 	}
 	return higher_precedence;
@@ -785,6 +786,7 @@ std::shared_ptr<AST> Parser::parse_fn(){
 		fn_ast.has_body = 1;
 		fn_ast.body = parse_stmt();
 	}
+	fn_ast.m_position = fn_ast.m_position.merge(prev().m_position);
 	return std::make_shared<ExprFnAST>(fn_ast);
 }
 
@@ -806,6 +808,7 @@ std::shared_ptr<AST> Parser::parse_interface() {
 		expr_interface.m_definitions.push_back(define);
 	}
 	expr_interface.m_full_type = Type::create_interface(members);
+	expr_interface.m_position = expr_interface.m_position.merge(prev().m_position);
 	return std::make_shared<ExprInterfaceAST>(expr_interface);
 }
 
