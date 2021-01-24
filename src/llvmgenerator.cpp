@@ -137,7 +137,7 @@ void LLVMGenerator::generate() {
 void LLVMGenerator::make_runtime() {
 	// setup the type structure
 	llvm::StructType* type_type = llvm::StructType::create(*m_context, "type");
-	type_type->setBody(llvm::ArrayRef<llvm::Type*>({ llvm::Type::getInt8PtrTy(*m_context) }));
+	type_type->setBody(llvm::ArrayRef<llvm::Type*>({ llvm::Type::getInt8PtrTy(*m_context), llvm::Type::getInt32Ty(*m_context) }));
 }
 
 
@@ -176,6 +176,29 @@ llvm::StructType* LLVMGenerator::create_interface_type(Type type) {
 llvm::Value* LLVMGenerator::alloc_interface(std::string identifier, std::vector<llvm::Value*> values) {
 	auto interface_type = llvm::StructType::getTypeByName(*m_context, identifier);
 	return NULL;
+}
+
+llvm::Value* LLVMGenerator::create_str_constant(std::string s) {
+	if (m_string_constants.count(s)) {
+		return m_string_constants[s];
+	}
+	else {
+		auto value = m_builder->CreateGlobalStringPtr(s);
+		m_string_constants[s] = value;
+		return value;
+	}
+
+}
+
+void LLVMGenerator::set_interface_value(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index, llvm::Value* value, bool is_volatile) {
+	auto element = get_interface_value(type, interface_value, ptr_index, member_index);
+	m_builder->CreateStore(value, element);
+}
+
+llvm::Value* LLVMGenerator::get_interface_value(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index) {
+	return m_builder->CreateGEP(type, interface_value, {
+		llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), ptr_index),
+		llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), member_index)});
 }
 
 llvm::Type* LLVMGenerator::convert_type(Type type) {
@@ -267,13 +290,9 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			switch (stmt_define_ast->define_type.m_type) {
 				// if we are dealing with a type decleration, then we need to assign the type variable
 				case Type::Types::TYPE: {
-					auto index = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), 0);
-					auto element = m_builder->CreateGEP(define_type, creation_instr, index);
-					auto a = element->getName();
-					//m_builder->CreateStore(
-					//	llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), 12), element, false
-					//);
-
+					
+					set_interface_value(define_type, creation_instr, 0, 0, create_str_constant("test"), false);
+					set_interface_value(define_type, creation_instr, 0, 1, llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), 123), false);
 
 					break;
 				}
@@ -789,14 +808,7 @@ void* LLVMGenerator::visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) {
 		case Type::Types::F64: { m_fetched_value = llvm::ConstantFP::get(llvm::Type::getDoubleTy(*m_context),expr_literal_ast->v.as_f64()); break; }
 		case Type::Types::CHAR: { m_fetched_value = llvm::ConstantInt::getSigned(llvm::Type::getInt8Ty(*m_context), expr_literal_ast->v.as_char()); break;}
 		case Type::Types::STRING: { 
-			m_fetched_type = FetchedType::VALUE;
-			if (m_string_constants.count(expr_literal_ast->v.as_string())) {
-				m_fetched_value = m_string_constants[expr_literal_ast->v.as_string()];
-			}
-			else {
-				m_fetched_value = m_builder->CreateGlobalStringPtr(expr_literal_ast->v.as_string());
-				m_string_constants[expr_literal_ast->v.as_string()] = m_fetched_value;
-			}
+			create_str_constant(expr_literal_ast->v.as_string());
 			m_fetched_type = FetchedType::VALUE;
 			
 			return NULL; 

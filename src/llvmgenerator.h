@@ -60,7 +60,9 @@ struct LLVMGenerator : public Generator {
 	llvm::StructType* create_interface_type(Type type);
 	llvm::Value* alloc_interface(std::string identifier, std::vector<llvm::Value*> values);
 	//void set_interface_member(llvm::Value* i)
-
+	llvm::Value* create_str_constant(std::string s);
+	void set_interface_value(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index, llvm::Value* value, bool is_volatile);
+	llvm::Value* get_interface_value(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index);
 
 	virtual void* visit_program(ProgramAST* program_ast);
 	virtual void* visit_stmt_block(StmtBlockAST* stmt_block_ast);
