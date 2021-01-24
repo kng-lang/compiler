@@ -142,12 +142,12 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		SymTableEntry(
 			nullptr,
 			&stmt_define_ast->define_type,
-			stmt_define_ast->is_global,
+			stmt_define_ast->m_is_global,
 			stmt_define_ast->m_is_constant));
 
 	// if we are at the first scope then this is a global variable
 	if (m_sym_table.level == 0) {
-		stmt_define_ast->is_global = 1;
+		stmt_define_ast->m_is_global = 1;
 	}
 
 	m_checked_type = stmt_define_ast->define_type;
@@ -238,6 +238,7 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_interface_ast->m_is_lambda) {
 		expr_interface_ast->m_lambda_name = m_sym_table.latest_entry.first;
+		expr_interface_ast->m_type.m_interface_identifier = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
@@ -248,8 +249,8 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 	
 	m_sym_table.pop_scope();
 
-	m_checked_type_ptr = &expr_interface_ast->m_full_type;
-	m_checked_type = expr_interface_ast->m_full_type;
+	m_checked_type_ptr = &expr_interface_ast->m_type;
+	m_checked_type = expr_interface_ast->m_type;
 
 	return NULL; 
 

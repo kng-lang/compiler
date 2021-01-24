@@ -1,6 +1,7 @@
 #pragma once
 
 #include "generator.h"
+#include <stack>
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
@@ -43,6 +44,9 @@ struct LLVMGenerator : public Generator {
 	// used for types and instructions
 	SymTable<LLVMSymEntry> m_sym_table;
 	std::map<std::string, llvm::Value*> m_string_constants;
+	// these are expressions at global scope that require moving into the main fn
+	// e.g. 1 + 3; would be moved into the main fn
+	std::stack<std::shared_ptr<AST>> m_global_expressions;
 	LLVMGenerator() {}
 	LLVMGenerator(std::shared_ptr<AST> ast, CompilationUnit* unit) : m_ast(ast), m_unit(unit) {}
 	virtual void generate();
@@ -53,7 +57,9 @@ struct LLVMGenerator : public Generator {
 	// e.g. convert StoreInstr to LoadInstr to use a variable
 	llvm::Value* convert_fetched_to_value();
 	llvm::FunctionType* create_fn_type(Type type);
-	llvm::Value* instantiate_struct(llvm::StructType* type);
+	llvm::StructType* create_interface_type(Type type);
+	llvm::Value* alloc_interface(std::string identifier, std::vector<llvm::Value*> values);
+	//void set_interface_member(llvm::Value* i)
 
 
 	virtual void* visit_program(ProgramAST* program_ast);

@@ -133,7 +133,7 @@ struct StmtExpressionAST : public StatementAST {
 };
 
 struct StmtDefineAST : public StatementAST {
-	u8 is_global = 0;
+	u8 m_is_global = 0;
 	u8 m_is_constant = 0;
 	u8 m_is_initialised = 0;
 	u8 m_requires_type_inference = 0;
@@ -226,7 +226,7 @@ struct StmtLoopAST : public StatementAST {
 struct ExprInterfaceAST : public ExpressionAST {
 	std::vector<std::shared_ptr<AST>> m_definitions;
 	u8 m_is_lambda = 0; // this is used for name resolution
-	Type m_full_type;
+	Type m_type;
 	Token m_lambda_name;
 	ExprInterfaceAST(){}
 	ExprInterfaceAST(Token::Position position) : ExpressionAST(position) {}

@@ -186,6 +186,12 @@ Type Type::create_interface(std::vector<Type> member_types){
 	return type;
 }
 
+Type Type::create_interface(Token name) {
+	auto type = Type(Type::Types::INTERFACE);
+	type.m_interface_identifier = name;
+	return type;
+}
+
 Type Type::create_pattern(std::vector<Type> types) {
 	auto type = Type(Type::Types::PATTERN);
 	type.m_pattern_types = types;

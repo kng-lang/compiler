@@ -102,6 +102,7 @@ struct Type {
 	};
 
 	std::vector<Type> m_interface_members;
+	Token m_interface_identifier;
 
 	u8 matches_interface(Type& other, InterfaceMatchType match_type) {
 		if (match_type == InterfaceMatchType::LOOSE) {
@@ -134,6 +135,7 @@ struct Type {
 	*/
 	// index 0 is the return type
 	std::vector<Type> m_fn_operation_types;
+	Token m_fn_identifier;
 	u8 m_fn_has_return = 0;
 
 
@@ -172,6 +174,7 @@ struct Type {
 	static Type create_array(Type::Types t, u32 length);
 	static Type create_fn(u8 has_return, std::vector<Type> op_types);
 	static Type create_interface(std::vector<Type> member_types);
+	static Type create_interface(Token name);
 	static Type create_pointer(Type::Types t, u32 ptr_indirection);
 	static Type create_pattern(std::vector<Type> types);
 

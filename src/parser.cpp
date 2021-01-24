@@ -262,7 +262,8 @@ Type Parser::parse_type() {
 		ptr_indirection += 1;
 	}
 
-	switch (next().m_type) {
+	auto token = next();
+	switch (token.m_type) {
 	case Token::Type::U0: t = Type::create_basic(Type::Types::U0); break;
 	case Token::Type::U8: t = Type::create_basic(Type::Types::U8); break;
 	case Token::Type::S8: t = Type::create_basic(Type::Types::S8); break;
@@ -277,7 +278,7 @@ Type Parser::parse_type() {
 	case Token::Type::INTERFACE: t = Type::create_basic(Type::Types::INTERFACE); break;
 	case Token::Type::IDENTIFIER: {
 		// !@TODO here, we need the typechecker to resolve the full type of the interface
-		t = Type(Type::Types::INTERFACE);
+		t = Type::create_interface(token);
 		//.t.m_interface_identifier = prev();
 		break;
 	}
@@ -807,8 +808,9 @@ std::shared_ptr<AST> Parser::parse_interface() {
 		members.push_back(define->define_type);
 		expr_interface.m_definitions.push_back(define);
 	}
-	expr_interface.m_full_type = Type::create_interface(members);
+	expr_interface.m_type = Type::create_interface(members);
 	expr_interface.m_position = expr_interface.m_position.merge(prev().m_position);
+	m_requiring_delimiter = 0;
 	return std::make_shared<ExprInterfaceAST>(expr_interface);
 }
 
