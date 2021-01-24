@@ -88,13 +88,13 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	Type r_type;
 	Type* r_type_ptr;
 	// finally, visit the initialisation value
-	if (stmt_define_ast->is_initialised) {
+	if (stmt_define_ast->m_is_initialised) {
 		stmt_define_ast->value->visit(this);
 		r_type = m_checked_type;
 		r_type_ptr = m_checked_type_ptr;
 	}
 
-	if (stmt_define_ast->requires_type_inference) {
+	if (stmt_define_ast->m_requires_type_inference) {
 		//l_type = infer_type(stmt_define_ast->value);
 		//stmt_define_ast->define_type = l_type;
 		kng_assert(r_type_ptr != NULL, "r_type was NULL");
@@ -102,7 +102,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		stmt_define_ast->define_type = r_type;
 	}
 
-	if (stmt_define_ast->is_initialised) {
+	if (stmt_define_ast->m_is_initialised) {
 		if (!l_type.matches(r_type)) {
 			// @TODO the problem here is that if we are dealing with an array, we need to cast each element individually
 			if(r_type_ptr->can_niave_cast(l_type)) {
@@ -120,7 +120,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 
-	if (stmt_define_ast->is_constant && !stmt_define_ast->is_initialised) {
+	if (stmt_define_ast->m_is_constant && !stmt_define_ast->m_is_initialised) {
 		m_unit->m_error_handler.error("constant variable requires initialisation",
 			stmt_define_ast->identifier.m_index,
 			stmt_define_ast->identifier.m_line,
@@ -134,7 +134,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			nullptr,
 			&stmt_define_ast->define_type,
 			stmt_define_ast->is_global,
-			stmt_define_ast->is_constant));
+			stmt_define_ast->m_is_constant));
 
 	// if we are at the first scope then this is a global variable
 	if (m_sym_table.level == 0) {
@@ -215,7 +215,7 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_interface_ast->m_is_lambda) {
-		expr_interface_ast->m_full_type.m_interface_identifier = m_sym_table.latest_entry.first;
+		expr_interface_ast->m_lambda_name = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
@@ -245,7 +245,7 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	// !@TODO shouldn't this be the job of the code generator and not the type checker...
 	if (!expr_fn_ast->is_lambda) {
-		expr_fn_ast->full_type.m_fn_identifier = m_sym_table.latest_entry.first;
+		expr_fn_ast->m_lambda_name = m_sym_table.latest_entry.first;
 	}
 
 	m_sym_table.enter_scope();
@@ -268,8 +268,8 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	
 	m_sym_table.pop_scope();
 
-	m_checked_type_ptr = &expr_fn_ast->full_type;
-	m_checked_type = expr_fn_ast->full_type;
+	m_checked_type_ptr = &expr_fn_ast->m_type;
+	m_checked_type = expr_fn_ast->m_type;
 
 	return NULL;
 	//return (void*)&expr_fn_ast->full_type;

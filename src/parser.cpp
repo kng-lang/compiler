@@ -26,7 +26,7 @@ std::shared_ptr<AST> Parser::parse() {
 }
 
 std::shared_ptr<AST> Parser::parse_stmt(){
-
+	reset_flags();
 	// consume empty newlines
 	m_requiring_delimiter = 0; // e.g. if 1 {} doesn't require a delimiter
 	std::shared_ptr<AST> stmt = std::make_shared<ErrorAST>(peek().m_position);
@@ -103,6 +103,7 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 std::shared_ptr<AST> Parser::parse_directive() {
 	consume(Token::DIRECTIVE);
 	switch (next().m_type) {
+	    case Token::Type::DOC: break;
 		case Token::Type::RUN: {
 				// create a new compilation unit to JIT the next statement
 				auto stmt_to_jit = parse_stmt();
@@ -135,7 +136,7 @@ std::shared_ptr<AST> Parser::parse_directive() {
 				|| valid_include==Importer::DepStatus::CYCLIC_DEP) {
 				std::string problem;
 				switch (valid_include) {
-				case Importer::DepStatus::CYCLIC_DEP: problem = "include path is causing a cyclic dependency"; break;
+				    case Importer::DepStatus::CYCLIC_DEP: problem = "include path is causing a cyclic dependency"; break;
 				}
 				m_unit->m_error_handler.error(
 					Error::Level::CRITICAL,
@@ -231,6 +232,7 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::IDENTIFIER)
 		|| expect(Token::Type::STRING)
 		|| expect(Token::Type::POINTER)
+		|| expect(Token::Type::FN)
 		|| expect(Token::Type::TYPE);
 }
 
@@ -276,11 +278,45 @@ Type Parser::parse_type() {
 	case Token::Type::IDENTIFIER: {
 		// !@TODO here, we need the typechecker to resolve the full type of the interface
 		t = Type(Type::Types::INTERFACE);
-		t.m_interface_identifier = prev();
+		//.t.m_interface_identifier = prev();
 		break;
 	}
 	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
 	case Token::Type::TYPE: t = Type(Type::Types::TYPE); break;
+	// TODO parsing fns here
+	case Token::Type::FN: {
+		u8 has_return = 0;
+		std::vector<Type> op_types;
+		op_types.push_back(Type::create_basic(Type::Types::U0));
+		if(!consume(Token::Type::LPAREN))
+			m_unit->m_error_handler.error(
+				Error::Level::CRITICAL,
+				Error::Type::MISSING_DELIMITER,
+				"expected ( after fn type decleration",
+				prev().m_position
+			);
+		while (!expect(Token::Type::RPAREN)) {
+			if(expecting_type())
+				op_types.push_back(parse_type());
+		}
+		consume(Token::Type::RPAREN);
+		if (expecting_type()) {
+			has_return = 1;
+			op_types.at(0) = parse_type();
+		}
+		kng_log("parsed fn type");
+		t = Type::create_fn(has_return, op_types);
+		break;
+	}
+	default: {
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::UNKNOWN_TYPE,
+			"unknown type when parsing",
+			prev().m_position
+		);
+		return Type::create_basic(Type::Types::UNKNOWN);
+	}
 	}
 	// check if we are dealing with an array
 	if (consume(Token::Type::LBRACKET)){
@@ -311,6 +347,11 @@ Type Parser::parse_type() {
 	return t;
 }
 
+void Parser::reset_flags() {
+	m_parsing_constant_assignment = 0;
+	m_parsing_variable_assignment = 0;
+}
+
 std::shared_ptr<AST> Parser::parse_define() {
 	StmtDefineAST define_ast;
 	define_ast.identifier = next();
@@ -322,10 +363,10 @@ std::shared_ptr<AST> Parser::parse_define() {
 		m_parsing_variable_assignment = 1;
 		// at this point, we are expecting to parse an expression as without an expression the syntax is invalid
 
-		define_ast.requires_type_inference = 1;
+		define_ast.m_requires_type_inference = 1;
 		// @TODO check an expression exists???
 		define_ast.value = parse_expression();
-		define_ast.is_initialised = 1;
+		define_ast.m_is_initialised = 1;
 		m_parsing_variable_assignment = 0;
 	}
 	else if(consume(Token::Type::COLON)){
@@ -337,15 +378,14 @@ std::shared_ptr<AST> Parser::parse_define() {
 
 			u8 expecting_expression = expecting_expr();
 			u8 parsing_constant = expecting_expression;
-			define_ast.is_constant = parsing_constant;
+			define_ast.m_is_constant = parsing_constant;
 			m_parsing_constant_assignment = parsing_constant;
 			if (expecting_expression || consume(Token::Type::ASSIGN)) {
 				m_parsing_variable_assignment = 1;
-				define_ast.is_initialised = 1;
+				define_ast.m_is_initialised = 1;
 				define_ast.value = parse_expression();
 				m_parsing_variable_assignment = 0;
 			}
-			if (m_parsing_constant_assignment) m_parsing_constant_assignment = 0;
 		}
 		else {
 			// if we reached here we MUST expect an inferred constant e.g. x : 1
@@ -359,13 +399,13 @@ std::shared_ptr<AST> Parser::parse_define() {
 				return std::make_shared<ErrorAST>(prev().m_position);
 			}
 			m_parsing_constant_assignment = 1;
-			define_ast.requires_type_inference = 1;
+			define_ast.m_requires_type_inference = 1;
 			define_ast.value = parse_expression();
-			define_ast.is_initialised = 1;
-			define_ast.is_constant = 1;
-			m_parsing_constant_assignment = 0;
+			define_ast.m_is_initialised = 1;
+			define_ast.m_is_constant = 1;
 		}
 	}
+	m_parsing_constant_assignment = 0;
 	return std::make_shared<StmtDefineAST>(define_ast);
 }
 
@@ -739,7 +779,7 @@ std::shared_ptr<AST> Parser::parse_fn(){
 		operation_types.at(0) = parse_type();
 		has_return = 1;
 	}
-	fn_ast.full_type = Type::create_fn(has_return, operation_types);
+	fn_ast.m_type = Type::create_fn(has_return, operation_types);
 	// we need to check if the fn has a body
 	if (!expect(Token::Type::SEMI_COLON)) {
 		fn_ast.has_body = 1;

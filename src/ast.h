@@ -134,9 +134,9 @@ struct StmtExpressionAST : public StatementAST {
 
 struct StmtDefineAST : public StatementAST {
 	u8 is_global = 0;
-	u8 is_constant = 0;
-	u8 is_initialised = 0;
-	u8 requires_type_inference = 0;
+	u8 m_is_constant = 0;
+	u8 m_is_initialised = 0;
+	u8 m_requires_type_inference = 0;
 	u8 m_is_underscore = 0;
 	Token identifier;
 	Type define_type;
@@ -227,6 +227,7 @@ struct ExprInterfaceAST : public ExpressionAST {
 	std::vector<std::shared_ptr<AST>> m_definitions;
 	u8 m_is_lambda = 0; // this is used for name resolution
 	Type m_full_type;
+	Token m_lambda_name;
 	ExprInterfaceAST(){}
 	ExprInterfaceAST(Token::Position position) : ExpressionAST(position) {}
 	virtual std::string to_json();
@@ -241,9 +242,10 @@ struct ExprFnAST : public ExpressionAST {
 	u8 has_body = 0; // e.g. if we are declaring an external fn
 	u8 is_lambda = 0; // this is used for name resolution
 	// the full type signature
-	Type full_type;
+	Type m_type;
+	Token m_lambda_name; // used for identifying the fn regardless of whether it is a lambda or not
 	ExprFnAST() {}
-	ExprFnAST(std::shared_ptr<AST> body, Type full_type) : body(body), full_type(full_type) {}
+	ExprFnAST(std::shared_ptr<AST> body, Type full_type) : body(body), m_type(full_type) {}
 	virtual std::string to_json();
 	virtual ASTType type() { return ASTType::EXPR_FN; }
 	virtual void* visit(ASTVisitor* visitor);

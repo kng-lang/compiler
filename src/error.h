@@ -32,7 +32,8 @@ struct Error{
 		UNEXPECTED_CHARACTER, // e.g. x : s32 u32
 		UNEXPECTED_EOF,       // e.g. if x { EOF
 		CYCLIC_DEP,			  // when files include each other
-		SYMBOL_ALREADY_DEFINED
+		SYMBOL_ALREADY_DEFINED,
+		UNKNOWN_TYPE
 	};
 
 	Level m_level;

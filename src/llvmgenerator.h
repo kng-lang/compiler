@@ -51,7 +51,7 @@ struct LLVMGenerator : public Generator {
 	// call this if we need the fetched_value as a value ready to be used.
 	// e.g. convert StoreInstr to LoadInstr to use a variable
 	llvm::Value* convert_fetched_to_value();
-
+	llvm::FunctionType* create_fn_type(Type type);
 	llvm::Value* instantiate_struct(llvm::StructType* type);
 
 

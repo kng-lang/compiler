@@ -89,6 +89,7 @@ struct Token{
 		F64,
 		CHAR,
 		STRING,
+		FN,
 
 		POINTER,
 		DOT,

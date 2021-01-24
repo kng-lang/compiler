@@ -150,10 +150,22 @@ llvm::Value* cast_to_type(llvm::Value* value, llvm::Type* type) {
 
 
 
+llvm::FunctionType* LLVMGenerator::create_fn_type(Type type) {
+	std::vector<llvm::Type*> param_types;
+	for (s32 i = 1; i < type.m_fn_operation_types.size(); i++)
+		param_types.push_back(convert_type(type.m_fn_operation_types.at(i)));
+	// convert to fn pointer
+	return llvm::FunctionType::get(
+		convert_type(type.m_fn_operation_types.at(0)),
+		param_types,
+		false);
+}
+
+
 llvm::Type* LLVMGenerator::convert_type(Type type) {
 	llvm::Type* tmp_type = NULL;
 	switch (type.m_type) {
-	case Type::Types::U0:     tmp_type = llvm::Type::getVoidTy(*m_context); break;
+		case Type::Types::U0:     tmp_type = llvm::Type::getVoidTy(*m_context); break;
 		case Type::Types::U8:     tmp_type = llvm::Type::getInt8Ty(*m_context); break;
 		case Type::Types::S8:     tmp_type = llvm::Type::getInt8Ty(*m_context); break;
 		case Type::Types::U16:    tmp_type = llvm::Type::getInt16Ty(*m_context); break;
@@ -164,10 +176,13 @@ llvm::Type* LLVMGenerator::convert_type(Type type) {
 		case Type::Types::F32:    tmp_type = llvm::Type::getFloatTy(*m_context); break;
 		case Type::Types::F64:    tmp_type = llvm::Type::getDoubleTy(*m_context); break;
 		case Type::Types::CHAR:   tmp_type = llvm::Type::getInt8Ty(*m_context); break; // ASCII FOR NOW?
-		case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)m_sym_table.get_symbol(type.m_fn_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
-		case Type::Types::INTERFACE: tmp_type = (llvm::StructType*)(m_sym_table.get_symbol(type.m_interface_identifier).optional_data);
+		//case Type::Types::FN:     tmp_type = (llvm::FunctionType*)((llvm::Function*)m_sym_table.get_symbol(type.m_fn_identifier).optional_data)->getType(); break; // @TODO return the reference to the fn in the symbol table
+		//case Type::Types::INTERFACE: tmp_type = (llvm::StructType*)(m_sym_table.get_symbol(type.m_interface_identifier).optional_data);
 		case Type::Types::STRING: tmp_type = llvm::Type::getInt8PtrTy(*m_context); break; // @TODO return a reference to the string interface using the symbol table
-
+		case Type::Types::FN: {
+			tmp_type = create_fn_type(type);
+			break;
+		}
 	}
 	// its only an array and not a ptr if the arr_length > 0 otherwise x : u8[] is a ptr
 	if (type.m_is_arr && type.m_arr_length > 0)
@@ -221,7 +236,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 
 	if (stmt_define_ast->m_is_underscore
-		&& stmt_define_ast->is_initialised) {
+		&& stmt_define_ast->m_is_initialised) {
 		stmt_define_ast->value->visit(this);
 		return NULL;
 	}
@@ -238,7 +253,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			&& stmt_define_ast->define_type.m_type != Type::Types::TYPE
 			) {
 			creation_instr = m_builder->CreateAlloca(convert_type(stmt_define_ast->define_type), NULL, stmt_define_ast->identifier.m_value);
-			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->m_is_constant));
 		}
 	}
 	else {
@@ -248,7 +263,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			&& stmt_define_ast->define_type.m_type != Type::Types::TYPE
 			) {
 			creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), convert_type(stmt_define_ast->define_type));
-			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->m_is_constant));
 		}
 		else {
 
@@ -256,7 +271,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 	
 	// @TODO this works if it isn't a function...
-	if (stmt_define_ast->is_initialised
+	if (stmt_define_ast->m_is_initialised
 		&& stmt_define_ast->define_type.m_type != Type::Types::FN
 		&& stmt_define_ast->define_type.m_type != Type::Types::INTERFACE
 		&& stmt_define_ast->define_type.m_type != Type::Types::TYPE) {
@@ -273,7 +288,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// @TODO jesus fix this pls
 	if (stmt_define_ast->define_type.m_type == Type::Types::FN) {
 		stmt_define_ast->value->visit(this);
-		m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::Function*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->is_constant));
+		m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry((llvm::Function*)m_fetched_value, &stmt_define_ast->define_type, stmt_define_ast->is_global, stmt_define_ast->m_is_constant));
 	}
 
 
@@ -288,8 +303,8 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (stmt_define_ast->define_type.m_type == Type::Types::INTERFACE) {
 
 		// first get the llvm::StructType* from the define type e.g. x : vec
-		llvm::StructType* type = (llvm::StructType*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_identifier).optional_data;
-		auto creation_instr = m_builder->CreateAlloca(type);
+		//llvm::StructType* type = (llvm::StructType*)m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_identifier).optional_data;
+		//auto creation_instr = m_builder->CreateAlloca(type);
 		//if (stmt_define_ast->is_initialised) {
 		//	stmt_define_ast->value->visit(this);
 		//	convert_fetched_to_value();
@@ -415,7 +430,7 @@ void* LLVMGenerator::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
 
-	// when we visit an interface ast, we are defining the interface
+	// when we visit an interface ast, we are creating an interface instance interface
 	// e.g. interaface {
 	//			xyz : f32;
 	//		}
@@ -423,7 +438,7 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
 
 	// create the struct and the virtual table for the struct
-	auto name = llvm::StringRef(expr_interface_ast->m_full_type.m_interface_identifier.m_value);
+	auto name = llvm::StringRef(expr_interface_ast->m_lambda_name.m_value);
 	auto interface_type = llvm::StructType::create(*m_context, name);
 
 	std::vector<llvm::Type*> members;
@@ -432,10 +447,10 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 	}
 
 	interface_type->setBody(llvm::ArrayRef<llvm::Type*>(members));
-	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_full_type.m_interface_identifier.m_value));
+	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_lambda_name.m_value));
 	
 	m_sym_table.add_symbol(
-		expr_interface_ast->m_full_type.m_interface_identifier,
+		expr_interface_ast->m_lambda_name,
 		SymTableEntry(interface_type, &expr_interface_ast->m_full_type, 0, 0)
 	);
 
@@ -445,22 +460,12 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 }
 
 void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
-
+    //kng_log("visiting fn! {}", expr_fn_ast->full_type.m_fn_identifier.m_value);
 	auto prev_insert_point = m_builder->GetInsertBlock();
-	llvm::Type* return_type = convert_type(expr_fn_ast->full_type.m_fn_operation_types.at(0));
-	std::vector<llvm::Type*> param_types;
 
 
-
-
-	for (s32 i = 1; i < expr_fn_ast->full_type.m_fn_operation_types.size(); i++) {
-		param_types.push_back(convert_type(expr_fn_ast->full_type.m_fn_operation_types.at(i)));
-	}
-
-
-	llvm::FunctionType* ft = llvm::FunctionType::get(return_type, param_types, false);
-	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->full_type.m_fn_identifier.m_value, *m_module);
-	
+	llvm::FunctionType* ft = create_fn_type(expr_fn_ast->m_type);
+	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->m_lambda_name.m_value, *m_module);
 
 	
 	m_sym_table.enter_scope();
@@ -503,7 +508,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 		// code gen the fn body
 		expr_fn_ast->body->visit(this);
-		if (!expr_fn_ast->full_type.m_fn_has_return)
+		if (!expr_fn_ast->m_type.m_fn_has_return)
 			m_builder->CreateRetVoid();
 	
 		//m_builder->ClearInsertionPoint();
@@ -513,7 +518,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 
 	m_sym_table.pop_scope();
 	// add the fn type to the symbol table
-	m_sym_table.add_symbol(expr_fn_ast->full_type.m_fn_identifier, SymTableEntry(f, &expr_fn_ast->full_type, 0,0));
+	m_sym_table.add_symbol(expr_fn_ast->m_lambda_name, SymTableEntry(f, &expr_fn_ast->m_type, 0,0));
 	m_fetched_value = f;
 	return NULL;
 }

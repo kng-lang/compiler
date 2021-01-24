@@ -63,6 +63,7 @@ const char* Token::debug_types[] = {
 		"F64",
 		"CHAR",
 		"STRING",
+		"FN",
 
 		"POINTER",
 		"DOT",
