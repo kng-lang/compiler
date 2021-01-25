@@ -225,6 +225,7 @@ struct StmtLoopAST : public StatementAST {
 // e.g. { y : s32 }
 struct ExprInterfaceAST : public ExpressionAST {
 	std::vector<std::shared_ptr<AST>> m_definitions;
+	std::vector<Type> m_types;
 	u8 m_is_lambda = 0; // this is used for name resolution
 	Type m_type;
 	Token m_lambda_name;
@@ -338,6 +339,7 @@ struct ExprUnAST : public ExpressionAST {
 		RIGHT
 	};
 
+	Type m_value_type;
 	Token op;
 	std::shared_ptr<AST> ast;
 	Side side;

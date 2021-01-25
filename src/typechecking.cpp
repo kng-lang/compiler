@@ -245,6 +245,7 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 	
 	for (const auto& def : expr_interface_ast->m_definitions) {
 		def->visit(this);
+		expr_interface_ast->m_type.m_interface_members.push_back(m_checked_type);
 	}
 	
 	m_sym_table.pop_scope();
@@ -448,6 +449,7 @@ void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
 	switch (expr_un_ast->op.m_type) {
 	case Token::Type::TYPEOF: {
 		expr_un_ast->ast->visit(this);
+		expr_un_ast->m_value_type = m_checked_type;
 		m_checked_type = Type::create_basic(Type::Types::TYPE);
 		break;
 	}

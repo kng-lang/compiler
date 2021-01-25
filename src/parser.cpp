@@ -804,9 +804,7 @@ std::shared_ptr<AST> Parser::parse_interface() {
 
 	// a list of definition
 	while (!consume(Token::RCURLY)) {
-		auto define = std::static_pointer_cast<StmtDefineAST>(parse_define());
-		members.push_back(define->define_type);
-		expr_interface.m_definitions.push_back(define);
+		expr_interface.m_definitions.push_back(parse_stmt());
 	}
 	expr_interface.m_type = Type::create_interface(members);
 	expr_interface.m_position = expr_interface.m_position.merge(prev().m_position);

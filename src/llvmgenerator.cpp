@@ -288,6 +288,9 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 			creation_instr = m_builder->CreateAlloca(define_type, NULL, stmt_define_ast->identifier.m_value);
 
 			switch (stmt_define_ast->define_type.m_type) {
+				case Type::Types::NAMESPACE: {
+					break;
+				}
 				// if we are dealing with a type decleration, then we need to assign the type variable
 				case Type::Types::TYPE: {
 					
@@ -518,6 +521,7 @@ void* LLVMGenerator::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 
 void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
+	kng_log("fuck");
 
 	// when we visit an interface ast, we are creating an interface instance interface
 	// e.g. interaface {
@@ -531,10 +535,9 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 	auto interface_type = llvm::StructType::create(*m_context, name);
 
 	std::vector<llvm::Type*> members;
-	for (const auto& member : expr_interface_ast->m_definitions) {
-		// @TODO members here
+	for (s32 i = 0; i < expr_interface_ast->m_definitions.size(); i++){
+		members.push_back(convert_type(expr_interface_ast->m_type.m_interface_members[i]));
 	}
-
 	interface_type->setBody(llvm::ArrayRef<llvm::Type*>(members));
 	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_"+expr_interface_ast->m_lambda_name.m_value));
 	
