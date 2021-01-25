@@ -107,6 +107,10 @@ void Lexer::decide(Token::Type t1, Token::Type t2){
 
 // @TODO this doesn't work
 void Lexer::decide(Token::Type t1, Token::Type t2, Token::Type t3){
+	if (!end() && peek() != '=' && peek() != prev()) {
+		return token(t1);
+	}
+
 	if (!end() && peek() == '=') {
 		advance(1);
 		return token(t2);

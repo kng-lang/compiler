@@ -23,7 +23,7 @@ void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
 		lit->t.cast(t);
 		return;
 	}
-	case AST::ASTType::EXPR_LIT_ARRAY:{
+	case AST::ASTType::EXPR_LIT_ARRAY: {
 		auto arr = std::static_pointer_cast<ExprLiteralArrayAST>(ast);
 		arr->array_type.m_type = t.m_type; // @TODO should we cast the array_type here?
 		arr->contained_type.cast(t);
@@ -80,18 +80,19 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				stmt_define_ast->identifier.m_line
 			)
 		);
-		//m_unit->m_error_handler.error("symbol already defined!",
-		//	stmt_define_ast->identifier.m_index,
-		//	stmt_define_ast->identifier.m_line,
-		//	stmt_define_ast->identifier.m_index+stmt_define_ast->identifier.m_length,
-		//	stmt_define_ast->identifier.m_line
-		//	);
 		return NULL;
 	}
 
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
 	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.m_type == Type::Types::FN))
 		m_sym_table.add_symbol(stmt_define_ast->identifier);
+
+	// if we require the type to be resolved from an identifier, then do that here
+	// an example is x : string; the word string needs to be resolved to a concreate type
+	if (stmt_define_ast->define_type.m_interface_requires_type_finding) {
+		auto entry = m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_identifier);
+		stmt_define_ast->define_type = *entry.type->m_type_contained;
+	}
 
 	Type l_type = stmt_define_ast->define_type;
 	Type r_type;
@@ -101,6 +102,11 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		stmt_define_ast->value->visit(this);
 		r_type = m_checked_type;
 		r_type_ptr = m_checked_type_ptr;
+	}
+
+	if (stmt_define_ast->define_type.m_type == Type::Types::TYPE) {
+		// get the contained type
+		stmt_define_ast->define_type.m_type_contained = r_type_ptr;
 	}
 
 	if (stmt_define_ast->m_requires_type_inference) {
@@ -243,9 +249,11 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 
 	m_sym_table.enter_scope();
 	
+	s32 idx = 0;
 	for (const auto& def : expr_interface_ast->m_definitions) {
 		def->visit(this);
 		expr_interface_ast->m_type.m_interface_members.push_back(m_checked_type);
+		expr_interface_ast->m_type.m_interface_member_idx[m_sym_table.latest_entry.first] = idx++;
 	}
 	
 	m_sym_table.pop_scope();
@@ -398,7 +406,25 @@ void* TypeChecker::visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast){
 	return NULL;
 }
 
-void* TypeChecker::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) { return NULL; }
+void* TypeChecker::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) { 
+	expr_interface_get_ast->m_value->visit(this);
+	expr_interface_get_ast->m_interface_type = m_checked_type;
+	u32 idx;
+	// now try to get the index assuming the lhs is an interface
+	if (expr_interface_get_ast->m_member.m_type == Token::Type::IDENTIFIER) {
+		// the get is an identifier e.g. x.member
+		idx = m_checked_type.m_interface_member_idx[expr_interface_get_ast->m_member];
+		kng_log("fuck={}", m_checked_type.m_interface_member_idx[expr_interface_get_ast->m_member]);
+	}
+	else {
+		// the get is a number e.g. x.0
+		idx = stoi(expr_interface_get_ast->m_member.m_value);
+	}
+	expr_interface_get_ast->m_idx = idx;
+	m_checked_type = expr_interface_get_ast->m_interface_type.m_interface_members.at(idx);
+	m_checked_type_ptr = &expr_interface_get_ast->m_interface_type.m_interface_members.at(idx);
+	return NULL;
+}
 
 void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) { 
 	// get the types of both sides

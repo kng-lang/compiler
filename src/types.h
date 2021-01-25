@@ -62,9 +62,7 @@ struct Type {
 	u8 m_is_constant = 0;
 	u8 m_is_global = 0;
 
-
-
-	
+	Type* m_type_contained;
 	/*
 	
 	NAMESPACES
@@ -101,7 +99,9 @@ struct Type {
 		EXACT,
 	};
 
+	u8 m_interface_requires_type_finding = 0;
 	std::vector<Type> m_interface_members;
+	std::map<Token, u32> m_interface_member_idx;
 	Token m_interface_identifier;
 
 	u8 matches_interface(Type& other, InterfaceMatchType match_type) {

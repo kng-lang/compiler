@@ -175,6 +175,8 @@ llvm::StructType* LLVMGenerator::create_interface_type(Type type) {
 
 llvm::Value* LLVMGenerator::alloc_interface(std::string identifier, std::vector<llvm::Value*> values) {
 	auto interface_type = llvm::StructType::getTypeByName(*m_context, identifier);
+	// now we allocate it on the stack
+	auto allocate = m_builder->CreateAlloca(interface_type);
 	return NULL;
 }
 
@@ -190,12 +192,12 @@ llvm::Value* LLVMGenerator::create_str_constant(std::string s) {
 
 }
 
-void LLVMGenerator::set_interface_value(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index, llvm::Value* value, bool is_volatile) {
-	auto element = get_interface_value(type, interface_value, ptr_index, member_index);
+void LLVMGenerator::set_interface_member(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index, llvm::Value* value, bool is_volatile) {
+	auto element = get_interface_member(type, interface_value, ptr_index, member_index);
 	m_builder->CreateStore(value, element);
 }
 
-llvm::Value* LLVMGenerator::get_interface_value(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index) {
+llvm::Value* LLVMGenerator::get_interface_member(llvm::Type* type, llvm::Value* interface_value, u32 ptr_index, u32 member_index) {
 	return m_builder->CreateGEP(type, interface_value, {
 		llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), ptr_index),
 		llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), member_index)});
@@ -294,8 +296,8 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 				// if we are dealing with a type decleration, then we need to assign the type variable
 				case Type::Types::TYPE: {
 					
-					set_interface_value(define_type, creation_instr, 0, 0, create_str_constant("test"), false);
-					set_interface_value(define_type, creation_instr, 0, 1, llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), 123), false);
+					set_interface_member(define_type, creation_instr, 0, 0, create_str_constant("test"), false);
+					set_interface_member(define_type, creation_instr, 0, 1, llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), 123), false);
 
 					break;
 				}
@@ -521,8 +523,6 @@ void* LLVMGenerator::visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) {
 
 void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 
-	kng_log("fuck");
-
 	// when we visit an interface ast, we are creating an interface instance interface
 	// e.g. interaface {
 	//			xyz : f32;
@@ -685,6 +685,11 @@ void* LLVMGenerator::visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast){
 }
 
 void* LLVMGenerator::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) {
+	// first fetch the value of the interface
+	// we dont convert it to a load because we access the pointer directly
+	expr_interface_get_ast->m_value->visit(this);
+
+	m_fetched_value = get_interface_member(convert_type(expr_interface_get_ast->m_interface_type), m_fetched_value, 0, expr_interface_get_ast->m_idx);
 	return NULL;
 }
 void* LLVMGenerator::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {

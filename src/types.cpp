@@ -189,6 +189,7 @@ Type Type::create_interface(std::vector<Type> member_types){
 Type Type::create_interface(Token name) {
 	auto type = Type(Type::Types::INTERFACE);
 	type.m_interface_identifier = name;
+	type.m_interface_requires_type_finding = 1;
 	return type;
 }
 

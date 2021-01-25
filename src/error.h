@@ -35,7 +35,8 @@ struct Error{
 		SYMBOL_ALREADY_DEFINED,
 		UNKNOWN_TYPE,
 		NOT_L_VALUE,
-		NOT_R_VALUE
+		NOT_R_VALUE,
+		NOT_MEMBER
 	};
 
 	Level m_level;

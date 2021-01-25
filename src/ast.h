@@ -309,10 +309,16 @@ struct ExprGetAST : public ExpressionAST {
 		FILE,
 		MODULE
 	};
-
+	Type m_interface_type;
 	GetType get_type;
-	std::shared_ptr<AST> value;
-	Token member;
+	std::shared_ptr<AST> m_value;
+	Token m_member;
+	s32 m_idx;
+	
+	ExprGetAST(){}
+	ExprGetAST(Token::Position position, std::shared_ptr<AST> value, Token member)
+	: ExpressionAST(position), m_value(value), m_member(member){}
+
 	virtual std::string to_json();
 	virtual ASTType  type() { return ASTType::EXPR_GET; }
 	virtual void* visit(ASTVisitor* visitor);

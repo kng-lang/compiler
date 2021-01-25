@@ -432,8 +432,8 @@ std::shared_ptr<AST> Parser::parse_assign() {
 		switch (higher_precedence->type()) {
 			case AST::ASTType::EXPR_GET: {
 				auto member_get = std::dynamic_pointer_cast<ExprGetAST>(higher_precedence);
-				auto interface_value = member_get->value;
-				auto member_token = member_get->member;
+				auto interface_value = member_get->m_value;
+				auto member_token = member_get->m_member;
 				return std::make_shared<StmtInterfaceAssignAST>(prev().m_position, interface_value, member_token, assign_value);
 			}
 			default: {
@@ -562,7 +562,7 @@ std::shared_ptr<AST> Parser::parse_un() {
 	return parse_cast();
 }
 std::shared_ptr<AST> Parser::parse_cast() {
-	auto higher_precedence = parse_call();
+	auto higher_precedence = parse_interface_get();
 	if (consume(Token::AS)) {
 		// expecting type here
 		if (!expecting_type()) {
@@ -582,6 +582,24 @@ std::shared_ptr<AST> Parser::parse_cast() {
 	}
 	return higher_precedence;
 }
+
+std::shared_ptr<AST> Parser::parse_interface_get() {
+	auto higher_precedence = parse_call();
+	if (consume(Token::Type::DOT)) {
+		// parsing an expression get
+		if (!(consume(Token::Type::IDENTIFIER) || consume(Token::Type::NUMBER))) {
+			m_unit->m_error_handler.error(
+				Error::Level::CRITICAL,
+				Error::Type::NOT_MEMBER,
+				"expected identifier or number as interface member",
+				peek().m_position
+			);
+		}
+		return std::make_shared<ExprGetAST>(higher_precedence->m_position.merge(prev().m_position), higher_precedence, prev());
+	}
+	return higher_precedence;
+}
+
 std::shared_ptr<AST> Parser::parse_call() {
 	auto higher_precedence = parse_single();
 	// check if next is var args
