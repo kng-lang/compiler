@@ -108,6 +108,7 @@ const char* Token::debug_types[] = {
 		"BOR",
 		"BAND",
 
+		"TYPEOF",
 		"AS",
 		"INTERFACE",
 		"IF",

@@ -772,6 +772,13 @@ void* LLVMGenerator::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 }
 void* LLVMGenerator::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
 	switch (expr_un_ast->op.m_type) {
+		// we want to get the type of the next expression and allocate an interface
+		case Token::Type::TYPEOF: {
+			auto type_interface = alloc_interface("type", {});
+			m_fetched_value = type_interface;
+			m_fetched_type = FetchedType::VALUE;
+			break;
+		}
 		case Token::Type::POINTER: {
 			// we first visit the variable expression to set the stored_var_instr.
 			// after, we then load the variable value.

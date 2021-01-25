@@ -549,7 +549,7 @@ std::shared_ptr<AST> Parser::parse_mdmr() {
 }
 
 std::shared_ptr<AST> Parser::parse_un() {
-	if (expect(Token::Type::POINTER) || expect(Token::Type::BANG) || expect(Token::Type::BAND)) {
+	if (expect(Token::Type::POINTER) || expect(Token::Type::BANG) || expect(Token::Type::BAND) || expect(Token::Type::TYPEOF)) {
 
 
 		// @TODO optimise by having a for consume(POINTER) for example so we can chain operations to reduce recursiveness

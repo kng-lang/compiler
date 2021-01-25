@@ -142,6 +142,7 @@ struct Token{
 		BOR,
 		BAND,
 
+		TYPEOF,
 		AS,
 		INTERFACE,
 		IF,

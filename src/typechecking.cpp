@@ -446,6 +446,11 @@ void* TypeChecker::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
 void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) { 
 
 	switch (expr_un_ast->op.m_type) {
+	case Token::Type::TYPEOF: {
+		expr_un_ast->ast->visit(this);
+		m_checked_type = Type::create_basic(Type::Types::TYPE);
+		break;
+	}
 	case Token::Type::POINTER:{
 		// first get the type of the group
 		expr_un_ast->ast->visit(this);
