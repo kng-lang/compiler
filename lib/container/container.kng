@@ -1,0 +1,17 @@
+/*
+
+James Clarke 2021
+
+*/
+
+@module "container";
+
+
+
+//*
+Interface for container types
+*//
+Container : type {
+	contained_type : type;
+	size : u32;
+}

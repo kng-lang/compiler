@@ -1,0 +1,44 @@
+/*
+
+James Clarke 2021
+
+*/
+
+
+@module "container";
+
+//*
+name = stack
+description = stack data structure
+usage = 
+
+s : stack<s32>;
+s.push(1);
+top := s.pop();
+
+*//
+Stack : type {
+	contained_type : type;
+	size : u32;
+	data : vector<$type>;
+	counter := 0;
+
+	Stack := (this){
+		this.type = typeof $type;
+	}
+
+	push := (this, data : $type) {
+		this.data.push_back(data);
+		this.counter++;
+		this.size++;
+	}
+
+	pop := (this) $type {
+		if this.size == 0 {
+			panic("attempting to pop on empty stack");
+		}
+		this.size--;
+		ret this.data.at(this.counter--);
+	}
+		
+}

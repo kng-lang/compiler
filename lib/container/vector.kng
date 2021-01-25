@@ -5,47 +5,34 @@ James Clarke 2021
 */
 
 
-memory : @import "memory"
+@module "container";
 
+Vector : type {
+	contained_type : type;
+	size : u32;
+	data : []$type;
+    allocated_size := 0;
 
+	Vector : (this){
+		this.type = typeof $type;
+        this.allocated_size = 10;
+        this.data = allocate(this.contained_type, this.allocated_size);
+	}
 
-
-
-
-/*
-
-usage:
-
-// allocate & initialise a string vector
-v : vector({"string", "vector"});
-// allocate but don't initialise a string vector
-v : vector<string>;
-
-*/
-vector : type {
-    
-    arr : $type;
-    size : u32;
-    allocated : u32;
-
-    construct vector : (this : ^vector, arr : $type[]){
-        this.arr = arr;
-        this.size = memory.arr_length(arr);
-        this.allocated = size;
-    }
-
-    push_back : (this : ^vector, data : $type) ^vector {
-        // if we have ran out of memory, realloc
-        if(this.size==allocated){
-            this.arr = memory.realloc(this.arr, this.allocated*2);
-            this.allocated*=2;
+	push_back : (this, data : $type){
+        this.data[this.size] = data;
+        this.size++;
+        if this.size > this.allocated_size {
+            this.allocated_size*=2;
+            this.data = realloc(this.contained_type, this.data, this.allocated_size);
         }
-        this.arr[this.size++]=data;
-        return this;
     }
 
-    get : (this : ^vector, index : u32) $type {
-        return this.arr[index];
+    @overload "[]";
+    at : (this, index : u32){
+        if index > this.size
+            panic("array index out of bounds, idx={}",index);
+        ret this.data[index];
     }
-
+		
 }

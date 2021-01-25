@@ -1,0 +1,58 @@
+
+
+@import "memory";
+
+
+strlen : (data : ^u8) u32 {
+    counter : u32 = 0;
+    for {
+        if data[counter]=='\0' 
+            ret counter;
+        counter++;
+    }
+}
+
+
+/*
+String class implements container so we can perform contianer operations on it
+*/
+String : type {
+    data : ^u8;
+    contained_type : type = typeof ^u8;
+    size : u32 = 0;
+    allocated_size := 10;
+
+    String : (this){
+        this.data = allocate(this.contained_type, allocated_size);
+    }
+
+    String : (this, data : ^u8) {
+        this.data = data;
+        this.size = strlen(data);
+    }
+
+    @overload "[]";
+    at : (this, index : u32) {
+        ret this.data[index];
+    }
+
+    append : (this, data : ^u8){
+        this.size += strlen(data);
+        if this.size > this.allocated_size {
+            this.data = reallocate(this.contained_type, this.data, this.size);
+        }
+        for i in 0..strlen(data) {
+            this.data[i-data.size] = data[i];
+        } 
+    }
+
+    append : (this, data : String){
+        this.size += data.size();
+        if this.size > this.allocated_size {
+            this.data = reallocate(this.contained_type, this.data, this.size);
+        }
+        for c, i in data {
+            this.data[i-data.size] = c;
+        }
+    }
+}

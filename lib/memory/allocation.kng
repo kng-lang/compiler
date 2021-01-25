@@ -1,0 +1,42 @@
+/*
+
+James Clarke 2021
+
+*/
+
+linked_list : @include "container/linked_list.kng";
+
+
+/*
+An allocator is responsible of allocating memory and managing that allocated memory
+*/
+Allocator : type {
+    allocate : (size : u32) ^$type;
+    reallocate : (new_size : u32) ^$type;
+}
+
+/*
+The default allocator implements the standard malloc allocation technique
+*/
+DefaultAllocator : type {
+
+    ll : linked_list.LinkedList;
+
+    allocate : (size : u32) ^$type {}
+    reallocate : (data : ^$type, size : u32) ^$type {}
+}
+
+
+default_allocator : Allocator;
+
+
+/*
+By default, the default_allocator is used to allocate memory on the heap
+*/
+alloc : (allocator : Allocator = default_allocator, size : u32) {
+    allocator.allocate(size);
+}
+
+realloc : (allocator : Allocator = default_allocator, data : ^$type, new_size : u32) {
+    allocator.reallocate(data, new_size);
+}

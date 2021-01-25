@@ -1,0 +1,11 @@
+/*
+
+James Clarke 2021
+
+*/
+
+
+Result : type {
+    result : u8;
+    ok : $type;
+}

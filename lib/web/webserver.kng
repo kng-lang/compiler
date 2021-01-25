@@ -1,0 +1,23 @@
+/*
+
+James Clarke 2021
+
+*/
+
+@import "concurrency";
+@import "net";
+
+
+ServerConnection : type {
+    thread : Thread;
+    socket : Socket;
+}
+
+WebServer : type {
+    connections : []ServerConnection;
+    socket : Socket;
+
+    WebServer : (this, port : u32 = 80){
+        this.socket = Socket(port);
+    }
+}
