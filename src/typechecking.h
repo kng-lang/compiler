@@ -6,6 +6,7 @@ James Clarke - 2021
 
 #include <memory>
 
+#include "symtable.h"
 #include "types.h"
 #include "common.h"
 #include "ast.h"

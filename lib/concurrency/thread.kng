@@ -7,13 +7,24 @@ James Clarke 2021
 
 Thread : type {
 
-    start_fn : fn ();
+    code : fn ();
 
-    start : (){}
-    kill : (){}
-    wait : (){}
+    start : (this : ^Thread){
+        this.code();
+    }
 
+    kill : (this : ^Thread){}
+    wait : (this : ^Thread){
+        block(this);
+    }
 }
 
 
 ThreadPool : type {}
+
+
+
+create_thread : (code : fn) t : ^Thread {
+    t = alloc(typeof Thread);
+    t.code = code;
+}

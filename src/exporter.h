@@ -6,6 +6,7 @@ James Clarke - 2021
 
 #include "common.h"
 #include "types.h"
+#include "symtable.h"
 
 #define EXPORT_DUMP_DIR "exports/" // the directory relative to kng.exe to dump the exports
 #define PATH_DELIMITER "__"		   // used to delimit directories in a source file e.g. /src/main.k -> src__main.dump

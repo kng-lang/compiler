@@ -11,7 +11,6 @@ Parser::Parser(){}
 Parser::Parser(TokenList& tokens, CompilationUnit* unit){
 	this->tokens = tokens.m_tokens;
 	this->m_unit = unit;
-	this->m_sym_table = std::make_shared<SymTable<Type>>();
 }
 
 
@@ -131,29 +130,20 @@ std::shared_ptr<AST> Parser::parse_directive() {
 				return std::make_shared<ErrorAST>(prev().m_position);
 			}
 			auto path = next();
-			auto valid_include = m_unit->m_importer->valid_include_path(m_unit->m_compile_file.m_file_path, path.m_value);
-			if (valid_include==Importer::DepStatus::NO
-				|| valid_include==Importer::DepStatus::CYCLIC_DEP) {
-				std::string problem;
-				switch (valid_include) {
-				    case Importer::DepStatus::CYCLIC_DEP: problem = "include path is causing a cyclic dependency"; break;
-				}
+			auto valid_include = m_unit->m_importer->valid_include_path(path.m_value);
+			if (!valid_include){
 				m_unit->m_error_handler.error(
 					Error::Level::CRITICAL,
 					Error::Type::MISSING_DELIMITER,
-					problem,
+					"include path was invalid (TODO say why)",
 					prev().m_position
 				);
 				return std::make_shared<ErrorAST>(prev().m_position);
 			}
-			// finally if we have't already included this file then include it!
-			if (!m_unit->m_importer->already_included(m_unit->m_compile_file.m_file_path, path.m_value)) {
-				// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
-				auto compilation_unit = m_unit->m_importer->include(m_unit->m_compile_file.m_file_path, path.m_value, valid_include);
-				auto ast = compilation_unit->compile_to_ast();
-				return ast;
-			}
-			break;
+			// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
+			auto compilation_unit = m_unit->m_importer->include_file(path.m_value);
+			auto ast = compilation_unit->compile_to_ast();
+			return ast;
 		}
 	}
 	return parse_stmt();
@@ -197,11 +187,9 @@ std::shared_ptr<AST> Parser::parse_stmt_block() {
 
 	consume(Token::Type::LCURLY, "'{' expected");
 	if (!consume(Token::Type::RCURLY)) {
-		m_sym_table->enter_scope();
 		while (!end_of_block()) {
 			stmt_block.stmts.push_back(parse_stmt());
 		}
-		m_sym_table->pop_scope();
 		consume(Token::Type::RCURLY, "'}' expected");
 	}
 

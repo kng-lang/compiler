@@ -1,6 +1,7 @@
 #pragma once
 
 #include "generator.h"
+#include "symtable.h"
 #include <stack>
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/IR/Module.h"

@@ -37,12 +37,12 @@ void Compiler::compile(std::string& path, CompileOptions options) {
 
 	m_importer = Importer(this);
 
-	auto unit = m_importer.include(path, path, Importer::DepStatus::LOCAL);
+	auto unit = m_importer.include_file(path);
 	unit->compile();
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-	kng_log("compiled {} file(s) and {} line(s) in {} ms.", m_importer.m_unit_count, m_importer.m_line_count, time);
+	kng_log("compiled {} file(s) and {} line(s) in {} ms.", m_importer.m_units, m_importer.m_lines, time);
 }
 
 u8 CompilationUnit::compile() {
@@ -97,82 +97,82 @@ void CompilationUnit::compile_to_bin() {
 		kng_log("generated in {} ms.", time);
 }
 
-u8 Importer::valid_import_path(std::string& path) {
-	// (for each of these check if the path contains a main.kng)
-
-	// first check the path relative to the current file
-
-	// then check the path relative to the kng install e.g. c:/kng/lib/examples/
-
-	// then check the internet
-	// e.g. #include "https://www.github.com/kng/lib/examples/"
-
-	// then check absolute
-	return 1;
-}
-
-std::string Importer::create_import_path(std::string& path, Importer::DepStatus dep_status) {
-	switch (dep_status) {
-		case DepStatus::LOCAL: return path; // if the path is local absolute then return it
-		case DepStatus::LIB: {
-			std::stringstream ss;
-			auto install_dir = std::getenv("KNG_PATH");
-			ss << install_dir << "lib/" << path;
-			return ss.str();
-		}
-	}
-}
-
-Importer::DepStatus Importer::valid_include_path(std::string& current_path, std::string& path) {
-	// we need to check for circular dependencies
-	// first get the target dependencies' dependencies
-	auto to_imports_dependencies = m_unit_dependencies[path];
-	// then check if we are inside that
-	if (std::find(to_imports_dependencies.begin(), to_imports_dependencies.end(), current_path) != to_imports_dependencies.end())
-		return DepStatus::CYCLIC_DEP;
-
-	// first check the path relative to the current file
-	if (FILE* file = fopen(path.c_str(), "r")) {
-		fclose(file);
-		return DepStatus::LOCAL;
-	}
-	auto lib_path = create_import_path(path, DepStatus::LIB);
-	// first check the path relative to the current file
-	if (FILE* file = fopen(lib_path.c_str(), "r")) {
-		fclose(file);
-		return DepStatus::LIB;
-	}
-
-
-
-	// then check the internet
-	// e.g. #include "https://www.github.com/kng/lib/example.kng"
-
-	// then check absolute
-
-	return DepStatus::NO;
-}
-
-u8 Importer::already_included(std::string& current_path, std::string& path) {
-	return m_units.count(path)>0;
-}
-
-std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
-	CompileFile f(path);
-	auto unit = std::make_shared<CompilationUnit>(f, m_compiler);
-	return unit;
-}
-
-std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path, DepStatus dep_status) {
-
-	auto new_path = create_import_path(path, dep_status);
-	CompileFile f(new_path);
-
-	auto unit = std::make_shared<CompilationUnit>(f, m_compiler);
-	m_unit_count++;
-	m_line_count += count_lines(f.m_file_contents);
-	m_units[path] = unit;
-	// get the current unit
-	m_unit_dependencies[current_path].push_back(path);
-	return unit;
-}
+//u8 Importer::valid_import_path(std::string& path) {
+//	// (for each of these check if the path contains a main.kng)
+//
+//	// first check the path relative to the current file
+//
+//	// then check the path relative to the kng install e.g. c:/kng/lib/examples/
+//
+//	// then check the internet
+//	// e.g. #include "https://www.github.com/kng/lib/examples/"
+//
+//	// then check absolute
+//	return 1;
+//}
+//
+//std::string Importer::create_import_path(std::string& path, Importer::DepStatus dep_status) {
+//	switch (dep_status) {
+//		case DepStatus::LOCAL: return path; // if the path is local absolute then return it
+//		case DepStatus::LIB: {
+//			std::stringstream ss;
+//			auto install_dir = std::getenv("KNG_PATH");
+//			ss << install_dir << "lib/" << path;
+//			return ss.str();
+//		}
+//	}
+//}
+//
+//Importer::DepStatus Importer::valid_include_path(std::string& current_path, std::string& path) {
+//	// we need to check for circular dependencies
+//	// first get the target dependencies' dependencies
+//	auto to_imports_dependencies = m_unit_dependencies[path];
+//	// then check if we are inside that
+//	if (std::find(to_imports_dependencies.begin(), to_imports_dependencies.end(), current_path) != to_imports_dependencies.end())
+//		return DepStatus::CYCLIC_DEP;
+//
+//	// first check the path relative to the current file
+//	if (FILE* file = fopen(path.c_str(), "r")) {
+//		fclose(file);
+//		return DepStatus::LOCAL;
+//	}
+//	auto lib_path = create_import_path(path, DepStatus::LIB);
+//	// first check the path relative to the current file
+//	if (FILE* file = fopen(lib_path.c_str(), "r")) {
+//		fclose(file);
+//		return DepStatus::LIB;
+//	}
+//
+//
+//
+//	// then check the internet
+//	// e.g. #include "https://www.github.com/kng/lib/example.kng"
+//
+//	// then check absolute
+//
+//	return DepStatus::NO;
+//}
+//
+//u8 Importer::already_included(std::string& current_path, std::string& path) {
+//	return m_units.count(path)>0;
+//}
+//
+//std::shared_ptr<CompilationUnit> Importer::import(std::string& path) {
+//	CompileFile f(path);
+//	auto unit = std::make_shared<CompilationUnit>(f, m_compiler);
+//	return unit;
+//}
+//
+//std::shared_ptr<CompilationUnit> Importer::include(std::string& current_path, std::string& path, DepStatus dep_status) {
+//
+//	auto new_path = create_import_path(path, dep_status);
+//	CompileFile f(new_path);
+//
+//	auto unit = std::make_shared<CompilationUnit>(f, m_compiler);
+//	m_unit_count++;
+//	m_line_count += count_lines(f.m_file_contents);
+//	m_units[path] = unit;
+//	// get the current unit
+//	m_unit_dependencies[current_path].push_back(path);
+//	return unit;
+//}

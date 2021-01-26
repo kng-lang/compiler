@@ -8,6 +8,7 @@ James Clarke - 2021
 #include <map>
 #include "common.h"
 #include "error.h"
+#include "import.h"
 
 
 /*
@@ -74,32 +75,32 @@ struct CompileFile {
 
 struct CompilationUnit;
 
-struct Importer {
-
-	enum class DepStatus {
-		NO = 0,
-		LOCAL = 1,
-		LIB = 2,
-		CYCLIC_DEP = 3
-	};
-
-	Compiler* m_compiler;
-	// the importer manages the compilation units
-	std::map<std::string, std::shared_ptr<CompilationUnit>> m_units;
-	std::map<std::string, std::vector<std::string>> m_unit_dependencies;
-	u32 m_unit_count = 0;
-	u32 m_line_count = 0;
-
-	Importer(){}
-	Importer(Compiler* compiler) : m_compiler(compiler){}
-	std::string create_import_path(std::string& path, Importer::DepStatus dep_status);
-	u8 valid_import_path(std::string& path);
-	DepStatus valid_include_path(std::string& current_path, std::string& path);
-	u8 already_included(std::string& current_path, std::string& path);
-	std::shared_ptr<CompilationUnit> new_unit(std::string& path, Compiler* compiler);
-	std::shared_ptr<CompilationUnit> import(std::string& path);
-	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path, DepStatus dep_status);
-};
+//struct Importer {
+//
+//	enum class DepStatus {
+//		NO = 0,
+//		LOCAL = 1,
+//		LIB = 2,
+//		CYCLIC_DEP = 3
+//	};
+//
+//	Compiler* m_compiler;
+//	// the importer manages the compilation units
+//	std::map<std::string, std::shared_ptr<CompilationUnit>> m_units;
+//	std::map<std::string, std::vector<std::string>> m_unit_dependencies;
+//	u32 m_unit_count = 0;
+//	u32 m_line_count = 0;
+//
+//	Importer(){}
+//	Importer(Compiler* compiler) : m_compiler(compiler){}
+//	std::string create_import_path(std::string& path, Importer::DepStatus dep_status);
+//	u8 valid_import_path(std::string& path);
+//	DepStatus valid_include_path(std::string& current_path, std::string& path);
+//	u8 already_included(std::string& current_path, std::string& path);
+//	std::shared_ptr<CompilationUnit> new_unit(std::string& path, Compiler* compiler);
+//	std::shared_ptr<CompilationUnit> import(std::string& path);
+//	std::shared_ptr<CompilationUnit> include(std::string& current_path, std::string& path, DepStatus dep_status);
+//};
 
 struct Compiler {
 	CompileOptions m_options;
@@ -110,9 +111,6 @@ struct Compiler {
 
 	void compile(std::string& path, CompileOptions options);
 };
-
-struct Importer;
-
 struct CompilationUnit {
 	Compiler* m_compiler;
 	Importer* m_importer;

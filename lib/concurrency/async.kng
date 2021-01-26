@@ -1,0 +1,81 @@
+/*
+
+James Clarke 2021
+
+*/
+
+
+
+/*
+
+async usage:
+
+say we wanted to run some code asyncronously, and we wanted to wait
+for the result. rather than directly using threads, we can use
+the async and await helper functions.
+
+
+promise := async(() println("this is running asyncronously!"););
+result := await(promise);
+
+
+
+if we don't want to wait for the result, we can call the function asyncronously anyway
+
+
+async(() write_to_file(...));
+println("this will be printed whilst the async is running in the background!");
+
+*/
+
+
+
+
+@module "concurrency";
+@import "memory";
+
+Promise : type {
+    resolved : u8 = 0;
+    result : ^u0;
+    worker_thread : ^Thread;
+}
+
+
+
+/*
+The async function runs a function asyncronously and
+returns a promise as a result
+*/
+async : (f : fn) promise : ^Promise {
+
+    promise = create_shared<Promise>();
+
+    // first create a lambda that will call the function
+    // and when done, will set the promise value
+    on_another_thread := (){
+        promise.result = f();
+        promise.resolved = 1;
+    }
+
+    // start the fn on another thread and return
+    promise.worker_thread = create_thread(on_another_thread);
+    promise.worker_thread.start();
+}
+
+
+
+/*
+Block until a promise has been resolved
+*/
+wait : (p : ^Promise) ^u0{
+    // there are 2 options here, we can either block on the worker thread
+    // or we can spin on the result
+
+    // blocking on worker thread
+    block(p.worker_thread);
+
+    // spinning on result
+    for !p.resolved {}
+
+    ret p.result;
+}
