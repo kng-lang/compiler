@@ -299,3 +299,7 @@ void* ExprIncludedAST::visit(ASTVisitor* visitor) {
 void* ExprModuleAST::visit(ASTVisitor* visitor) {
 	return visitor->visit_expr_module_ast(this);
 }
+
+void* StmtDeferAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_stmt_defer_ast(this);
+}

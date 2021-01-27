@@ -154,6 +154,7 @@ struct Token{
 		RETURN,
 		BREAK,
 		CONTINUE,
+		DEFER,
 
 		ASSIGN,
 		QUICK_ASSIGN

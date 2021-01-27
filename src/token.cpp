@@ -120,6 +120,7 @@ const char* Token::debug_types[] = {
 		"RETURN",
 		"BREAK",
 		"CONTINUE",
+		"DEFER",
 
 		"ASSIGN",
 		"QUICK_ASSIGN"

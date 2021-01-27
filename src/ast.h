@@ -41,6 +41,7 @@ struct ExprLiteralArrayAST;
 struct ExprTypeAST; // e.g. x := u32;
 struct ExprIncludedAST;
 struct ExprModuleAST;
+struct StmtDeferAST;
 
 
 struct AST {
@@ -222,6 +223,13 @@ struct StmtLoopAST : public StatementAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+
+struct StmtDeferAST : public StatementAST {
+	std::shared_ptr<AST> m_ast;
+	StmtDeferAST() {}
+	StmtDeferAST(Token::Position position, std::shared_ptr<AST> ast) : StatementAST(position), m_ast(ast) {}
+	virtual void* visit(ASTVisitor* visitor);
+};
 
 // this is the actual interface definition, not an inline inline interace, array literals are used for that
 // e.g. { y : s32 }
@@ -429,6 +437,7 @@ struct ExprModuleAST : public ExpressionAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+
 struct ASTVisitor {
 	std::shared_ptr<AST> m_ast;
 
@@ -447,6 +456,7 @@ struct ASTVisitor {
 	virtual void* visit_stmt_break_ast(StmtBreakAST* stmt_break_ast) = 0;
 	virtual void* visit_stmt_if_ast(StmtIfAST* stmt_if_ast) = 0;
 	virtual void* visit_stmt_loop_ast(StmtLoopAST* stmt_loop_ast) = 0;
+	virtual void* visit_stmt_defer_ast(StmtDeferAST* stmt_defer_ast) = 0;
 	virtual void* visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) = 0;
 	virtual void* visit_expr_fn_ast(ExprFnAST* expr_fn_ast) = 0;
 	virtual void* visit_expr_cast_ast(ExprCastAST* expr_cast_ast) = 0;

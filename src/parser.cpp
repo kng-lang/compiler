@@ -64,6 +64,11 @@ std::shared_ptr<AST> Parser::parse_stmt(){
 			stmt = parse_for();
 			break;
 		}
+		case Token::Type::DEFER: {
+			m_requiring_delimiter = 1;
+			stmt = parse_defer();
+			break;
+		}
 		case Token::Type::LCURLY: {
 			stmt = parse_stmt_block();
 			break;
@@ -176,6 +181,12 @@ std::shared_ptr<AST> Parser::parse_for(){
 	loop_ast.body = parse_stmt();
 	m_requiring_delimiter = 0;
 	return std::make_shared<StmtLoopAST>(loop_ast);
+}
+
+std::shared_ptr<AST> Parser::parse_defer() {
+	consume(Token::Type::DEFER);
+	auto expression = parse_expression();
+	return std::make_shared<StmtDeferAST>(prev().m_position.merge(expression->m_position), expression);
 }
 
 // a stmt block is simply a list of statements.

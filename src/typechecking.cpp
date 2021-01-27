@@ -414,7 +414,6 @@ void* TypeChecker::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_a
 	if (expr_interface_get_ast->m_member.m_type == Token::Type::IDENTIFIER) {
 		// the get is an identifier e.g. x.member
 		idx = m_checked_type.m_interface_member_idx[expr_interface_get_ast->m_member];
-		kng_log("fuck={}", m_checked_type.m_interface_member_idx[expr_interface_get_ast->m_member]);
 	}
 	else {
 		// the get is a number e.g. x.0
@@ -553,5 +552,9 @@ void* TypeChecker::visit_expr_included_ast(ExprIncludedAST* expr_included_ast) {
 	return NULL;
 }
 void* TypeChecker::visit_expr_module_ast(ExprModuleAST* expr_module_ast) {
+	return NULL;
+}
+
+void* TypeChecker::visit_stmt_defer_ast(StmtDeferAST* stmt_defer_ast) {
 	return NULL;
 }

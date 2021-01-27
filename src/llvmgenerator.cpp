@@ -859,3 +859,7 @@ void* LLVMGenerator::visit_expr_included_ast(ExprIncludedAST* expr_included_ast)
 void* LLVMGenerator::visit_expr_module_ast(ExprModuleAST* expr_module_ast) {
 	return NULL;
 }
+
+void* LLVMGenerator::visit_stmt_defer_ast(StmtDeferAST* stmt_defer_ast) {
+	return NULL;
+}

@@ -213,6 +213,7 @@ void Lexer::do_word(char start){
 			if(!found_keyword) found_keyword = check_keyword("ontinue", Token::Type::CONTINUE); 
 			break;
 		}
+		case 'd': found_keyword = check_keyword("efer", Token::Type::DEFER); break;
 		case 'e': found_keyword = check_keyword("lse", Token::Type::ELSE); break;
 		case 'f': {
 			found_keyword = check_keyword("32", Token::Type::F32);
