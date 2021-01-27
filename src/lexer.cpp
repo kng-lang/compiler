@@ -230,6 +230,9 @@ void Lexer::do_word(char start){
 			if (!found_keyword) found_keyword = check_keyword("mport", Token::Type::IMPORT);
 			break;
 		}
+		case 'm': {
+			found_keyword = check_keyword("odule", Token::Type::MODULE); break;
+		}
 		case 'o': {
 			found_keyword = check_keyword("r", Token::Type::LOR); break;
 		}
@@ -256,6 +259,7 @@ void Lexer::do_word(char start){
 			if (!found_keyword) found_keyword = check_keyword("16", Token::Type::U16);
 			if (!found_keyword) found_keyword = check_keyword("32", Token::Type::U32);
 			if (!found_keyword) found_keyword = check_keyword("64", Token::Type::U64);
+			if (!found_keyword) found_keyword = check_keyword("se", Token::Type::USE);
 			break;
 		}
 		case 'x': found_keyword = check_keyword("or", Token::Type::LAND); break;

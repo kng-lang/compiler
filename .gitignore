@@ -5,7 +5,7 @@ cmake-build-release/
 **/.idea/
 exports/
 tests/
-TODO.md
+NOTES.md
 **/build
 **/Debug
 **/Release

@@ -547,3 +547,11 @@ void* TypeChecker::visit_expr_type_ast(ExprTypeAST* expr_type_ast) {
 	m_checked_type_ptr = &expr_type_ast->m_type;
 	return NULL;
 }
+
+void* TypeChecker::visit_expr_included_ast(ExprIncludedAST* expr_included_ast) {
+	expr_included_ast->m_ast->visit(this);
+	return NULL;
+}
+void* TypeChecker::visit_expr_module_ast(ExprModuleAST* expr_module_ast) {
+	return NULL;
+}

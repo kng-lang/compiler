@@ -291,3 +291,11 @@ void* ExpressionAST::visit(ASTVisitor* visitor)
 {
 	return nullptr;
 }
+
+void* ExprIncludedAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_included_ast(this);
+}
+
+void* ExprModuleAST::visit(ASTVisitor* visitor) {
+	return visitor->visit_expr_module_ast(this);
+}

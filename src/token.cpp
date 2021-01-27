@@ -34,6 +34,8 @@ const char* Token::debug_types[] = {
 
 		"INCLUDE",
 		"IMPORT",
+		"MODULE",
+		"USE",
 		"RUN",
 		"LINK",
 		"HIDE",

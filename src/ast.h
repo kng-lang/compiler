@@ -39,6 +39,8 @@ struct ExprGroupAST;
 struct ExprLiteralAST;
 struct ExprLiteralArrayAST;
 struct ExprTypeAST; // e.g. x := u32;
+struct ExprIncludedAST;
+struct ExprModuleAST;
 
 
 struct AST {
@@ -414,6 +416,19 @@ struct ExprTypeAST : public ExpressionAST {
 	virtual void* visit(ASTVisitor* visitor);
 };
 
+struct ExprIncludedAST : public ExpressionAST {
+	std::shared_ptr<AST> m_ast;
+	ExprIncludedAST(){}
+	ExprIncludedAST(Token::Position position, std::shared_ptr<AST> ast) : ExpressionAST(position), m_ast(ast){}
+	virtual void* visit(ASTVisitor* visitor);
+};
+
+struct ExprModuleAST : public ExpressionAST {
+	ExprModuleAST(){}
+	ExprModuleAST(Token::Position position) : ExpressionAST(position) {}
+	virtual void* visit(ASTVisitor* visitor);
+};
+
 struct ASTVisitor {
 	std::shared_ptr<AST> m_ast;
 
@@ -445,4 +460,6 @@ struct ASTVisitor {
 	virtual void* visit_expr_literal_ast(ExprLiteralAST* expr_literal_ast) = 0;
 	virtual void* visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_literal_array_ast) = 0;
 	virtual void* visit_expr_type_ast(ExprTypeAST* expr_type_ast) = 0;
+	virtual void* visit_expr_included_ast(ExprIncludedAST* expr_included_ast) = 0;
+	virtual void* visit_expr_module_ast(ExprModuleAST* expr_module_ast) = 0;
 };

@@ -688,8 +688,8 @@ void* LLVMGenerator::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get
 	// first fetch the value of the interface
 	// we dont convert it to a load because we access the pointer directly
 	expr_interface_get_ast->m_value->visit(this);
-
 	m_fetched_value = get_interface_member(convert_type(expr_interface_get_ast->m_interface_type), m_fetched_value, 0, expr_interface_get_ast->m_idx);
+	m_fetched_type = FetchedType::VALUE;
 	return NULL;
 }
 void* LLVMGenerator::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {
@@ -849,5 +849,13 @@ void* LLVMGenerator::visit_expr_literal_array_ast(ExprLiteralArrayAST* expr_lite
 
 void* LLVMGenerator::visit_expr_type_ast(ExprTypeAST* expr_type_ast) {
 	// create a type structure here
+	return NULL;
+}
+
+void* LLVMGenerator::visit_expr_included_ast(ExprIncludedAST* expr_included_ast) {
+	expr_included_ast->m_ast->visit(this);
+	return NULL;
+}
+void* LLVMGenerator::visit_expr_module_ast(ExprModuleAST* expr_module_ast) {
 	return NULL;
 }

@@ -68,6 +68,8 @@ struct Token{
 
 		INCLUDE,
 		IMPORT,
+		MODULE,
+		USE,
 		RUN,
 		LINK,
 		HIDE,

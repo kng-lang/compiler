@@ -140,10 +140,9 @@ std::shared_ptr<AST> Parser::parse_directive() {
 				);
 				return std::make_shared<ErrorAST>(prev().m_position);
 			}
-			// @TODO_URGENT add a way for the compilers Importer to track which CompilationUnits exist so we can get some stats
 			auto compilation_unit = m_unit->m_importer->include_file(path.m_value);
 			auto ast = compilation_unit->compile_to_ast();
-			return ast;
+			return std::make_shared<ExprIncludedAST>(prev().m_position, ast);
 		}
 	}
 	return parse_stmt();
@@ -412,30 +411,7 @@ std::shared_ptr<AST> Parser::parse_assign() {
 	auto higher_precedence = parse_expression();
 	if (consume(Token::ASSIGN)) {
 		auto assign_value = parse_expression();
-
-		// !@TODO we should be able to assign to any lvalue
-
-
-		// we need to check if we are setting a variable, or an interface member
-		switch (higher_precedence->type()) {
-			case AST::ASTType::EXPR_GET: {
-				auto member_get = std::dynamic_pointer_cast<ExprGetAST>(higher_precedence);
-				auto interface_value = member_get->m_value;
-				auto member_token = member_get->m_member;
-				return std::make_shared<StmtInterfaceAssignAST>(prev().m_position, interface_value, member_token, assign_value);
-			}
-			default: {
-				return std::make_shared<StmtAssignAST>(prev().m_position, higher_precedence, assign_value);
-				//@TODO use AST position information
-				m_unit->m_error_handler.error(
-					Error::Level::CRITICAL,
-					Error::Type::MISSING_DELIMITER,
-					"cannot assign to lhs",
-					higher_precedence->m_position
-				);
-				return std::make_shared<ErrorAST>(prev().m_position);
-			}
-		}
+		return std::make_shared<StmtAssignAST>(prev().m_position, higher_precedence, assign_value);
 	}
 	return higher_precedence;
 }

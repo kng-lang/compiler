@@ -192,29 +192,108 @@ app.build := (){
 }
 ```
 
-# garbage collection
-we can enable garbage collection in the build options. if the compiler sees a structure will be used outside of the current scope, it will heap allocate it and the gc runtime (on another thread) will deallocate it when ready
-
-```
-fn_1 := (v : ^vec) io.println v.x
-
-main := () {
-    v := &vec() // this is turned into a heap allocation by the compiler (v := new vec)
-    fn_1(v)
-}
-```
-in this example, the compiler can see that v in main is used outside of main (passed to another function) and so it heap allocates it
-
 # reflection
 
-## typeof
-
-## sizeof
-
-## details
 
 
-# includes
+
+# using other files
+
+Using other files in KNG is done by either importing a file directly, or using the module system.
+All decleration resolution is done at link time, only the symbol table of other files is exposed to other files. 
+
+## include
+say we have a file called first.kng
+
+```
+global_variable : 123;
+
+```
+and we want to use that variable in second.kng, we can just include the file
+```
+
+@include "first.kng";
+
+some_variable := global_variable;
+
+```
+if we want we can assign the first file to a namespace
+```
+first : @include "first.kng";
+
+some_variable := first.global_variable;
+another_variable := first.a_namespace.another_variable;
+```
+
+
+## modules
+Modules implicitly group a set of individual files together. A file must use the @module directive to indicate it is part of a module
+```
+@module;
+
+global_variable : 321;
+```
+now this global_variable is exposed to the module and we can use it in other module files
+```
+@module;
+
+x := global_variable;
+
+```
+we can also tie the module to a namespace to indicate the varibale is defined in another file
+```
+module : @module;
+
+x := module.global_variable;
+```
+
+### import
+we use the import directive to import other modules
+```
+@import "io";
+
+print("hello world!");
+```
+again, we can assign that module to a namespace
+```
+io : @import "io";
+
+io.print("hello world!");
+
+```
+
+### Submodules
+if we have files in subfolders that want to be part of the module, thats no problem! they just need the @module directive. However, what if we want to have a module within another module, we can so so by using module identifiers
+
+```
+@module "top_directory_module";
+```
+another file in a subdirectory may be in a submodule
+```
+@module "sub_directory_module";
+```
+the top level directory module can include the other module
+```
+@module "top_directory_module";
+@import "sub_directory_module";
+```
+
+### using
+What if we want to import multiple modules that both have defined a global variable the same name, and we want to use one in particular, we use the @using directive.
+
+Say two io modules both have a global called 'print', this will cause a compiler error as both export 'print'
+```
+@import "io";
+@import "another_io";
+```
+we can namespace the imports, but indicate we want to use the io module's print without a namespace
+```
+io : @import "io";
+another_io : @import "another_io";
+@using "io.print";
+
+print("hello world!");
+```
 
 # compiler directives
 
