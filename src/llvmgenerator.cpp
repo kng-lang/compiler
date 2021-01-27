@@ -264,10 +264,10 @@ void* LLVMGenerator::visit_program(ProgramAST* program_ast){
 	return NULL;
 }
 void* LLVMGenerator::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
-	m_sym_table.enter_scope();
+	m_sym_table.enter_anon();
 	for (const auto& stmt : stmt_block_ast->stmts)
 		stmt->visit(this);
-	m_sym_table.pop_scope();
+	m_sym_table.exit();
 	return NULL;
 }
 void* LLVMGenerator::visit_stmt_expression(StmtExpressionAST* stmt_expression_ast) {
@@ -307,7 +307,7 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 					break;
 				}
 			}
-			m_sym_table.add_symbol(stmt_define_ast->identifier, SymTableEntry(creation_instr, &stmt_define_ast->define_type, stmt_define_ast->m_is_global, stmt_define_ast->m_is_constant));
+			m_sym_table.add(stmt_define_ast->identifier, SymEntry(creation_instr, &stmt_define_ast->define_type));
 		}
 		else {
 			//creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), define_type);
@@ -552,14 +552,13 @@ void* LLVMGenerator::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast){
 }
 
 void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
-    //kng_log("visiting fn! {}", expr_fn_ast->full_type.m_fn_identifier.m_value);
 	auto prev_insert_point = m_builder->GetInsertBlock();
 
 	llvm::FunctionType* ft = create_fn_type(expr_fn_ast->m_type);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->m_lambda_name.m_value, *m_module);
 
 	
-	m_sym_table.enter_scope();
+	m_sym_table.add_enter(expr_fn_ast->m_lambda_name);
 	if (expr_fn_ast->has_body) {
 		llvm::BasicBlock* bb = llvm::BasicBlock::Create(*m_context, "entry_block", f);
 		m_builder->SetInsertPoint(bb);
@@ -593,7 +592,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 			// initialise it
 			auto is_volatile = false;
 			m_builder->CreateStore(arg, alloca_instr, is_volatile);
-			m_sym_table.add_symbol(arg_name, SymTableEntry(alloca_instr, &stmt_define_arg->define_type, 0, 0));
+			m_sym_table.add(arg_name, SymEntry(alloca_instr, &stmt_define_arg->define_type));
 			i++;
 		}
 
@@ -614,7 +613,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	}
 	llvm::verifyFunction(*f);
 
-	m_sym_table.pop_scope();
+	m_sym_table.exit();
 	// add the fn type to the symbol table
 	//m_sym_table.add_symbol(expr_fn_ast->m_lambda_name, SymTableEntry(f, &expr_fn_ast->m_type, 0,0));
 	m_fetched_value = f;
@@ -662,17 +661,16 @@ void* LLVMGenerator::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 
 void* LLVMGenerator::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// the problem here is that a variable can be a load, store etc
-	
-	auto var_type = m_sym_table.get_symbol(expr_var_ast->identifier).type;
+	auto var_type = m_sym_table.get(expr_var_ast->identifier).m_type;
 	switch (var_type->m_type) {
 		case Type::Types::FN: {
 			m_fetched_type = FetchedType::FN;
-			m_fetched_value = (llvm::Function*)m_sym_table.get_symbol(expr_var_ast->identifier).optional_data;
+			m_fetched_value = (llvm::Function*)m_sym_table.get(expr_var_ast->identifier).m_optional_data;
 			break;
 		}
 		default: {
 			m_fetched_type = FetchedType::VARIABLE;
-			m_fetched_value = (llvm::StoreInst*)m_sym_table.get_symbol(expr_var_ast->identifier).optional_data;
+			m_fetched_value = (llvm::StoreInst*)m_sym_table.get(expr_var_ast->identifier).m_optional_data;
 			break;
 		}
 	}
@@ -685,11 +683,21 @@ void* LLVMGenerator::visit_expr_pattern_ast(ExprPatternAST* expr_pattern_ast){
 }
 
 void* LLVMGenerator::visit_expr_interface_get_ast(ExprGetAST* expr_interface_get_ast) {
-	// first fetch the value of the interface
-	// we dont convert it to a load because we access the pointer directly
-	expr_interface_get_ast->m_value->visit(this);
-	m_fetched_value = get_interface_member(convert_type(expr_interface_get_ast->m_interface_type), m_fetched_value, 0, expr_interface_get_ast->m_idx);
-	m_fetched_type = FetchedType::VALUE;
+	switch (expr_interface_get_ast->m_get_type) {
+		case ExprGetAST::GetType::INTERFACE: {
+			// first fetch the value of the interface
+			// we dont convert it to a load because we access the pointer directly
+			expr_interface_get_ast->m_value->visit(this);
+			m_fetched_value = get_interface_member(convert_type(expr_interface_get_ast->m_interface_type), m_fetched_value, 0, expr_interface_get_ast->m_idx);
+			m_fetched_type = FetchedType::VALUE;
+			return NULL;
+		}
+		case ExprGetAST::GetType::NAMESPACE: {
+			// if we are getting a namespace, then simply return the value that the namespace points to
+		}
+										   
+	}
+
 	return NULL;
 }
 void* LLVMGenerator::visit_expr_bin_ast(ExprBinAST* expr_bin_ast) {

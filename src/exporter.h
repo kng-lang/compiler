@@ -16,9 +16,9 @@ struct Exporter {
 
 
 
-	u8 export_globals(SymTable<Type> sym_table);
-	SymTable<Type> import_globals(std::string& path);				   // import globals into a symbol table
-	void import_globals(std::string& path, SymTable<Type>* sym_table); // import globals into an existing symbol table
+	u8 export_globals(SymTable sym_table);
+	SymTable import_globals(std::string& path);				   // import globals into a symbol table
+	void import_globals(std::string& path, SymTable* sym_table); // import globals into an existing symbol table
 	std::string get_dump_name(std::string path);
 	std::string reverse_dump_name(std::string path);
 

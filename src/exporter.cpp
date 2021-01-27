@@ -7,7 +7,7 @@ James Clarke - 2021
 
 #include <filesystem>
 
-u8 Exporter::export_globals(SymTable<Type> sym_table) {
+u8 Exporter::export_globals(SymTable sym_table) {
 	// exporting globals requries first serialising level 0 of the symbol table to a file 
 	
 	//write_file(
@@ -22,14 +22,14 @@ u8 Exporter::export_globals(SymTable<Type> sym_table) {
 	return 1;
 }
 
-SymTable<Type> Exporter::import_globals(std::string& path) {
+SymTable Exporter::import_globals(std::string& path) {
 	// the path is the path of the actual source file e.g. /src/main.k
 	// this is then converted into an export dump path e.g. /kng/exports/src__main.k
-	SymTable<Type> t;
+	SymTable t;
 	return t;
 }
 
-void Exporter::import_globals(std::string& path, SymTable<Type>* sym_table){
+void Exporter::import_globals(std::string& path, SymTable* sym_table){
 	auto s = import_globals(path);
 }
 

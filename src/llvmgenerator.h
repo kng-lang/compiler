@@ -24,11 +24,6 @@ struct LLVMGenerator : public Generator {
 	};
 
 
-	struct LLVMSymEntry {
-		void* llvm_instruction;
-		Type type;
-	};
-
 
 	std::shared_ptr<AST> m_ast;
 	CompilationUnit* m_unit;
@@ -43,7 +38,7 @@ struct LLVMGenerator : public Generator {
 	llvm::BasicBlock* m_exit_block;
 
 	// used for types and instructions
-	SymTable<LLVMSymEntry> m_sym_table;
+	SymTable m_sym_table;
 	std::map<std::string, llvm::Value*> m_string_constants;
 	// these are expressions at global scope that require moving into the main fn
 	// e.g. 1 + 3; would be moved into the main fn

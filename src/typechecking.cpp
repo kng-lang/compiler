@@ -46,10 +46,10 @@ void* TypeChecker::visit_program(ProgramAST* program_ast) {
 }
 
 void* TypeChecker::visit_stmt_block(StmtBlockAST* stmt_block_ast) {
-	m_sym_table.enter_scope();
+	m_sym_table.enter_anon();
 	for (const auto& ast : stmt_block_ast->stmts)
 		ast->visit(this);
-	m_sym_table.pop_scope();
+	m_sym_table.exit();
 	return NULL; 
 }
 
@@ -64,9 +64,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// wait do we ?   x : fn { y : x } -> that isn't valid is it???
 
 	// first check that in this scope the variable isn't already defined
-	if (m_sym_table.entries.size()>0
+	if (m_sym_table.m_current->m_entries.size()>0
 		&& stmt_define_ast->identifier.m_value.compare("_")!=0
-		&& m_sym_table.entries[m_sym_table.level].count(stmt_define_ast->identifier)>0) {
+		&& m_sym_table.exists_currently(stmt_define_ast->identifier)>0) {
 		
 		
 		m_unit->m_error_handler.error(
@@ -85,13 +85,13 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
 	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.m_type == Type::Types::FN))
-		m_sym_table.add_symbol(stmt_define_ast->identifier);
+		m_sym_table.add(stmt_define_ast->identifier);
 
 	// if we require the type to be resolved from an identifier, then do that here
 	// an example is x : string; the word string needs to be resolved to a concreate type
 	if (stmt_define_ast->define_type.m_interface_requires_type_finding) {
-		auto entry = m_sym_table.get_symbol(stmt_define_ast->define_type.m_interface_identifier);
-		stmt_define_ast->define_type = *entry.type->m_type_contained;
+		auto entry = m_sym_table.get(stmt_define_ast->define_type.m_interface_identifier);
+		stmt_define_ast->define_type = *entry.m_type->m_type_contained;
 	}
 
 	Type l_type = stmt_define_ast->define_type;
@@ -134,7 +134,6 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		}
 	}
 
-
 	if (stmt_define_ast->m_is_constant && !stmt_define_ast->m_is_initialised) {
 		m_unit->m_error_handler.error("constant variable requires initialisation",
 			stmt_define_ast->identifier.m_index,
@@ -145,14 +144,12 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 	m_sym_table.set_symbol(stmt_define_ast->identifier,
-		SymTableEntry(
+		SymEntry(
 			nullptr,
-			&stmt_define_ast->define_type,
-			stmt_define_ast->m_is_global,
-			stmt_define_ast->m_is_constant));
+			&stmt_define_ast->define_type));
 
 	// if we are at the first scope then this is a global variable
-	if (m_sym_table.level == 0) {
+	if (m_sym_table.global()) {
 		stmt_define_ast->m_is_global = 1;
 	}
 
@@ -243,20 +240,19 @@ void* TypeChecker::visit_expr_inter_ast(ExprInterfaceAST* expr_interface_ast) {
 
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	if (!expr_interface_ast->m_is_lambda) {
-		expr_interface_ast->m_lambda_name = m_sym_table.latest_entry.first;
-		expr_interface_ast->m_type.m_interface_identifier = m_sym_table.latest_entry.first;
+		expr_interface_ast->m_lambda_name = m_sym_table.latest().first;
+		expr_interface_ast->m_type.m_interface_identifier = m_sym_table.latest().first;
 	}
-
-	m_sym_table.enter_scope();
+	m_sym_table.enter_anon();
 	
 	s32 idx = 0;
 	for (const auto& def : expr_interface_ast->m_definitions) {
 		def->visit(this);
 		expr_interface_ast->m_type.m_interface_members.push_back(m_checked_type);
-		expr_interface_ast->m_type.m_interface_member_idx[m_sym_table.latest_entry.first] = idx++;
+		expr_interface_ast->m_type.m_interface_member_idx[m_sym_table.latest().first] = idx++;
 	}
 	
-	m_sym_table.pop_scope();
+	m_sym_table.exit();
 
 	m_checked_type_ptr = &expr_interface_ast->m_type;
 	m_checked_type = expr_interface_ast->m_type;
@@ -277,10 +273,10 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	// if the fn isn't a lambda (meaning it must be assigned to a constant), update its name
 	// !@TODO shouldn't this be the job of the code generator and not the type checker...
 	if (!expr_fn_ast->is_lambda) {
-		expr_fn_ast->m_lambda_name = m_sym_table.latest_entry.first;
+		expr_fn_ast->m_lambda_name = m_sym_table.latest().first;
 	}
 
-	m_sym_table.enter_scope();
+	m_sym_table.enter_anon();
 	// first resolve the type of the paramaters
 
 	std::vector<Type> operation_types;
@@ -298,7 +294,7 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	if(expr_fn_ast->has_body)
 		expr_fn_ast->body->visit(this);
 	
-	m_sym_table.pop_scope();
+	m_sym_table.exit();
 
 	m_checked_type_ptr = &expr_fn_ast->m_type;
 	m_checked_type = expr_fn_ast->m_type;
@@ -359,8 +355,8 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 }
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
-	if (m_sym_table.contains_symbol(expr_var_ast->identifier)) {
-		m_checked_type_ptr = (Type*)m_sym_table.get_symbol(expr_var_ast->identifier).type;
+	if (m_sym_table.exists(expr_var_ast->identifier)) {
+		m_checked_type_ptr = (Type*)m_sym_table.get(expr_var_ast->identifier).m_type;
 		m_checked_type = *m_checked_type_ptr;
 		return NULL;
 	}
@@ -370,16 +366,16 @@ void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	
 	Token dist_token;
 	u32 max_dist = _UI32_MAX;
-	for (int level = m_sym_table.level; level > 0; level--) {
-		auto& entries = m_sym_table.entries[level];
-		for(const auto& [identifier, entry] : entries){
-			auto dist = levenshtein_distance(identifier.m_value, expr_var_ast->identifier.m_value);
-			if (dist < max_dist) {
-				max_dist = dist;
-				dist_token = identifier;
-			}
+
+
+	m_sym_table.do_stuff_upwards([&](Token identifier, SymEntry entry) {
+		auto dist = levenshtein_distance(identifier.m_value, expr_var_ast->identifier.m_value);
+		if (dist < max_dist) {
+			max_dist = dist;
+			dist_token = identifier;
 		}
-	}
+	});
+
 	m_unit->m_error_handler.error(
 		Error::Level::CRITICAL,
 		Error::Type::MISSING_DELIMITER,

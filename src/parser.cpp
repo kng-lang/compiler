@@ -303,7 +303,6 @@ Type Parser::parse_type() {
 			has_return = 1;
 			op_types.at(0) = parse_type();
 		}
-		kng_log("parsed fn type");
 		t = Type::create_fn(has_return, op_types);
 		break;
 	}
@@ -785,9 +784,6 @@ std::shared_ptr<AST> Parser::parse_fn(){
 }
 
 std::shared_ptr<AST> Parser::parse_interface() {
-
-	kng_log("parsing interface");
-
 	ExprInterfaceAST expr_interface;
 	expr_interface.m_position = prev().m_position;
 

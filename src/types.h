@@ -63,37 +63,9 @@ struct Type {
 	u8 m_is_global = 0;
 
 	Type* m_type_contained;
-	/*
-	
-	NAMESPACES
-	
-	This exposes all the identifiers in a given namespace.
-	e.g. for a file main.kng with 3 variables: a, b & c.
-	The m_identifiers variable would contain a, b & c
-	*/
-	std::vector<Token> m_namespace_identifiers;
 
-	/*
-	
-	INTERFACES
-	
-	This is used to define what matching behaviour the user is trying to implement.
+	std::map<Token, Type> m_namespace_identifiers;
 
-	say we have 2 interfaces
-
-	a : {
-		x : u8;
-	}
-
-	b : {
-		x : u8;
-		y : u8;
-	}
-
-	if we did a.match(b, LOOSE), this would return true, as b implements all the members of a.
-	however if we did a.match(b, EXACT), this would return false as b implements more members than a.
-
-	*/
 	enum class InterfaceMatchType {
 		LOOSE,
 		EXACT,
@@ -128,14 +100,8 @@ struct Type {
 		return 1;
 	}
 
-	/*
-	
-	FUNCTION
 
-	*/
-	// index 0 is the return type
 	std::vector<Type> m_fn_operation_types;
-	Token m_fn_identifier;
 	u8 m_fn_has_return = 0;
 
 

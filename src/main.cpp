@@ -15,7 +15,7 @@ James Clarke - 2021
 int main(int argc, char** argv) {
 
     Exporter e;
-    SymTable<Type> s;
+    SymTable s;
     e.export_globals(s);
 
     cxxopts::Options options("kng compiler", "The kng compiler");

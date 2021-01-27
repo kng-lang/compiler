@@ -1,71 +1,126 @@
 #pragma once
 
-
+#include <optional>
 #include "types.h"
 #include "common.h"
 
-struct SymTableEntry {
-	void* optional_data;
-	Type* type;
-	u8 is_global = 0;
-	u8 is_constant = 0;
 
-	SymTableEntry() {}
-	SymTableEntry(void* optional_data, Type* type, u8 is_global, u8 is_constant)
-		: optional_data(optional_data), type(type), is_global(is_global), is_constant(is_constant) {}
+struct SymTable;
+struct SymTableScope;
+
+struct SymEntry {
+	void* m_optional_data;
+	Type* m_type;
+	// used if this entry is a symbol table itself
+	std::shared_ptr<SymTableScope> m_table;
+
+	SymEntry(){}
+	SymEntry(std::shared_ptr<SymTableScope> table) : m_table(table) {}
+	SymEntry(void* optional_data, Type* type)
+		: m_optional_data(optional_data), m_type(type) {}
+	SymEntry(void* optional_data, Type* type, std::shared_ptr<SymTableScope> table)
+		: m_optional_data(optional_data), m_type(type), m_table(table) {}
 };
 
-template<typename T>
-struct SymTable {
+struct SymTableScope {
 	// keep track of the latest entry
-	std::pair<Token, SymTableEntry> latest_entry;
-	std::map<s32, std::map<Token, SymTableEntry>> entries;
+	std::pair<Token, SymEntry> latest_entry;
+	std::map<Token, SymEntry> m_entries;
 	s32 level = 0;
 
-	SymTable() {}
+
+	std::shared_ptr<SymTableScope> m_above;
+	std::shared_ptr<SymTableScope> m_current;
+
+	SymTableScope() {}
+};
 
 
-	void dump() {
-		kng_warn("dumping symtable at level {}", level);
-		for (s32 i = level; i >= 0; i--) {
-			kng_warn("level {}", i);
-			for (auto& [key, value] : entries[i]) {
-				kng_warn("level: {}, k: {}", i, key);
-			}
+struct SymTable {
+	std::shared_ptr<SymTableScope> m_global;
+	std::shared_ptr<SymTableScope> m_current;
+
+	SymTable() {
+		m_global = std::make_shared<SymTableScope>();
+		m_current = m_global;
+	}
+
+	void add(Token id, SymEntry entry = SymEntry()) {
+		m_current->m_entries[id] = entry;
+		m_current->latest_entry = std::pair<Token, SymEntry>(id, entry);
+	}
+
+
+	SymEntry get(Token id) {
+		std::shared_ptr<SymTableScope> table = m_current;
+		while (table) {
+			for (const auto& [key, value] : table->m_entries)
+				if (key.m_value.compare(id.m_value) == 0)
+					return value;
+			table = table->m_above;
+		}
+		return {};
+	}
+
+	u8 global() {
+		return m_current->m_above==NULL;
+	}
+
+
+	void do_stuff_upwards(std::function<void(Token, SymEntry)> callback){
+		std::shared_ptr<SymTableScope> table = m_current;
+		while (table) {
+			for (const auto& [key, value] : table->m_entries)
+				callback(key, value);
+			table = table->m_above;
 		}
 	}
-	void add_symbol(Token entry_id, SymTableEntry entry = SymTableEntry()) {
-		latest_entry = std::pair<Token, SymTableEntry>(entry_id, entry);
-		entries[level][entry_id] = entry;
+
+
+
+	std::pair<Token, SymEntry> latest() {
+		return m_current->latest_entry;
 	}
 
-	void set_symbol(Token entry_id, SymTableEntry entry) {
-		latest_entry = std::pair<Token, SymTableEntry>(entry_id, entry);
-		entries[level][entry_id] = entry;
-	}
 
-	u8 contains_symbol(Token entry_id) {
-		for (s32 i = level; i >= 0; i--) {
-			if (this->entries[i].count(entry_id) > 0) {
+	u8 exists_currently(Token id) {
+		for (const auto& [key, value] : m_current->m_entries)
+			if (key.m_value.compare(id.m_value) == 0)
 				return 1;
-			}
+		return 0;
+	}
+
+	u8 exists(Token id) {
+		std::shared_ptr<SymTableScope> table = m_current;
+		while (table) {
+			for (const auto& [key, value] : table->m_entries)
+				if (key.m_value.compare(id.m_value) == 0)
+					return 1;
+			table = table->m_above;
 		}
 		return 0;
 	}
 
-	SymTableEntry get_symbol(Token entry_id) {
-		for (s32 i = level; i >= 0; i--) {
-			if (this->entries[i].count(entry_id) > 0) {
-				return entries[i][entry_id];
-			}
-		}
-		return SymTableEntry();
+	void add_enter(Token id = Token("anon"), SymEntry entry = SymEntry()) {
+
+		entry.m_table = std::make_shared<SymTableScope>();
+		m_current->latest_entry = std::pair<Token, SymEntry>(id, entry);
+		m_current->m_entries[id] = entry;
+		entry.m_table->m_above = m_current;
+		m_current = entry.m_table;
 	}
-	void enter_scope() { level++; };
-	void pop_scope() {
-		// @TODO this doesn't actually clear the symbols at the current scope and causes
-		// a "sym already defined" error, to fix clear the scope
-		entries[level].clear();
-		level--;
+
+	void enter_anon() {
+		add_enter();
+	}
+
+	void exit() {
+		m_current = m_current->m_above;
+	}
+
+
+	void set_symbol(Token entry_id, SymEntry entry) {
+		m_current->latest_entry = std::pair<Token, SymEntry>(entry_id, entry);
+		m_current->m_entries[entry_id] = entry;
 	}
 };

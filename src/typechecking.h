@@ -15,7 +15,7 @@ struct CompilationUnit;
 
 struct TypeChecker : public ASTVisitor {
 	CompilationUnit* m_unit;
-	SymTable<std::shared_ptr<Type>> m_sym_table;
+	SymTable m_sym_table;
 	Type m_checked_type;
 	Type* m_checked_type_ptr;
 	// these are used as identifiers for anonymous types

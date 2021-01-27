@@ -184,13 +184,6 @@ std::string ErrorHandler::pretty_format_str(Token::Position& pos, std::string& c
 	const std::string& during = problem_string.substr(pos.m_index_start, pos.m_index_end - pos.m_index_start);
 	const std::string& after = problem_string.substr(pos.m_index_end, problem_string.length() - pos.m_index_end);
 	
-	//kng_log("original: {}", problem_string);
-	//kng_log("line len: {}", problem_string.length());
-	//kng_log("i: {}, i+length: {}", pos.m_index_start, pos.m_index_end);
-	//kng_log("before: {}:)", before);
-	//kng_log("during: {}:)", during);
-	//kng_log("after: {}:)", after);
-
 	std::stringstream ss;
 	ss << before << colour << during << reset << after;
 

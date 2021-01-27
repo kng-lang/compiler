@@ -12,6 +12,7 @@ James Clarke - 2021
 #include <sstream>
 #include "common.h"
 #include "token.h"
+#include <stack>
 
 
 struct Compiler;

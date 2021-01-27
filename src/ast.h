@@ -315,12 +315,11 @@ struct ExprGetAST : public ExpressionAST {
 
 	// this represents what the lhs is
 	enum class GetType {
+		NAMESPACE,
 		INTERFACE,
-		FILE,
-		MODULE
 	};
 	Type m_interface_type;
-	GetType get_type;
+	GetType m_get_type;
 	std::shared_ptr<AST> m_value;
 	Token m_member;
 	s32 m_idx;

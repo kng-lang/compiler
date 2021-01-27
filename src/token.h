@@ -167,7 +167,12 @@ struct Token{
 	u32 m_length = 0;
 	Position m_position;
 
+
 	std::string m_value;
+
+	Token(){}
+	Token(std::string value) : m_value(value){}
+
 
 	std::string to_json();
 

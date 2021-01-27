@@ -11,7 +11,7 @@ struct CompilationUnit;
 
 struct Module {
 	// these are the globals exported in this module
-	SymTable<Type> m_exported_globals;
+	SymTable m_exported_globals;
 };
 
 // an importer is soley responsible for handling importing/exporing other files
