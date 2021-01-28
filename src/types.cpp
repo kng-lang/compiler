@@ -206,9 +206,7 @@ Type Type::create_interface(std::vector<Type> member_types){
 Type Type::create_interface(Token name) {
 	auto type = Type(Type::Types::INTERFACE);
 	type.m_interface_identifier = name;
-	// if the name is a builtin type we don't require type resolving
-	//if(!is_builtin_type(name))
-		type.m_interface_requires_type_finding = 1;
+	type.m_interface_requires_type_finding = 1;
 	return type;
 }
 

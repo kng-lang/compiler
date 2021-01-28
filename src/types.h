@@ -70,13 +70,6 @@ struct Type {
 	std::map<Token, Type> m_namespace_identifiers;
 
 
-	u8 is_type_define() {
-		return m_type == Type::Types::INTERFACE && m_interface_identifier.m_value.compare("type") == 0;
-	}
-	u8 is_fn_define() {
-		return m_type == Type::Types::FN;
-	}
-
 	enum class InterfaceMatchType {
 		LOOSE,
 		EXACT,

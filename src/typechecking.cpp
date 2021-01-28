@@ -102,16 +102,8 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 
-	// if we are checking a non-lambda interface define e.g.
-	// x : type {};
-	// this doesn't apply to the following because this is an anonymous lambda type
-	// x : type = {}; 
-	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.is_type_define())) {
-		m_sym_table.add(stmt_define_ast->identifier);
-	}
-
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
-	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.is_fn_define()))
+	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.m_type==Type::Types::FN))
 		m_sym_table.add(stmt_define_ast->identifier);
 
 	// if we require the type to be resolved from an identifier, then do that here
@@ -149,7 +141,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 	// if we are dealing with an interface define, then we need to create the type here
-	if (stmt_define_ast->define_type.is_type_define()) {
+	if (stmt_define_ast->define_type.m_type==Type::Types::TYPE) {
 		// get the contained type
 		stmt_define_ast->define_type.m_type_contained = r_type_ptr;
 	}
@@ -163,7 +155,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 	// if we are not checking an interface define and the value is initialised then perform a typecheck
-	if (!stmt_define_ast->define_type.is_type_define() && stmt_define_ast->m_is_initialised) {
+	if (!(stmt_define_ast->define_type.m_type == Type::Types::TYPE) && stmt_define_ast->m_is_initialised) {
 		if (!l_type.matches(r_type)) {
 			// @TODO the problem here is that if we are dealing with an array, we need to cast each element individually
 			if(r_type_ptr->can_niave_cast(l_type)) {

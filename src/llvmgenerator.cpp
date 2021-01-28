@@ -298,10 +298,35 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		convert_fetched_to_value();
 	}
 
-	auto define_type = convert_type(stmt_define_ast->define_type);
-	if(!stmt_define_ast->m_is_underscore 
-		&& !stmt_define_ast->define_type.is_fn_define())
-		auto creation_instr = m_builder->CreateAlloca(define_type, NULL, stmt_define_ast->identifier.m_value);
+
+
+	void* creation_instr = NULL;
+
+	// if we are dealing with a type, then just visit the type
+	if (stmt_define_ast->define_type.m_type != Type::Types::TYPE) {
+
+
+		auto define_type = convert_type(stmt_define_ast->define_type);
+		if (!stmt_define_ast->m_is_underscore && !(stmt_define_ast->define_type.m_type==Type::Types::FN && stmt_define_ast->m_is_constant)) {
+
+
+			creation_instr = m_builder->CreateAlloca(define_type, NULL, stmt_define_ast->identifier.m_value);
+
+			if (stmt_define_ast->m_is_initialised)
+				m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, is_volatile);
+		}
+	}
+	else {
+		creation_instr = m_fetched_value;
+	}
+
+
+	// finally add to the symbol table
+	m_sym_table.add(stmt_define_ast->identifier, SymEntry(creation_instr, stmt_define_ast->define_type));
+
+
+
+	
 
 
 

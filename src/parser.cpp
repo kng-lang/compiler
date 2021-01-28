@@ -229,8 +229,8 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::IDENTIFIER)
 		|| expect(Token::Type::STRING)
 		|| expect(Token::Type::POINTER)
-		|| expect(Token::Type::FN);
-		//|| expect(Token::Type::TYPE);
+		|| expect(Token::Type::FN)
+		|| expect(Token::Type::TYPE);
 }
 
 u8 Parser::expecting_basic_type() {
@@ -248,8 +248,8 @@ u8 Parser::expecting_basic_type() {
 		|| expect(Token::Type::INTERFACE)
 		|| expect(Token::Type::STRING)
 		|| expect(Token::Type::POINTER)
-		|| expect(Token::Type::FN);
-		//|| expect(Token::Type::TYPE);
+		|| expect(Token::Type::FN)
+		|| expect(Token::Type::TYPE);
 }
 
 u8 Parser::expecting_expr(){
