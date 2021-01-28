@@ -84,7 +84,9 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	}
 
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
-	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.m_type == Type::Types::FN))
+	if (!(stmt_define_ast->define_type.m_is_constant && 
+		(stmt_define_ast->define_type.m_type == Type::Types::FN
+			|| stmt_define_ast->define_type.m_type == Type::Types::TYPE)))
 		m_sym_table.add(stmt_define_ast->identifier);
 
 	// if we require the type to be resolved from an identifier, then do that here
@@ -96,7 +98,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 
 	Type l_type = stmt_define_ast->define_type;
 	Type r_type;
-	Type* r_type_ptr;
+	Type* r_type_ptr = NULL;
 	// finally, visit the initialisation value
 	if (stmt_define_ast->m_is_initialised) {
 		stmt_define_ast->value->visit(this);
@@ -112,7 +114,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	if (stmt_define_ast->m_requires_type_inference) {
 		//l_type = infer_type(stmt_define_ast->value);
 		//stmt_define_ast->define_type = l_type;
-		kng_assert(r_type_ptr != NULL, "r_type was NULL");
+		kng_assert(r_type_ptr != NULL, "rhs of of define's type couldn't be inferred");
 		l_type = r_type;
 		stmt_define_ast->define_type = r_type;
 	}
@@ -276,7 +278,7 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		expr_fn_ast->m_lambda_name = m_sym_table.latest().first;
 	}
 
-	m_sym_table.enter_anon();
+	m_sym_table.add_enter(expr_fn_ast->m_lambda_name, SymEntry(NULL, &expr_fn_ast->m_type));
 	// first resolve the type of the paramaters
 
 	std::vector<Type> operation_types;
@@ -472,6 +474,7 @@ void* TypeChecker::visit_expr_un_ast(ExprUnAST* expr_un_ast) {
 		expr_un_ast->ast->visit(this);
 		expr_un_ast->m_value_type = m_checked_type;
 		m_checked_type = Type::create_basic(Type::Types::TYPE);
+		m_checked_type.m_type_contained = m_checked_type_ptr;
 		break;
 	}
 	case Token::Type::POINTER:{

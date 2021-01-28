@@ -62,6 +62,8 @@ struct Type {
 	u8 m_is_constant = 0;
 	u8 m_is_global = 0;
 
+	// this is used for typedefs such as x : type = f32;
+	// y : x = 1.23f;
 	Type* m_type_contained;
 
 	std::map<Token, Type> m_namespace_identifiers;

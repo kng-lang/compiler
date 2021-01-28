@@ -214,8 +214,7 @@ u8 Parser::end_of_block() {
 
 u8 Parser::expecting_type() {
 	// @TODO this should be done as a numeric check e.g. (u32)expect() > 12 etc
-	return 
-		expect(Token::Type::U0)
+	return expect(Token::Type::U0)
 		|| expect(Token::Type::U8)
 		|| expect(Token::Type::S8)
 		|| expect(Token::Type::U16)
@@ -228,6 +227,25 @@ u8 Parser::expecting_type() {
 		|| expect(Token::Type::CHAR)
 		|| expect(Token::Type::INTERFACE)
 		|| expect(Token::Type::IDENTIFIER)
+		|| expect(Token::Type::STRING)
+		|| expect(Token::Type::POINTER)
+		|| expect(Token::Type::FN)
+		|| expect(Token::Type::TYPE);
+}
+
+u8 Parser::expecting_basic_type() {
+	return expect(Token::Type::U0)
+		|| expect(Token::Type::U8)
+		|| expect(Token::Type::S8)
+		|| expect(Token::Type::U16)
+		|| expect(Token::Type::S16)
+		|| expect(Token::Type::U32)
+		|| expect(Token::Type::S32)
+		|| expect(Token::Type::S64)
+		|| expect(Token::Type::F32)
+		|| expect(Token::Type::F64)
+		|| expect(Token::Type::CHAR)
+		|| expect(Token::Type::INTERFACE)
 		|| expect(Token::Type::STRING)
 		|| expect(Token::Type::POINTER)
 		|| expect(Token::Type::FN)
@@ -331,6 +349,92 @@ Type Parser::parse_type() {
 		}
 
 		if(!consume(Token::Type::RBRACKET)){
+			m_unit->m_error_handler.error(
+				Error::Level::CRITICAL,
+				Error::Type::MISSING_DELIMITER,
+				"expected ] after array decleration",
+				prev().m_position
+			);
+			return Type(Type::Types::UNKNOWN);
+		}
+	}
+	t.m_ptr_indirection = ptr_indirection;
+	t.m_is_constant = m_parsing_constant_assignment;
+	return t;
+}
+
+Type Parser::parse_basic_type() {
+	Type t;
+	u8 ptr_indirection = 0;
+	while (consume(Token::Type::POINTER)) {
+		ptr_indirection += 1;
+	}
+
+	auto token = next();
+	switch (token.m_type) {
+	case Token::Type::U0: t = Type::create_basic(Type::Types::U0); break;
+	case Token::Type::U8: t = Type::create_basic(Type::Types::U8); break;
+	case Token::Type::S8: t = Type::create_basic(Type::Types::S8); break;
+	case Token::Type::U16: t = Type::create_basic(Type::Types::U16); break;
+	case Token::Type::S16: t = Type::create_basic(Type::Types::S16); break;
+	case Token::Type::U32: t = Type::create_basic(Type::Types::U32); break;
+	case Token::Type::S32: t = Type::create_basic(Type::Types::S32); break;
+	case Token::Type::S64: t = Type::create_basic(Type::Types::S64); break;
+	case Token::Type::F32: t = Type::create_basic(Type::Types::F32); break;
+	case Token::Type::F64: t = Type::create_basic(Type::Types::F64); break;
+	case Token::Type::CHAR: t = Type::create_basic(Type::Types::CHAR); break;
+	case Token::Type::INTERFACE: t = Type::create_basic(Type::Types::INTERFACE); break;
+	case Token::Type::STRING: t = Type(Type::Types::STRING); break;
+	case Token::Type::TYPE: t = Type(Type::Types::TYPE); break;
+		// TODO parsing fns here
+	case Token::Type::FN: {
+		u8 has_return = 0;
+		std::vector<Type> op_types;
+		op_types.push_back(Type::create_basic(Type::Types::U0));
+		if (!consume(Token::Type::LPAREN))
+			m_unit->m_error_handler.error(
+				Error::Level::CRITICAL,
+				Error::Type::MISSING_DELIMITER,
+				"expected ( after fn type decleration",
+				prev().m_position
+			);
+		while (!expect(Token::Type::RPAREN)) {
+			if (expecting_type())
+				op_types.push_back(parse_type());
+		}
+		consume(Token::Type::RPAREN);
+		if (expecting_type()) {
+			has_return = 1;
+			op_types.at(0) = parse_type();
+		}
+		t = Type::create_fn(has_return, op_types);
+		break;
+	}
+	default: {
+		m_unit->m_error_handler.error(
+			Error::Level::CRITICAL,
+			Error::Type::UNKNOWN_TYPE,
+			"unknown type when parsing",
+			prev().m_position
+		);
+		return Type::create_basic(Type::Types::UNKNOWN);
+	}
+	}
+	// check if we are dealing with an array
+	if (consume(Token::Type::LBRACKET)) {
+		if (expect(Token::Type::NUMBER)) {
+			// known size and stack allocated
+			Token size = next();
+			t.m_is_arr = 1;
+			t.m_arr_length = std::stoi(size.m_value);
+		}
+		else {
+			// unknown size, we need to check during type checking if the array is initialised otherwise it is a pointer
+			t.m_is_arr = 1;
+			ptr_indirection++;
+		}
+
+		if (!consume(Token::Type::RBRACKET)) {
 			m_unit->m_error_handler.error(
 				Error::Level::CRITICAL,
 				Error::Type::MISSING_DELIMITER,
@@ -608,10 +712,10 @@ std::shared_ptr<AST> Parser::parse_call() {
 std::shared_ptr<AST> Parser::parse_single(){ 
 
 	//@TODO this breaks because if you do y := x(); it thinks x is a type because x could be the name of an interface
-	//if (expecting_type()){
-	//	auto t = parse_type();
-	//	return std::make_shared<ExprTypeAST>(prev().m_position, t);
-	//}
+	if (expecting_basic_type()){
+		auto t = parse_basic_type();
+		return std::make_shared<ExprTypeAST>(prev().m_position, t);
+	}
 
 	// @TODO implement casts
 	// @TODO implement groups e.g. (1+2) + (1+3)
