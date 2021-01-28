@@ -135,9 +135,13 @@ void LLVMGenerator::generate() {
 }
 
 void LLVMGenerator::make_runtime() {
-	// setup the type structure
-	llvm::StructType* type_type = llvm::StructType::create(*m_context, "type");
-	type_type->setBody(llvm::ArrayRef<llvm::Type*>({ llvm::Type::getInt8PtrTy(*m_context), llvm::Type::getInt32Ty(*m_context) }));
+	auto type_interface = Type::create_interface(Token::create("type"), {
+		{Token::create("__name__"), Type::create_pointer(Type::Types::U8, 1)},
+		{Token::create("__size__"), Type::create_basic(Type::Types::U32)}
+	});
+
+	auto type = create_interface_definition("type", type_interface);
+	m_sym_table.add(Token::create("type"), SymEntry(type, type_interface));
 }
 
 
@@ -201,6 +205,20 @@ llvm::Value* LLVMGenerator::get_interface_member(llvm::Type* type, llvm::Value* 
 	return m_builder->CreateGEP(type, interface_value, {
 		llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), ptr_index),
 		llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), member_index)});
+}
+
+inline llvm::StructType* LLVMGenerator::create_interface_definition(std::string name, Type type) {
+	// create the struct and the virtual table for the struct
+	auto n = llvm::StringRef(name);
+	auto interface_type = llvm::StructType::create(*m_context, n);
+
+	std::vector<llvm::Type*> members;
+	for (s32 i = 0; i < type.m_interface_members.size(); i++) {
+		members.push_back(convert_type(type.m_interface_members[i]));
+	}
+	interface_type->setBody(llvm::ArrayRef<llvm::Type*>(members));
+	auto interface_vtable = llvm::StructType::create(*m_context, llvm::StringRef("vtable_" + name));
+	return interface_type;
 }
 
 llvm::Type* LLVMGenerator::convert_type(Type type) {
@@ -280,40 +298,47 @@ void* LLVMGenerator::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		convert_fetched_to_value();
 	}
 
-	llvm::Value* creation_instr = NULL;
-	// only handle the definition if it isn't an underscore
-	if (!stmt_define_ast->m_is_underscore) {
-		llvm::Type* define_type = convert_type(stmt_define_ast->define_type);
+	auto define_type = convert_type(stmt_define_ast->define_type);
+	if(!stmt_define_ast->m_is_underscore 
+		&& !stmt_define_ast->define_type.is_fn_define())
+		auto creation_instr = m_builder->CreateAlloca(define_type, NULL, stmt_define_ast->identifier.m_value);
 
-		if (!stmt_define_ast->m_is_global) {
 
-			creation_instr = m_builder->CreateAlloca(define_type, NULL, stmt_define_ast->identifier.m_value);
 
-			switch (stmt_define_ast->define_type.m_type) {
-				case Type::Types::NAMESPACE: {
-					break;
-				}
-				// if we are dealing with a type decleration, then we need to assign the type variable
-				case Type::Types::TYPE: {
-					
-					set_interface_member(define_type, creation_instr, 0, 0, create_str_constant("test"), false);
-					set_interface_member(define_type, creation_instr, 0, 1, llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), 123), false);
-
-					break;
-				}
-				default: {
-					if(stmt_define_ast->m_is_initialised)
-						m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, is_volatile);
-					break;
-				}
-			}
-			m_sym_table.add(stmt_define_ast->identifier, SymEntry(creation_instr, &stmt_define_ast->define_type));
-		}
-		else {
-			//creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), define_type);
-			//m_global_expressions.push(m_builder->CreateStore(m_fetched_value, (llvm::Constant*)creation_instr, is_volatile));
-		}
-	}
+	//llvm::Value* creation_instr = NULL;
+	//// only handle the definition if it isn't an underscore
+	//if (!stmt_define_ast->m_is_underscore) {
+	//	llvm::Type* define_type = convert_type(stmt_define_ast->define_type);
+	//
+	//	if (!stmt_define_ast->m_is_global) {
+	//
+	//		creation_instr = m_builder->CreateAlloca(define_type, NULL, stmt_define_ast->identifier.m_value);
+	//
+	//		switch (stmt_define_ast->define_type.m_type) {
+	//			case Type::Types::NAMESPACE: {
+	//				break;
+	//			}
+	//			// if we are dealing with a type decleration, then we need to assign the type variable
+	//			case Type::Types::TYPE: {
+	//				
+	//				set_interface_member(define_type, creation_instr, 0, 0, create_str_constant("test"), false);
+	//				set_interface_member(define_type, creation_instr, 0, 1, llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(*m_context), 123), false);
+	//
+	//				break;
+	//			}
+	//			default: {
+	//				if(stmt_define_ast->m_is_initialised)
+	//					m_builder->CreateStore(m_fetched_value, (llvm::Value*)creation_instr, is_volatile);
+	//				break;
+	//			}
+	//		}
+	//		m_sym_table.add(stmt_define_ast->identifier, SymEntry(creation_instr, stmt_define_ast->define_type));
+	//	}
+	//	else {
+	//		//creation_instr = m_module->getOrInsertGlobal(llvm::StringRef(stmt_define_ast->identifier.m_value), define_type);
+	//		//m_global_expressions.push(m_builder->CreateStore(m_fetched_value, (llvm::Constant*)creation_instr, is_volatile));
+	//	}
+	//}
 	return NULL;
 
 
@@ -557,8 +582,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 	llvm::FunctionType* ft = create_fn_type(expr_fn_ast->m_type);
 	llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, expr_fn_ast->m_lambda_name.m_value, *m_module);
 
-	
-	m_sym_table.add_enter(expr_fn_ast->m_lambda_name);
+	m_sym_table.add_enter(expr_fn_ast->m_lambda_name, SymEntry(f, expr_fn_ast->m_type));
 	if (expr_fn_ast->has_body) {
 		llvm::BasicBlock* bb = llvm::BasicBlock::Create(*m_context, "entry_block", f);
 		m_builder->SetInsertPoint(bb);
@@ -592,7 +616,7 @@ void* LLVMGenerator::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 			// initialise it
 			auto is_volatile = false;
 			m_builder->CreateStore(arg, alloca_instr, is_volatile);
-			m_sym_table.add(arg_name, SymEntry(alloca_instr, &stmt_define_arg->define_type));
+			m_sym_table.add(arg_name, SymEntry(alloca_instr, stmt_define_arg->define_type));
 			i++;
 		}
 
@@ -661,16 +685,16 @@ void* LLVMGenerator::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 
 void* LLVMGenerator::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	// the problem here is that a variable can be a load, store etc
-	auto var_type = m_sym_table.get(expr_var_ast->identifier).m_type;
-	switch (var_type->m_type) {
+	auto var_type = m_sym_table.get(expr_var_ast->identifier)->m_type;
+	switch (var_type.m_type) {
 		case Type::Types::FN: {
 			m_fetched_type = FetchedType::FN;
-			m_fetched_value = (llvm::Function*)m_sym_table.get(expr_var_ast->identifier).m_optional_data;
+			m_fetched_value = (llvm::Function*)m_sym_table.get(expr_var_ast->identifier)->m_optional_data;
 			break;
 		}
 		default: {
 			m_fetched_type = FetchedType::VARIABLE;
-			m_fetched_value = (llvm::StoreInst*)m_sym_table.get(expr_var_ast->identifier).m_optional_data;
+			m_fetched_value = (llvm::StoreInst*)m_sym_table.get(expr_var_ast->identifier)->m_optional_data;
 			break;
 		}
 	}

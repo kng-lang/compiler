@@ -35,8 +35,26 @@ void TypeChecker::niave_cast_ast(Type t, std::shared_ptr<AST> ast) {
 }
 
 std::shared_ptr<AST> TypeChecker::check() {
+	make_runtime();
 	m_ast->visit(this);
 	return m_ast;
+}
+
+inline void TypeChecker::make_runtime() {
+	// first create the 'type' interface
+	auto type_interface = Type::create_interface(Token::create("type"), {
+		{Token::create("__name__"), Type::create_pointer(Type::Types::U8, 1)},
+		{Token::create("__size__"), Type::create_basic(Type::Types::U32)}
+		});
+	m_sym_table.add(type_interface.m_interface_identifier, SymEntry(NULL, type_interface));
+}
+
+inline u8 TypeChecker::checking_interface_define(Type& type) {
+	return type.m_type == Type::Types::INTERFACE && type.m_interface_identifier.m_value.compare("type") == 0;
+}
+
+inline u8 TypeChecker::checking_fn_define(Type& type) {
+	return type.m_type == Type::Types::FN;
 }
 
 void* TypeChecker::visit_program(ProgramAST* program_ast) { 
@@ -64,7 +82,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	// wait do we ?   x : fn { y : x } -> that isn't valid is it???
 
 	// first check that in this scope the variable isn't already defined
-	if (m_sym_table.m_current->m_entries.size()>0
+	if (!m_sym_table.empty()
 		&& stmt_define_ast->identifier.m_value.compare("_")!=0
 		&& m_sym_table.exists_currently(stmt_define_ast->identifier)>0) {
 		
@@ -83,17 +101,41 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		return NULL;
 	}
 
+
+	// if we are checking a non-lambda interface define e.g.
+	// x : type {};
+	// this doesn't apply to the following because this is an anonymous lambda type
+	// x : type = {}; 
+	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.is_type_define())) {
+		m_sym_table.add(stmt_define_ast->identifier);
+	}
+
 	// if the definition is a constant fn, we want the fn itself to actually be defined with the identifier
-	if (!(stmt_define_ast->define_type.m_is_constant && 
-		(stmt_define_ast->define_type.m_type == Type::Types::FN
-			|| stmt_define_ast->define_type.m_type == Type::Types::TYPE)))
+	if (!(stmt_define_ast->define_type.m_is_constant && stmt_define_ast->define_type.is_fn_define()))
 		m_sym_table.add(stmt_define_ast->identifier);
 
 	// if we require the type to be resolved from an identifier, then do that here
 	// an example is x : string; the word string needs to be resolved to a concreate type
 	if (stmt_define_ast->define_type.m_interface_requires_type_finding) {
+		
+		if (!m_sym_table.exists(stmt_define_ast->define_type.m_interface_identifier)) {
+			m_unit->m_error_handler.error(
+				Error::Level::CRITICAL,
+				Error::Type::UNKNOWN_TYPE,
+				"unknown type",
+				Token::Position(
+					stmt_define_ast->define_type.m_interface_identifier.m_index,
+					stmt_define_ast->define_type.m_interface_identifier.m_index + stmt_define_ast->define_type.m_interface_identifier.m_length,
+					stmt_define_ast->define_type.m_interface_identifier.m_line,
+					stmt_define_ast->define_type.m_interface_identifier.m_line
+				)
+			);
+			return NULL;
+		}
 		auto entry = m_sym_table.get(stmt_define_ast->define_type.m_interface_identifier);
-		stmt_define_ast->define_type = *entry.m_type->m_type_contained;
+		// if the type is builtin, then we 
+		if(!Type::is_builtin_type(stmt_define_ast->define_type.m_interface_identifier))
+			stmt_define_ast->define_type = *entry->m_type.m_type_contained;
 	}
 
 	Type l_type = stmt_define_ast->define_type;
@@ -106,7 +148,8 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		r_type_ptr = m_checked_type_ptr;
 	}
 
-	if (stmt_define_ast->define_type.m_type == Type::Types::TYPE) {
+	// if we are dealing with an interface define, then we need to create the type here
+	if (stmt_define_ast->define_type.is_type_define()) {
 		// get the contained type
 		stmt_define_ast->define_type.m_type_contained = r_type_ptr;
 	}
@@ -119,7 +162,8 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 		stmt_define_ast->define_type = r_type;
 	}
 
-	if (stmt_define_ast->m_is_initialised) {
+	// if we are not checking an interface define and the value is initialised then perform a typecheck
+	if (!stmt_define_ast->define_type.is_type_define() && stmt_define_ast->m_is_initialised) {
 		if (!l_type.matches(r_type)) {
 			// @TODO the problem here is that if we are dealing with an array, we need to cast each element individually
 			if(r_type_ptr->can_niave_cast(l_type)) {
@@ -148,7 +192,7 @@ void* TypeChecker::visit_stmt_define(StmtDefineAST* stmt_define_ast) {
 	m_sym_table.set_symbol(stmt_define_ast->identifier,
 		SymEntry(
 			nullptr,
-			&stmt_define_ast->define_type));
+			stmt_define_ast->define_type));
 
 	// if we are at the first scope then this is a global variable
 	if (m_sym_table.global()) {
@@ -278,7 +322,7 @@ void* TypeChecker::visit_expr_fn_ast(ExprFnAST* expr_fn_ast) {
 		expr_fn_ast->m_lambda_name = m_sym_table.latest().first;
 	}
 
-	m_sym_table.add_enter(expr_fn_ast->m_lambda_name, SymEntry(NULL, &expr_fn_ast->m_type));
+	m_sym_table.add_enter(expr_fn_ast->m_lambda_name, SymEntry(NULL, expr_fn_ast->m_type));
 	// first resolve the type of the paramaters
 
 	std::vector<Type> operation_types;
@@ -358,7 +402,7 @@ void* TypeChecker::visit_expr_call_ast(ExprCallAST* expr_call_ast) {
 
 void* TypeChecker::visit_expr_var_ast(ExprVarAST* expr_var_ast) {
 	if (m_sym_table.exists(expr_var_ast->identifier)) {
-		m_checked_type_ptr = (Type*)m_sym_table.get(expr_var_ast->identifier).m_type;
+		m_checked_type_ptr = &m_sym_table.get(expr_var_ast->identifier)->m_type;
 		m_checked_type = *m_checked_type_ptr;
 		return NULL;
 	}

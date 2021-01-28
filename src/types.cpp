@@ -180,6 +180,23 @@ Type Type::create_fn(u8 has_return, std::vector<Type> op_types) {
 	return type;
 }
 
+Type Type::create_interface(Token name, std::vector<std::pair<Token,Type>> member_types) {
+	auto type = Type(Type::Types::INTERFACE);
+	type.m_interface_identifier = name;
+	for (int i = 0; i < member_types.size(); i++) {
+		type.m_interface_member_idx[member_types[i].first] = i;
+		type.m_interface_members.push_back(member_types[i].second);
+	}
+	return type;
+}
+
+Type Type::create_interface(Token name, std::vector<Type> member_types) {
+	auto type = Type(Type::Types::INTERFACE);
+	type.m_interface_identifier = name;
+	type.m_interface_members = member_types;
+	return type;
+}
+
 Type Type::create_interface(std::vector<Type> member_types){
 	auto type = Type(Type::Types::INTERFACE);
 	type.m_interface_members = member_types;
@@ -189,8 +206,15 @@ Type Type::create_interface(std::vector<Type> member_types){
 Type Type::create_interface(Token name) {
 	auto type = Type(Type::Types::INTERFACE);
 	type.m_interface_identifier = name;
-	type.m_interface_requires_type_finding = 1;
+	// if the name is a builtin type we don't require type resolving
+	//if(!is_builtin_type(name))
+		type.m_interface_requires_type_finding = 1;
 	return type;
+}
+
+
+u8 Type::is_builtin_type(Token& name) {
+	return name.m_value.compare("type") == 0;
 }
 
 Type Type::create_pattern(std::vector<Type> types) {

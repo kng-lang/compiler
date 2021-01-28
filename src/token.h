@@ -173,6 +173,10 @@ struct Token{
 	Token(){}
 	Token(std::string value) : m_value(value){}
 
+	static Token create(std::string value) {
+		return Token(value);
+	}
+
 
 	std::string to_json();
 

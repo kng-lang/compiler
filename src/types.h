@@ -62,11 +62,20 @@ struct Type {
 	u8 m_is_constant = 0;
 	u8 m_is_global = 0;
 
+	u8 m_is_type_def = 0;
 	// this is used for typedefs such as x : type = f32;
 	// y : x = 1.23f;
 	Type* m_type_contained;
 
 	std::map<Token, Type> m_namespace_identifiers;
+
+
+	u8 is_type_define() {
+		return m_type == Type::Types::INTERFACE && m_interface_identifier.m_value.compare("type") == 0;
+	}
+	u8 is_fn_define() {
+		return m_type == Type::Types::FN;
+	}
 
 	enum class InterfaceMatchType {
 		LOOSE,
@@ -141,10 +150,15 @@ struct Type {
 	static Type create_basic(Type::Types t);
 	static Type create_array(Type::Types t, u32 length);
 	static Type create_fn(u8 has_return, std::vector<Type> op_types);
+	static Type create_interface(Token name, std::vector<std::pair<Token, Type>> member_types);
+	static Type create_interface(Token name, std::vector<Type> member_types);
 	static Type create_interface(std::vector<Type> member_types);
 	static Type create_interface(Token name);
 	static Type create_pointer(Type::Types t, u32 ptr_indirection);
 	static Type create_pattern(std::vector<Type> types);
+	static Type create_type_interface();
+
+	static u8 is_builtin_type(Token& name);
 
 	std::string to_json();
 
